@@ -30,9 +30,11 @@ A lista suspensa contém as 7 escolas cadastradas:
 - **Validação com Chave Única (E-mail):** Bloqueia tentativas de respostas duplicadas usando o e-mail cadastrado ou nome completo.
 - **Sincronização em Tempo Real (Google Planilhas):** Carrega automaticamente todas as presenças registradas em qualquer dispositivo.
 - **Comprovante & Recibo:** Exibe tela de confirmação com e-mail, escola, nome, data e hora após o envio.
-- **Área Administrativa Protegida:** Clique no ícone de engrenagem ⚙️ e informe a senha `admin123`.
-- **Histórico Completo com Busca:** Visualização, filtragem e distinção de registros (Nuvem / Local).
-- **Exportação CSV:** Download de relatório consolidado em formato `.csv`.
+- **Área Administrativa & Dashboard Completo:** Acesso protegido por senha (`admin123`) com KPIs em tempo real, contagem de presenças por escola e busca combinada.
+- **Relatório Executivo para a Gestão Escolar:**
+  - 🖨️ **Impressão / PDF:** Layout timbrado com cabeçalho institucional, relação nominal e linhas para assinatura da direção/coordenação.
+  - 📲 **WhatsApp da Gestão:** Cópia de texto formatado com resumo por escola e lista nominal com um clique.
+  - 📊 **Exportação CSV:** Download de relatório consolidado ou filtrado por unidade escolar.
 - **Configurações Flexíveis:** Ajuste de links e IDs do Google Forms e da Planilha Google diretamente no painel.
 
 ---
