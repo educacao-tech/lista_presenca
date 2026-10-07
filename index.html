@@ -1,775 +1,298 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Portal de Educação Digital e Midiática.">
-    <title>EduMídia - Cidadania na Era Digital</title>
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="EduMídia - Cidadania na Era Digital">
-    <meta property="og:description" content="Portal de Educação Digital e Midiática da rede municipal de Batatais.">
-    <meta property="og:image" content="logo.png">
-    <meta property="twitter:card" content="summary_large_image">
-
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Link para o arquivo CSS -->
-    <link rel="icon" href="logo.png" type="image/png">
-    <link rel="stylesheet" href="style.css">
-    <!-- Garante que todos os links abram na página principal do Google Sites -->
-    <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Presença | Registro Escolar</title>
+  <meta name="description" content="Sistema de Lista de Presença com integração direta ao Google Forms, seleção de escolas oficiais e nome completo do professor.">
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div class="bg-pattern"></div>
 
-    <a href="#planejamentos" class="skip-link visually-hidden">Pular para o conteúdo principal</a>
-
-    <!-- Navegação -->
-    <header>
-        <nav>
-            <a href="https://sites.google.com/educacao.batatais.sp.gov.br/seceduc/in%c3%adcio" class="logo" target="_top">
-                <img src="logo.png" alt="Logo EduMídia" width="150" height="40">
-                <span class="logo-text">Educação Digital e Midiática</span>
-            </a>
-
-            <!-- Substitua 'SEU-SITE' pela URL final do seu Google Sites -->
-            <ul class="nav-links" id="nav-links">
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#oque-e-edm" target="_top">O que é EDM?</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#busca-bncc" target="_top">Busca BNCC</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#pilares" target="_top">Eixos</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#importancia" target="_top">Importância</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#planejamentos" target="_top">Planejamentos</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#atividades" target="_top">Atividades</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#bncc-videos" target="_top">BNCC Vídeos</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#etapas" target="_top">Etapas</a></li>
-                <li><a href="https://sites.google.com/view/edumidia-batatais/#inclusao" target="_top">Inclusão</a></li>
-            </ul>
-
-            <div class="nav-controls">
-                <button class="admin-toggle" id="open-admin-login-btn-header" aria-label="Gestão de Links (Admin)" title="Gestão de Links (Admin)">
-                    <svg class="gear-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                </button>
-                <button class="theme-toggle" id="theme-toggle" aria-label="Ativar modo escuro" title="Alterar tema">
-                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                </button>
-                <!-- Botão Menu Mobile -->
-                <button class="mobile-menu-icon" id="mobile-menu" aria-label="Abrir menu" aria-expanded="false" aria-controls="nav-links">
-                    <svg class="hamburger-icon" viewBox="0 0 100 80" width="24" height="24" aria-hidden="true"><rect width="100" height="15" rx="8"></rect><rect y="30" width="100" height="15" rx="8"></rect><rect y="60" width="100" height="15" rx="8"></rect></svg>
-                </button>
-            </div>
-        </nav>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content">
-            <div class="hero-badge">✨ Novo Currículo 2026 • Rede Municipal de Batatais</div>
-            <h1>Educação Digital em São Paulo</h1>
-            <div class="hero-buttons">
-                <a href="https://drive.google.com/file/d/1UHh3iLtP54oTOKOUK-8CGi44D_cobQwI/view?usp=sharing" class="btn-hero" target="_blank" rel="noopener noreferrer">Acessar Curriculo EF1</a>
-                <a href="https://drive.google.com/drive/folders/177WODrM4SrMP3Hjqtmz4akIFkQHRS0rB?usp=sharing" class="btn-hero btn-hero-secondary" target="_blank" rel="noopener noreferrer">Livros Didáticos</a>
-            </div>
+  <!-- Cabeçalho Principal -->
+  <header class="main-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-clipboard-check"></i>
         </div>
-    </section>
-
-    <!-- Menu de Planejamentos (1º ao 5º Ano) -->
-    <section id="planejamentos" class="section">
-        <h2 class="section-title">Planejamentos Anuais (EF1) da rede Municipal de Batatais</h2>
-        <div class="section-intro">
-            <p>Acesse os roteiros de aprendizagem e materiais didáticos organizados por ano e bimestre.</p>
+        <div class="brand-text">
+          <h1>Lista de Presença!</h1>
+          <p>Conectado ao Google Forms Oficial</p>
         </div>
-        <div class="accordion-container">
-            <!-- 1º Ano -->
-            <details class="accordion-item" data-ano="1">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">1️⃣</span><h3>1º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://docs.google.com/document/d/1Yap9AJU2w4FlBpXHMqNaRo4miaqiYMAX/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        1º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1xrtDpPec3h6yzkN8uqB-TX6gZMGlA6Xo/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        2º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1NnYmYy91THy3S_S9xti01I7-uodaN3mq/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        3º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 2º Ano -->
-            <details class="accordion-item" data-ano="2">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">2️⃣</span><h3>2º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://docs.google.com/document/d/1kMJxrP_-snqlOaO3NiIUPd0WyFiGIv23/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre" target="_blank" rel="noopener noreferrer">
-                        1º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1a8Kyf0DlwlfVISwTOat0YMhsqdd5dNNb/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        2º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1RkSNVmdUl2pUe1R3dnuf8hMTGtv6M4tG/edit?usp=drive_link&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        3º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 3º Ano -->
-            <details class="accordion-item" data-ano="3">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">3️⃣</span><h3>3º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://docs.google.com/document/d/15mv2PLWIofSjykP1Htj5tALmpmhcOfIr/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre" target="_blank" rel="noopener noreferrer">
-                        1º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1w4AdxPuXF0QpY_iKUUCXLCt9DG7YeriX/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        2º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1WbxnVyeVB_cbCR3-KeZOY4fbsNrEpaJE/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        3º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 4º Ano -->
-            <details class="accordion-item" data-ano="4">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">4️⃣</span><h3>4º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://docs.google.com/document/d/1Gb1KxdgwZmd1afpzB70JcXEpoXv5Bx0o/edit?usp=drive_link&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre" target="_blank" rel="noopener noreferrer">
-                        1º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1rBlNC-1iRzlSdaqTOtt0GmbqDF15ADy9/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        2º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1eoSuejeAicffwc4iZueqw2rGMI-RBnFi/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        3º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 5º Ano -->
-            <details class="accordion-item" data-ano="5">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">5️⃣</span><h3>5º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://docs.google.com/document/d/1nTNyjvjkbR6pbNYuNhHkC8eOeBxWJ1lD/edit?usp=drive_link&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre" target="_blank" rel="noopener noreferrer">
-                        1º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1BMmrFi28vyWUC65kh-j58yoiVsb8KHDi/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        2º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="https://docs.google.com/document/d/1XUBNH05jTNyxdLDHSpr-cf80XeYe8zAl/edit?usp=sharing&ouid=105490380319692087161&rtpof=true&sd=true" class="btn-bimestre">
-                        3º Bimestre
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                    </a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-        </div>
-    </section>
-
-    <!-- Menu de Atividades (1º ao 5º Ano) -->
-    <section id="atividades" class="section bg-light">
-        <h2 class="section-title">Atividades Práticas (EF1)</h2>
-        <div class="section-intro">
-            <p>Sugestões de atividades práticas para aplicação em sala de aula, organizadas por ano e bimestre.</p>
-        </div>
-        <div class="accordion-container">
-            <!-- 1º Ano -->
-            <details class="accordion-item" data-ano="1">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">1️⃣</span><h3>1º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="#" class="btn-bimestre disabled">1º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">2º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">3º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 2º Ano -->
-            <details class="accordion-item" data-ano="2">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">2️⃣</span><h3>2º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://drive.google.com/drive/folders/13jyFSO2ewcOAF9jYGLYEx6xRvGRF7o9-?usp=sharing" class="btn-bimestre" target="_blank" rel="noopener noreferrer">1º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">2º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">3º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 3º Ano -->
-            <details class="accordion-item" data-ano="3">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">3️⃣</span><h3>3º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="#" class="btn-bimestre disabled">1º Bimestre</a>
-                    <a href="https://drive.google.com/drive/folders/1pUjVDb9GyJIEaTaZ4IY-m807ApamEYsC?usp=sharing" class="btn-bimestre" target="_blank" rel="noopener noreferrer">2º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">3º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 4º Ano -->
-            <details class="accordion-item" data-ano="4">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">4️⃣</span><h3>4º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://drive.google.com/drive/folders/1E7nrhcV8AxaS92d0HS0wiNNvfwL8x1sn?usp=drive_link" class="btn-bimestre" target="_blank" rel="noopener noreferrer">1º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">2º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">3º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 5º Ano -->
-            <details class="accordion-item" data-ano="5">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">5️⃣</span><h3>5º Ano</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="https://drive.google.com/drive/folders/1srF9D3WW-WsWEH5WrDUspiAinBfjEE2_?usp=drive_link" class="btn-bimestre" target="_blank" rel="noopener noreferrer">1º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">2º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">3º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-            <!-- 1º ao 5º Ano (Geral) -->
-            <details class="accordion-item" data-ano="6">
-                <summary class="accordion-header">
-                    <span class="accordion-icon">📚</span><h3>1º ao 5º Ano (Geral)</h3><span class="accordion-arrow"></span>
-                    <svg class="accordion-chevron" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                </summary>
-                <div class="accordion-content">
-                    <a href="#" class="btn-bimestre disabled">1º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">2º Bimestre</a>
-                    <a href="https://drive.google.com/drive/folders/1HbSmBeQSGio4k3Jer942hrqQD9-uiU8x?usp=sharing" class="btn-bimestre" target="_blank" rel="noopener noreferrer">3º Bimestre</a>
-                    <a href="#" class="btn-bimestre disabled">4º Bimestre</a>
-                </div>
-            </details>
-        </div>
-    </section>
-
-    <!-- BNCC Computação - Vídeos Explicativos -->
-    <section id="bncc-videos" class="section bg-light">
-        <h2 class="section-title">BNCC Computação: Vídeos Explicativos</h2>
-        <div class="section-intro">
-            <p>Explore nossa coleção de vídeos que desmistificam a BNCC Computação e suas aplicações práticas.</p>
-        </div>
-        <div class="cards-grid">
-            <a href="https://www.youtube.com/watch?v=4En8ISFWTjs&list=PLmYgSblYLMBqBW2o_P7EwDQXI-suXEhf4&index=2" target="_blank" rel="noopener noreferrer" class="card video-card">
-                <span class="card-icon" role="img" aria-label="Ícone de Play">▶️</span>
-                <h3>Introdução à BNCC Computação</h3>
-                <p>Entenda os fundamentos e a importância da BNCC Computação no currículo escolar.</p>
-            </a>
-            <a href="#">
-                <span class="card-icon" role="img" aria-label="Ícone de Lógica">🧠</span>
-                <h3>Pensamento Computacional na Prática</h3>
-                <p>Veja exemplos práticos de como desenvolver o pensamento computacional em sala de aula.</p>
-            </a>
-            <a href="#">
-                <span class="card-icon" role="img" aria-label="Ícone de Segurança Digital">🔒</span>
-                <h3>Cidadania Digital e Segurança Online</h3>
-                <p>Orientações sobre como abordar temas de segurança e ética no ambiente digital.</p>
-            </a>
-            <a href="#">
-                <span class="card-icon" role="img" aria-label="Ícone de Robô">🤖</span>
-                <h3>IA e o Futuro da Educação</h3>
-                <p>Como a Inteligência Artificial se integra à BNCC e transforma o aprendizado.</p>
-            </a>
-            <a href="#">
-                <span class="card-icon" role="img" aria-label="Ícone de Código">💻</span>
-                <h3>Programação para Iniciantes</h3>
-                <p>Primeiros passos no mundo da programação, com exemplos e ferramentas acessíveis.</p>
-            </a>
-        </div>
-    </section>
-
-    <!-- Busca Rápida de Habilidades da BNCC Computação -->
-    <section id="busca-bncc" class="section">
-        <h2 class="section-title">🔍 Busca de Habilidades BNCC Computação</h2>
-        <div class="section-intro">
-            <p>Pesquise instantaneamente por código (ex: <code>EF01CO01</code>), ano ou palavra-chave (ex: <em>algoritmos, fake news, segurança</em>) para encontrar as habilidades correspondentes.</p>
-        </div>
-
-        <div class="bncc-search-wrapper">
-            <div class="bncc-search-bar">
-                <span class="search-icon">🔍</span>
-                <input type="text" id="bncc-search-input" placeholder="Digite um código (ex: EF01CO01) ou assunto (ex: algoritmos)..." aria-label="Pesquisar Habilidades da BNCC Computação">
-                <button type="button" id="bncc-search-clear" class="btn-clear-search" aria-label="Limpar pesquisa">&times;</button>
-            </div>
-
-            <div class="bncc-filter-chips" id="bncc-filter-chips">
-                <button type="button" class="bncc-chip active" data-filter="all">Todos os Anos</button>
-                <button type="button" class="bncc-chip" data-filter="1º Ano">1º Ano</button>
-                <button type="button" class="bncc-chip" data-filter="2º Ano">2º Ano</button>
-                <button type="button" class="bncc-chip" data-filter="3º Ano">3º Ano</button>
-                <button type="button" class="bncc-chip" data-filter="4º Ano">4º Ano</button>
-                <button type="button" class="bncc-chip" data-filter="5º Ano">5º Ano</button>
-                <button type="button" class="bncc-chip chip-eixo" data-filter="Pensamento Computacional">Pensamento Computacional</button>
-                <button type="button" class="bncc-chip chip-eixo" data-filter="Mundo Digital">Mundo Digital</button>
-                <button type="button" class="bncc-chip chip-eixo" data-filter="Cultura Digital">Cultura Digital</button>
-            </div>
-
-            <div class="bncc-search-stats" id="bncc-search-stats">
-                Mostrando <strong id="bncc-count-visible">11</strong> de 11 habilidades da BNCC Computação
-            </div>
-        </div>
-
-        <div class="bncc-cards-grid" id="bncc-cards-grid">
-            <!-- Renderizado dinamicamente via script.js -->
-        </div>
-    </section>
-
-    <!-- O que é a Educação Digital e Midiática -->
-    <section id="oque-e-edm" class="section">
-        <h2 class="section-title">📖 O que é a Educação Digital e Midiática?</h2>
-        <div class="edm-cards-container">
-            <div class="card edm-card-highlight">
-                <div class="card-icon" role="img" aria-label="Livro e Conhecimento">📖</div>
-                <h3>Definição</h3>
-                <p>É o conjunto de saberes que une o <strong>letramento digital</strong> ao <strong>letramento midiático</strong>, capacitando o estudante a compreender e agir criticamente no ecossistema de informação.</p>
-                <div class="card-ref-links">
-                    <a href="https://www.gov.br/mec/pt-br/escolas-conectadas/arquivos/guia_eddigital_versofinaloficial.pdf" target="_blank" rel="noopener noreferrer" class="ref-pill">📄 Guia MEC (PDF)</a>
-                    <a href="https://www.youtube.com/watch?v=kHgD09bk6DQ&t=4" target="_blank" rel="noopener noreferrer" class="ref-pill">🎬 Vídeo Explicativo</a>
-                </div>
-            </div>
-
-            <div class="card edm-card-highlight">
-                <div class="card-icon" role="img" aria-label="Alvo e Objetivo">🎯</div>
-                <h3>Objetivo Principal</h3>
-                <p>Transformar o estudante de um <strong>mero consumidor de conteúdos</strong> da internet em um <strong>produtor criativo, seguro e responsável</strong> de informações.</p>
-                <div class="card-ref-links">
-                    <a href="https://www.youtube.com/watch?v=SITbRK0szEI&t=122" target="_blank" rel="noopener noreferrer" class="ref-pill">🎬 Vídeo de Apoio</a>
-                </div>
-            </div>
-
-            <div class="card edm-card-highlight">
-                <div class="card-icon" role="img" aria-label="Bases e Legislação">🏛️</div>
-                <h3>Bases no Brasil</h3>
-                <p>Está fundamentada em diretrizes estratégicas nacionais como a <strong>BNCC</strong> (Base Nacional Comum Curricular), a <strong>PNED</strong> (Política Nacional de Educação Digital) e a <strong>Estratégia Brasileira de Educação Midiática</strong>.</p>
-                <div class="card-ref-links">
-                    <a href="https://ieps.org.br/a-implementacao-da-educacao-digital-e-midiatica-nas-escolas-brasileiras/" target="_blank" rel="noopener noreferrer" class="ref-pill">🔗 IEPS - Implementação</a>
-                    <a href="https://www.gov.br/mec/pt-br/escolas-conectadas/arquivos/guia_eddigital_versofinaloficial.pdf" target="_blank" rel="noopener noreferrer" class="ref-pill">📄 Guia MEC</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Propósito -->
-    <section id="proposito" class="section bg-light">
-        <h2 class="section-title">Propósito e Implementação</h2>
-        <div class="section-content-narrow">
-            <p>O novo currículo visa consolidar os fundamentos da Educação Digital e Midiática, alinhando o contexto paulista às competências de computação previstas na Base Nacional Comum Curricular (BNCC).</p>
-            <p>A implementação sistemática nas redes estadual e municipais de São Paulo está prevista para iniciar no <strong>primeiro semestre de 2026</strong>, preparando os estudantes para um futuro cada vez mais tecnológico.</p>
-        </div>
-    </section>
-
-    <!-- Eixos -->
-    <section id="pilares" class="section">
-        <h2 class="section-title">📌 Os Eixos Principais da EDM</h2>
-        <div class="cards-grid">
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Pensamento Computacional">💻</span>
-                <h3>Pensamento Computacional</h3>
-                <p>Resolução de problemas lógicos, criação de algoritmos e compreensão da lógica por trás das máquinas e sistemas automatizados.</p>
-            </div>
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Mundo Digital">🌐</span>
-                <h3>Mundo Digital</h3>
-                <p>Entendimento do funcionamento da rede, segurança de dados, conectividade e respeito às leis no ambiente virtual (como o ECA Digital).</p>
-            </div>
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Cultura Digital e Letramento Midiático">🛡️</span>
-                <h3>Cultura Digital &amp; Letramento Midiático</h3>
-                <p>Capacidade de analisar notícias criticamente, combater a desinformação (fake news), reconhecer bolhas de algoritmos e interagir de forma cidadã.</p>
-            </div>
-        </div>
-        <div class="section-references">
-            <span class="ref-title">📚 Referências e Links Oficiais dos Eixos:</span>
-            <div class="ref-pills-group">
-                <a href="https://www.gov.br/mec/pt-br/escolas-conectadas/bloco-tematico-2-educacao-digital-e-midiatica" target="_blank" rel="noopener noreferrer" class="ref-pill">🏛️ MEC - Bloco Temático 2</a>
-                <a href="https://pnld.ftd.com.br/obras/a-conquista-educacao-digital-e-midiatica-pnld-2027-anos-iniciais-categoria-2/" target="_blank" rel="noopener noreferrer" class="ref-pill">📘 PNLD 2027 (FTD)</a>
-                <a href="https://www.youtube.com/watch?v=SITbRK0szEI&t=122" target="_blank" rel="noopener noreferrer" class="ref-pill">🎬 Vídeo: EDM na Prática</a>
-                <a href="https://www.youtube.com/watch?v=kHgD09bk6DQ&t=4" target="_blank" rel="noopener noreferrer" class="ref-pill">🎬 Vídeo: Conceitos EDM</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Por que ela é importante nas escolas -->
-    <section id="importancia" class="section bg-light">
-        <h2 class="section-title">💡 Por que ela é importante nas escolas?</h2>
-        <div class="cards-grid">
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Cidadania Ativa">🛡️</span>
-                <h3>Cidadania Ativa</h3>
-                <p>Ajuda o aluno a navegar na internet com discernimento, evitando golpes, armadilhas digitais e a disseminação de conteúdos falsos.</p>
-            </div>
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Uso Pedagógico">📱</span>
-                <h3>Uso Pedagógico</h3>
-                <p>Orienta professores a utilizarem tablets, computadores e vídeos como ferramentas reais de apoio ao aprendizado, superando a mera distração.</p>
-            </div>
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Ética e Empatia">🤝</span>
-                <h3>Ética e Empatia</h3>
-                <p>Promove debates essenciais sobre cyberbullying, privacidade de dados e o uso responsável de ferramentas como a Inteligência Artificial.</p>
-            </div>
-        </div>
-        <div class="section-references">
-            <span class="ref-title">🔗 Fontes e Materiais de Apoio:</span>
-            <div class="ref-pills-group">
-                <a href="https://www.gov.br/mec/pt-br/escolas-conectadas/bloco-tematico-2-educacao-digital-e-midiatica" target="_blank" rel="noopener noreferrer" class="ref-pill">🏛️ MEC - Escolas Conectadas</a>
-                <a href="https://www.youtube.com/watch?v=kHgD09bk6DQ&t=4" target="_blank" rel="noopener noreferrer" class="ref-pill">🎬 Vídeo Explicativo 1</a>
-                <a href="https://www.youtube.com/watch?v=SITbRK0szEI&t=122" target="_blank" rel="noopener noreferrer" class="ref-pill">🎬 Vídeo Explicativo 2</a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Etapas de Ensino -->
-    <section id="etapas" class="section bg-light">
-        <h2 class="section-title">Desenvolvimento por Etapa de Ensino</h2>
-        <div class="cards-grid">
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Ícone de Urso de Pelúcia">🧸</span>
-                <h3>Educação Infantil</h3>
-                <p>Foco no desenvolvimento lúdico e na conscientização sobre hábitos saudáveis de uso de telas e dispositivos digitais.</p>
-            </div>
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Ícone de Pilha de Livros">📚</span>
-                <h3>Ensino Fundamental</h3>
-                <p>Domínio de linguagens digitais, resolução de problemas e debates sobre cyberbullying, privacidade e sustentabilidade.</p>
-            </div>
-            <div class="card">
-                <span class="card-icon" role="img" aria-label="Ícone de Chapéu de Formatura">🎓</span>
-                <h3>Ensino Médio</h3>
-                <p>Integração transversal da educação digital, focando em projetos de vida, autonomia e cidadania digital plena.</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Inclusão e Cidadania -->
-    <section id="inclusao" class="section">
-        <h2 class="section-title">Inclusão e Legislação</h2>
-        <div class="about-grid">
-            <div class="about-text">
-                <h3>Educação para Todos</h3>
-                <p>O currículo enfatiza a Educação Especial e Inclusiva, utilizando tecnologias assistivas para reduzir barreiras e garantir que todos os estudantes tenham acesso equitativo ao ambiente digital.</p>
-                <h3>Marco Legal</h3>
-                <p>Reforça a necessidade de respeitar legislações como o <strong>Marco Civil da Internet</strong> e a <strong>Lei Geral de Proteção de Dados (LGPD)</strong>, formando cidadãos conscientes de seus direitos e deveres online.</p>
-            </div>
-            <div class="about-image-placeholder large-icon">
-                <span role="img" aria-label="Símbolo Universal de Acessibilidade">♿</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- Redes Sociais / QR Code -->
-    <section id="social" class="section bg-light">
-        <h2 class="section-title">Acompanhe nossas novidades</h2>
-        <div class="qrcode-container">
-            <!-- Certifique-se de salvar a imagem do QR Code como 'qrcode.png' na pasta do projeto -->
-            <img src="qrcode.png" alt="QR Code do Instagram" class="qrcode-img" loading="lazy">
-            <p>Escaneie o código acima ou clique no botão para nos seguir no Instagram.</p>
-            <a href="https://www.instagram.com/educacaodig/" target="_blank" rel="noopener noreferrer" class="btn-hero">Acessar Instagram</a>
-        </div>
-    </section>
-
-    <!-- Seção de Parceiros e Realização -->
-    <section id="parceiros" class="section">
-        <h2 class="section-title">Realização e Apoio</h2>
-        <div class="partners-grid">
-            <div class="partner-card">
-                <div class="partner-icon">🏛️</div>
-                <div class="partner-info">
-                    <h3>Prefeitura Municipal</h3>
-                    <p>Batatais - SP</p>
-                </div>
-            </div>
-            <div class="partner-card">
-                <div class="partner-icon">🎓</div>
-                <div class="partner-info">
-                    <h3>Secretaria de Educação</h3>
-                    <p>Rede Municipal de Ensino</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer>
-        <div class="footer-content">
-            <p>&copy; <span id="current-year">2024</span> EduMídia. Todos os direitos reservados.</p>
-            <a href="mailto:edm@educacao.batatais.sp.gov.br" class="footer-email">edm@educacao.batatais.sp.gov.br</a>
-            <div class="social-links">
-                <a href="#" aria-label="Link para o Facebook" title="Facebook">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/></svg>
-                </a>
-                <a href="https://www.instagram.com/educacaodig/" target="_blank" rel="noopener noreferrer" aria-label="Link para o Instagram" title="Instagram">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.585-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.585-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.585.069-4.85c.149-3.225 1.664-4.771 4.919-4.919C8.415 2.175 8.796 2.163 12 2.163zm0 1.441c-3.171 0-3.543.012-4.782.069-2.834.129-4.043 1.33-4.172 4.172-.057 1.239-.069 1.618-.069 4.782s.012 3.543.069 4.782c.129 2.841 1.338 4.043 4.172 4.172 1.239.057 1.611.069 4.782.069s3.543-.012 4.782-.069c2.834-.129 4.043-1.33 4.172-4.172.057-1.239.069-1.618.069-4.782s-.012-3.543-.069-4.782c-.129-2.841-1.338-4.043-4.172-4.172-1.239-.057-1.611-.069-4.782-.069zm0 5.838a3.558 3.558 0 1 0 0 7.116 3.558 3.558 0 0 0 0-7.116zm0 5.676a2.118 2.118 0 1 1 0-4.236 2.118 2.118 0 0 1 0 4.236zm6.225-8.212a.84.84 0 1 0 0 1.68.84.84 0 0 0 0-1.68z"/></svg>
-                </a>
-                <a href="#" aria-label="Link para o YouTube" title="YouTube">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                </a>
-            </div>
-            <div style="margin-top: 1rem;">
-                <button class="btn-admin-access" id="open-admin-login-btn" title="Área Administrativa de Gestão de Links">⚙️ Gestão de Links (Admin)</button>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Modal de Login Admin -->
-    <div class="admin-modal-overlay" id="admin-login-modal" aria-hidden="true">
-        <div class="admin-modal-box admin-login-box">
-            <button class="admin-modal-close" id="admin-login-close">&times;</button>
-            <div class="admin-modal-header">
-                <span class="admin-modal-icon">🔐</span>
-                <h3>Área Administrativa</h3>
-                <p>Digite a senha de acesso para gerenciar os links do portal.</p>
-            </div>
-            <form id="admin-login-form">
-                <div class="admin-form-group">
-                    <label for="admin-password">Senha de Acesso</label>
-                    <input type="password" id="admin-password" placeholder="Digite a senha..." required>
-                </div>
-                <div id="admin-login-error" class="admin-error-msg" style="display: none;">Senha incorreta. Tente novamente.</div>
-                <div class="admin-modal-actions">
-                    <button type="button" class="btn-admin-cancel" id="admin-login-cancel-btn">Cancelar</button>
-                    <button type="submit" class="btn-admin-primary">Acessar Painel</button>
-                </div>
-            </form>
-        </div>
+      </div>
+      
+      <div class="header-actions">
+        <button id="btnHistorico" class="btn btn-outline" title="Ver confirmações de presença salvas localmente">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Histórico (<span id="historyCountBadge">0</span>)</span>
+        </button>
+        <button id="btnConfig" class="btn btn-ghost" title="Configurações avançadas do formulário">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Configurações</span>
+        </button>
+      </div>
     </div>
+  </header>
 
-    <!-- Modal do Painel Administrativo -->
-    <div class="admin-modal-overlay" id="admin-dashboard-modal" aria-hidden="true">
-        <div class="admin-modal-box admin-dashboard-box">
-            <div class="admin-dashboard-header">
-                <div>
-                    <h2>⚙️ Painel de Gestão de Links</h2>
-                    <p>Cadastre e gerencie os links do Google Drive para Planejamentos e Atividades.</p>
-                </div>
-                <button class="admin-modal-close" id="admin-dashboard-close">&times;</button>
-            </div>
-
-            <div class="admin-dashboard-content">
-                <!-- Abas de Navegação (Planejamentos vs Atividades Práticas) -->
-                <div class="admin-type-tabs" id="admin-type-tabs">
-                    <button type="button" class="admin-tab-btn active" data-type="planejamentos">📚 Planejamentos Anuais</button>
-                    <button type="button" class="admin-tab-btn" data-type="atividades">🛠️ Atividades Práticas</button>
-                </div>
-
-                <!-- Barra de Progresso do Currículo -->
-                <div class="admin-progress-card">
-                    <div class="admin-progress-info">
-                        <strong>📊 Progresso dos Planejamentos:</strong>
-                        <span id="admin-progress-text">0 de 24 bimestres configurados (0%)</span>
-                    </div>
-                    <div class="admin-progress-bar-bg">
-                        <div class="admin-progress-bar-fill" id="admin-progress-fill" style="width: 0%;"></div>
-                    </div>
-                </div>
-
-                <!-- Matriz de Cobertura Visual de Links (Grade 6x4) -->
-                <div class="admin-matrix-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.8rem;">
-                        <strong>🗺️ Matriz de Cobertura de Links (Clique em um bimestre para cadastrar):</strong>
-                        <span style="font-size: 0.82rem; color: var(--text-color); opacity: 0.8;">🟢 Cadastrado | 🔴 Faltando</span>
-                    </div>
-
-                    <!-- Grade Interativa de Séries x Bimestres -->
-                    <div class="admin-matrix-grid" id="admin-matrix-grid">
-                        <!-- Gerado dinamicamente via JS -->
-                    </div>
-
-                    <!-- Resumo Consolidado de Pendências -->
-                    <div class="admin-pending-summary" id="admin-pending-summary">
-                        <!-- Gerado dinamicamente via JS -->
-                    </div>
-                </div>
-
-                <!-- Formulário de Edição/Adição de Link -->
-                <form id="admin-material-form" class="admin-card-form">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
-                        <h3 id="admin-form-title" style="margin: 0;">➕ Inserir / Atualizar Link</h3>
-                        <div id="admin-form-status-feedback"></div>
-                    </div>
-                    <input type="hidden" id="admin-material-id">
-
-                    <div class="admin-form-grid">
-                        <div class="admin-form-group">
-                            <label for="admin-select-ano">Ano Letivo</label>
-                            <select id="admin-select-ano" required>
-                                <option value="1">1º Ano</option>
-                                <option value="2">2º Ano</option>
-                                <option value="3">3º Ano</option>
-                                <option value="4">4º Ano</option>
-                                <option value="5">5º Ano</option>
-                                <option value="6">📚 1º ao 5º Ano (Geral)</option>
-                            </select>
-                        </div>
-
-                        <div class="admin-form-group">
-                            <label for="admin-select-bimestre">Bimestre</label>
-                            <select id="admin-select-bimestre" required>
-                                <option value="1">1º Bimestre</option>
-                                <option value="2">2º Bimestre</option>
-                                <option value="3">3º Bimestre</option>
-                                <option value="4">4º Bimestre</option>
-                            </select>
-                        </div>
-
-                        <div class="admin-form-group">
-                            <label for="admin-select-status">Status do Material</label>
-                            <select id="admin-select-status" required>
-                                <option value="active">Ativo / Disponível</option>
-                                <option value="soon">Em breve (Desabilitado)</option>
-                            </select>
-                        </div>
-
-                        <div class="admin-form-group admin-full-width">
-                            <label for="admin-drive-url">URL do Google Drive / Docs (Deixe em branco para remover)</label>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <input type="url" id="admin-drive-url" placeholder="https://docs.google.com/document/d/... ou deixe em branco para limpar" style="flex-grow: 1;">
-                                <button type="button" class="btn-admin-secondary" id="admin-test-link-btn" title="Abrir URL em nova aba para testar">🔗 Testar Link</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="admin-form-actions">
-                        <button type="button" class="btn-admin-cancel" id="admin-form-clear-btn">Limpar Campos</button>
-                        <button type="submit" class="btn-admin-primary">💾 Salvar Link</button>
-                    </div>
-                </form>
-
-                <!-- Barra de Backup e Ferramentas Avançadas -->
-                <div class="admin-backup-bar">
-                    <div>
-                        <strong>🛠️ Ferramentas Avançadas:</strong>
-                        <span style="font-size: 0.85rem; color: #666; display: block;">Exportação, importação em lote e configurações de segurança.</span>
-                    </div>
-                    <div class="admin-backup-buttons">
-                        <button type="button" class="btn-admin-secondary" id="admin-batch-modal-btn">⚡ Colar em Lote</button>
-                        <button type="button" class="btn-admin-secondary" id="admin-export-html-btn">📋 Exportar HTML</button>
-                        <button type="button" class="btn-admin-secondary" id="admin-export-json-btn">📥 Backup JSON</button>
-                        <button type="button" class="btn-admin-secondary" id="admin-import-json-btn">📤 Importar JSON</button>
-                        <input type="file" id="admin-import-file-input" accept=".json" style="display: none;">
-                        <button type="button" class="btn-admin-secondary" id="admin-change-password-btn">🔐 Alterar Senha</button>
-                        <button type="button" class="btn-admin-danger" id="admin-reset-default-btn">🔄 Padrão Original</button>
-                    </div>
-                </div>
-            </div>
+  <!-- Conteúdo Principal -->
+  <main class="main-content">
+    <div class="form-wrapper">
+      
+      <!-- Card Banner de Status de Conexão -->
+      <div id="statusBanner" class="status-banner status-linked">
+        <div class="status-icon-wrap">
+          <i class="fa-solid fa-cloud-check"></i>
         </div>
-    </div>
-
-    <!-- Modal Exportar Código HTML -->
-    <div class="admin-modal-overlay" id="admin-html-modal" aria-hidden="true">
-        <div class="admin-modal-box" style="max-width: 700px; padding: 2rem;">
-            <button class="admin-modal-close" id="admin-html-close">&times;</button>
-            <h3>📋 Código HTML Gerado para o Repositório</h3>
-            <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Copie este código para substituir a seção <code>#planejamentos</code> em index.html se desejar atualizar os arquivos permanentemente.</p>
-            <textarea id="admin-html-code-area" style="width: 100%; height: 250px; font-family: monospace; font-size: 0.82rem; padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-light); color: var(--text-color);" readonly></textarea>
-            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-                <button type="button" class="btn-admin-cancel" id="admin-html-cancel-btn">Fechar</button>
-                <button type="button" class="btn-admin-primary" id="admin-copy-html-btn">Copiar Código HTML</button>
-            </div>
+        <div class="status-text">
+          <strong>Integração Ativa:</strong> 
+          <span id="statusInfo">Os registros são enviados diretamente para a planilha do Google Forms oficial.</span>
         </div>
-    </div>
+      </div>
 
-    <!-- Modal Colar em Lote -->
-    <div class="admin-modal-overlay" id="admin-batch-modal" aria-hidden="true">
-        <div class="admin-modal-box" style="max-width: 650px; padding: 2rem;">
-            <button class="admin-modal-close" id="admin-batch-close">&times;</button>
-            <h3>⚡ Preenchimento de Links em Lote</h3>
-            <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Selecione a série e cole até 4 URLs do Google Drive (uma por linha) para cadastrar os 4 bimestres de uma só vez.</p>
-            
-            <div class="admin-form-group" style="margin-bottom: 1rem;">
-                <label for="admin-batch-select-ano">Selecione a Série</label>
-                <select id="admin-batch-select-ano">
-                    <option value="1">1º Ano (EF1)</option>
-                    <option value="2">2º Ano (EF1)</option>
-                    <option value="3">3º Ano (EF1)</option>
-                    <option value="4">4º Ano (EF1)</option>
-                    <option value="5">5º Ano (EF1)</option>
-                    <option value="6">📚 1º ao 5º Ano (Geral)</option>
+      <!-- Card Principal de Preenchimento -->
+      <div class="attendance-card card">
+        <div class="card-hero">
+          <div class="hero-tag"><i class="fa-solid fa-calendar-check"></i> Chamada Oficial</div>
+          <h2>Registro de Presença do Docente</h2>
+          <p>Selecione a sua unidade escolar e informe seu nome completo para registrar sua presença.</p>
+        </div>
+
+        <form id="attendanceForm" class="attendance-form" novalidate>
+          
+          <div class="fields-container">
+            <!-- 1. Campo ESCOLA (entry.285930433) -->
+            <div class="input-group">
+              <label for="selectEscola" class="required">
+                <i class="fa-solid fa-school-flag"></i> Selecione a Escola
+              </label>
+              <div class="select-wrapper">
+                <select id="selectEscola" name="entry.285930433" required class="input-field select-field">
+                  <option value="" disabled selected>Escolha sua escola na lista...</option>
+                  <option value="ALZIRA ACRA">ALZIRA ACRA</option>
+                  <option value="ANNA BONAGURA">ANNA BONAGURA</option>
+                  <option value="BRAGA MORATO">BRAGA MORATO</option>
+                  <option value="CAIC">CAIC</option>
+                  <option value="CÉLIA BUENO">CÉLIA BUENO</option>
+                  <option value="ESTHER VIANNA">ESTHER VIANNA</option>
+                  <option value="PADRE BENITO">PADRE BENITO</option>
                 </select>
-            </div>
-            
-            <div class="admin-form-group">
-                <label for="admin-batch-urls-area">URLs (uma por linha para 1º, 2º, 3º e 4º Bimestres)</label>
-                <textarea id="admin-batch-urls-area" placeholder="https://docs.google.com/... (1º Bimestre)&#10;https://docs.google.com/... (2º Bimestre)&#10;https://docs.google.com/... (3º Bimestre)&#10;https://docs.google.com/... (4º Bimestre)" style="width: 100%; height: 160px; font-family: monospace; font-size: 0.88rem; padding: 0.8rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--bg-light); color: var(--text-color);"></textarea>
+                <i class="fa-solid fa-chevron-down select-arrow"></i>
+              </div>
+              <span class="field-hint"><i class="fa-solid fa-info-circle"></i> Unidade escolar vinculada ao formulário</span>
             </div>
 
-            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-                <button type="button" class="btn-admin-cancel" id="admin-batch-cancel-btn">Cancelar</button>
-                <button type="button" class="btn-admin-primary" id="admin-batch-save-btn">Salvar 4 Bimestres</button>
+            <!-- 2. Campo NOME COMPLETO (entry.278265355) -->
+            <div class="input-group">
+              <label for="inputProfessor" class="required">
+                <i class="fa-solid fa-user-pen"></i> Nome Completo do Professor(a)
+              </label>
+              <div class="input-with-icon">
+                <input 
+                  type="text" 
+                  id="inputProfessor" 
+                  name="entry.278265355" 
+                  placeholder="Digite seu nome completo aqui..." 
+                  required 
+                  autocomplete="name"
+                  class="input-field"
+                >
+                <i class="fa-regular fa-user input-icon"></i>
+              </div>
+              <span class="field-hint"><i class="fa-solid fa-circle-check"></i> Digite o nome sem abreviações</span>
             </div>
+          </div>
+
+          <!-- Informações de Registro e Confirmação -->
+          <div class="summary-box">
+            <div class="summary-item">
+              <span class="summary-label"><i class="fa-regular fa-calendar"></i> Data de Registro:</span>
+              <strong id="displayDate">--/--/----</strong>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label"><i class="fa-regular fa-clock"></i> Horário:</span>
+              <strong id="displayTime">--:--</strong>
+            </div>
+          </div>
+
+          <!-- Botões de Ação -->
+          <div class="submit-section">
+            <button type="submit" id="btnSubmit" class="btn btn-submit btn-lg">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Confirmar e Registrar Presença</span>
+            </button>
+            <button type="button" id="btnLimpar" class="btn btn-outline btn-lg">
+              <i class="fa-solid fa-eraser"></i>
+              <span>Limpar</span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Card de Sucesso / Recibo (Oculto inicialmente) -->
+      <div id="successCard" class="card success-card hidden">
+        <div class="success-icon-badge">
+          <i class="fa-solid fa-circle-check"></i>
         </div>
-    </div>
-
-    <!-- Modal Alterar Senha -->
-    <div class="admin-modal-overlay" id="admin-password-modal" aria-hidden="true">
-        <div class="admin-modal-box" style="max-width: 420px; padding: 2rem;">
-            <button class="admin-modal-close" id="admin-password-close">&times;</button>
-            <h3>🔐 Alterar Senha Administrativa</h3>
-            <form id="admin-change-password-form" style="margin-top: 1rem;">
-                <div class="admin-form-group">
-                    <label for="admin-new-password">Nova Senha</label>
-                    <input type="password" id="admin-new-password" placeholder="Digite a nova senha..." required>
-                </div>
-                <div class="admin-form-group">
-                    <label for="admin-confirm-password">Confirme a Nova Senha</label>
-                    <input type="password" id="admin-confirm-password" placeholder="Repita a nova senha..." required>
-                </div>
-                <div id="admin-password-error" class="admin-error-msg" style="display: none;">As senhas não coincidem.</div>
-                <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem;">
-                    <button type="button" class="btn-admin-cancel" id="admin-password-cancel-btn">Cancelar</button>
-                    <button type="submit" class="btn-admin-primary">Salvar Nova Senha</button>
-                </div>
-            </form>
+        <h3>Presença Confirmada com Sucesso!</h3>
+        <p>Seu registro foi encaminhado e contabilizado no Google Forms.</p>
+        
+        <div class="receipt-box">
+          <div class="receipt-row">
+            <span>Escola:</span>
+            <strong id="receiptEscola">-</strong>
+          </div>
+          <div class="receipt-row">
+            <span>Professor(a):</span>
+            <strong id="receiptProfessor">-</strong>
+          </div>
+          <div class="receipt-row">
+            <span>Data e Hora:</span>
+            <strong id="receiptTimestamp">-</strong>
+          </div>
+          <div class="receipt-row">
+            <span>Status do Envio:</span>
+            <span class="badge badge-success"><i class="fa-solid fa-cloud-arrow-up"></i> Sincronizado</span>
+          </div>
         </div>
+
+        <div class="success-actions">
+          <button type="button" id="btnNovoRegistro" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Fazer Novo Registro
+          </button>
+          <button type="button" id="btnImprimirComprovante" class="btn btn-outline">
+            <i class="fa-solid fa-print"></i> Imprimir Comprovante
+          </button>
+        </div>
+      </div>
+
+      <!-- Seção Rápida: Últimos Registros Realizados -->
+      <div class="card recent-card">
+        <div class="section-header">
+          <div class="section-badge"><i class="fa-solid fa-list-check"></i></div>
+          <div>
+            <h3>Registros Recentes nesta Sessão</h3>
+            <p>Histórico local de professores que já confirmaram presença</p>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="recent-table" id="recentTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Professor(a)</th>
+                <th>Escola</th>
+                <th>Data / Hora</th>
+                <th style="text-align: center; width: 110px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="recentTableBody">
+              <!-- Renderizado via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
+  </main>
 
-    <!-- Botão Voltar ao Topo -->
-    <a href="#" class="back-to-top" id="back-to-top" aria-label="Voltar ao topo da página">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-    </a>
+  <!-- Modal: Configurações Avançadas -->
+  <div id="modalConfig" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-brands fa-google text-primary"></i>
+          <h3>Parâmetros do Google Forms</h3>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseConfig">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="alert-box info">
+          <i class="fa-solid fa-circle-info"></i>
+          <div>
+            <strong>Formulário já mapeado e configurado!</strong>
+            <p>Os IDs oficiais das perguntas foram extraídos automaticamente do seu link do Google Forms.</p>
+          </div>
+        </div>
 
-    <!-- Link para o arquivo JavaScript -->
-    <script src="script.js" defer></script>
+        <form id="googleConfigForm" class="config-grid">
+          <div class="input-group full-width">
+            <label for="cfgFormUrl" class="required">URL de Submissão (formResponse):</label>
+            <input type="url" id="cfgFormUrl" class="input-field" value="https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse">
+          </div>
 
+          <div class="input-group">
+            <label for="cfgEntryEscola">Entry ID - ESCOLA:</label>
+            <input type="text" id="cfgEntryEscola" class="input-field" value="entry.285930433">
+          </div>
+
+          <div class="input-group">
+            <label for="cfgEntryProfessor">Entry ID - NOME COMPLETO:</label>
+            <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btnResetConfig" class="btn btn-outline">Restaurar Padrão Oficial</button>
+        <button type="button" id="btnSalvarConfig" class="btn btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Histórico Completo com Exportação -->
+  <div id="modalHistorico" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-clock-rotate-left text-primary"></i>
+          <h3>Histórico de Presenças Registradas</h3>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseHistorico">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div id="historicoContainer">
+          <!-- Renderizado via JS -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btnExportarCSV" class="btn btn-outline">
+          <i class="fa-solid fa-file-csv"></i> Exportar Lista (CSV)
+        </button>
+        <button type="button" id="btnLimparHistorico" class="btn btn-outline text-danger">
+          <i class="fa-solid fa-trash"></i> Limpar Histórico
+        </button>
+        <button type="button" id="btnFecharHistorico" class="btn btn-secondary">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de Notificação -->
+  <div id="toast" class="toast">
+    <i class="toast-icon fa-solid fa-circle-check"></i>
+    <span id="toastMessage">Operação realizada com sucesso!</span>
+  </div>
+
+  <!-- Iframe oculto para envio redundante seguro -->
+  <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+  <script src="script.js"></script>
 </body>
 </html>
