@@ -14,7 +14,10 @@
   <!-- FontAwesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <!-- Google Identity Services (Sign In with Google) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <link rel="stylesheet" href="styles.css?v=2.3">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -68,7 +71,44 @@
             </div>
           </div>
           <h2>Confirmação de Presença</h2>
-          <p>Por favor, selecione sua unidade escolar e informe seu nome completo para assinar a lista.</p>
+          <p>Por favor, selecione sua unidade escolar e confirme seus dados para assinar a lista.</p>
+        </div>
+
+        <!-- Bloco de Autenticação Oficial do Google (Captura Automática com 1 Clique) -->
+        <div class="google-auth-box" id="googleAuthSection">
+          <div class="google-auth-header">
+            <div class="google-icon-circle"><i class="fa-brands fa-google"></i></div>
+            <div class="google-auth-titles">
+              <h4>Identificação Automática com a Conta Google</h4>
+              <p>Preencha seu e-mail e nome oficial com 1 clique usando a conta já conectada:</p>
+            </div>
+          </div>
+
+          <!-- Container do Botão Oficial do Google -->
+          <div id="googleBtnWrapper" class="google-btn-wrapper">
+            <div id="g_id_signin_button"></div>
+          </div>
+
+          <!-- Card de Conta Google Autenticada -->
+          <div id="googleConnectedCard" class="google-connected-card hidden">
+            <div class="google-user-profile">
+              <img id="googleUserPhoto" class="google-user-avatar" src="" alt="Foto Google" />
+              <div class="google-user-info-text">
+                <div class="google-user-name-line">
+                  <strong id="googleUserName">-</strong>
+                  <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Conta Verificada</span>
+                </div>
+                <span id="googleUserEmail" class="google-user-email-text">-</span>
+              </div>
+            </div>
+            <button type="button" id="btnGoogleDisconnect" class="btn btn-sm btn-outline" title="Desconectar ou usar outro e-mail">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Trocar</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-divider">
+          <span>ou digite seus dados manualmente</span>
         </div>
 
         <form id="attendanceForm" class="attendance-form" novalidate>
@@ -591,6 +631,23 @@
               <div class="input-group">
                 <label for="cfgEntryProfessor"><i class="fa-solid fa-tag"></i> Entry ID - Nome do Professor(a):</label>
                 <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
+              </div>
+            </div>
+
+            <!-- Seção Google Sign-In (Client ID) -->
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <i class="fa-solid fa-id-badge text-primary"></i>
+                <div>
+                  <h4>Google Identity Services (Login com 1 Clique)</h4>
+                  <p>Client ID do Google Cloud Console para ativar o botão oficial de login.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="cfgGoogleClientId"><i class="fa-solid fa-key"></i> Google OAuth Client ID:</label>
+                <input type="text" id="cfgGoogleClientId" class="input-field" placeholder="ex: 123456789-abcdef.apps.googleusercontent.com">
+                <span class="field-hint">Permite autenticação com 1 clique no formulário.</span>
               </div>
             </div>
 

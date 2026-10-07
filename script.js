@@ -10,7 +10,8 @@ const DEFAULT_CONFIG = {
   formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse",
   entryEscola: "entry.285930433",
   entryProfessor: "entry.278265355",
-  sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv"
+  sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv",
+  googleClientId: ""
 };
 
 const appState = {
@@ -19,7 +20,8 @@ const appState = {
   isAdmin: false,
   isSyncing: false,
   lastSyncTime: null,
-  syncTimer: null
+  syncTimer: null,
+  googleUser: null
 };
 
 // Elementos do DOM
@@ -106,6 +108,16 @@ const elements = {
   repTabelaContainer: document.getElementById('repTabelaContainer'),
   repFooterTimestamp: document.getElementById('repFooterTimestamp'),
 
+  // Google Sign-In (Captura Automática)
+  googleAuthSection: document.getElementById('googleAuthSection'),
+  googleBtnWrapper: document.getElementById('googleBtnWrapper'),
+  googleConnectedCard: document.getElementById('googleConnectedCard'),
+  googleUserPhoto: document.getElementById('googleUserPhoto'),
+  googleUserName: document.getElementById('googleUserName'),
+  googleUserEmail: document.getElementById('googleUserEmail'),
+  btnGoogleDisconnect: document.getElementById('btnGoogleDisconnect'),
+  cfgGoogleClientId: document.getElementById('cfgGoogleClientId'),
+
   // Aba Configurações
   cfgFormUrl: document.getElementById('cfgFormUrl'),
   cfgEntryEscola: document.getElementById('cfgEntryEscola'),
@@ -141,6 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
   startClock();
   checkStoredAdminSession();
   setupEventListeners();
+
+  // Inicializa o Google Identity Services para login com 1 clique
+  setTimeout(initGoogleIdentity, 400);
 
   // Se já tiver URL da planilha configurada, tenta sincronizar em segundo plano
   if (appState.config.sheetUrl) {
@@ -221,17 +236,24 @@ function loadConfig() {
   if (elements.cfgEntryEscola) elements.cfgEntryEscola.value = appState.config.entryEscola || DEFAULT_CONFIG.entryEscola;
   if (elements.cfgEntryProfessor) elements.cfgEntryProfessor.value = appState.config.entryProfessor || DEFAULT_CONFIG.entryProfessor;
   if (elements.cfgSheetUrl) elements.cfgSheetUrl.value = appState.config.sheetUrl || '';
+  if (elements.cfgGoogleClientId) elements.cfgGoogleClientId.value = appState.config.googleClientId || '';
 }
 
 function saveConfig() {
+  const oldClientId = appState.config.googleClientId;
   appState.config = {
     formUrl: (elements.cfgFormUrl ? elements.cfgFormUrl.value.trim() : '') || DEFAULT_CONFIG.formUrl,
     entryEscola: (elements.cfgEntryEscola ? elements.cfgEntryEscola.value.trim() : '') || DEFAULT_CONFIG.entryEscola,
     entryProfessor: (elements.cfgEntryProfessor ? elements.cfgEntryProfessor.value.trim() : '') || DEFAULT_CONFIG.entryProfessor,
-    sheetUrl: (elements.cfgSheetUrl ? elements.cfgSheetUrl.value.trim() : '')
+    sheetUrl: (elements.cfgSheetUrl ? elements.cfgSheetUrl.value.trim() : ''),
+    googleClientId: (elements.cfgGoogleClientId ? elements.cfgGoogleClientId.value.trim() : '')
   };
   localStorage.setItem('presenca_gforms_cfg', JSON.stringify(appState.config));
   showToast("Configurações salvas com sucesso!", "success");
+
+  if (oldClientId !== appState.config.googleClientId) {
+    initGoogleIdentity();
+  }
 
   // Re-executa sincronização com as novas configurações
   syncRealTime(true);
@@ -747,6 +769,171 @@ function setLoading(isLoading) {
   }
 }
 
+// ==========================================================================
+// Módulo de Autenticação Google Identity Services (Opção 1)
+// ==========================================================================
+
+/**
+ * Decodifica o token JWT retornado pelo Google Identity
+ */
+function parseJwt(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    console.error("Erro ao decodificar JWT Google:", e);
+    return null;
+  }
+}
+
+/**
+ * Inicializa o botão oficial e One-Tap do Google
+ */
+function initGoogleIdentity() {
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+    setTimeout(initGoogleIdentity, 600);
+    return;
+  }
+
+  // Se não tiver Client ID configurado, usa um ID padrão do projeto ou inicializa
+  const clientId = appState.config.googleClientId || "1028373307521-g8k41a982l9m68i46n54a1u28mquh44p.apps.googleusercontent.com";
+
+  try {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+
+    // Renderiza o botão oficial do Google
+    const btnContainer = document.getElementById('g_id_signin_button');
+    if (btnContainer) {
+      btnContainer.innerHTML = '';
+      google.accounts.id.renderButton(btnContainer, {
+        theme: 'outline',
+        size: 'large',
+        type: 'standard',
+        text: 'signin_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: 300
+      });
+    }
+
+    // Tenta One Tap se não estiver conectado ainda
+    if (!appState.googleUser) {
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // One tap dispensado ou não exibido, mantém o botão visível
+        }
+      });
+    }
+  } catch (err) {
+    console.warn("Google Identity Init:", err);
+  }
+}
+
+/**
+ * Callback executado após o professor selecionar a conta Google
+ */
+window.handleGoogleCredentialResponse = function(response) {
+  if (!response || !response.credential) return;
+
+  const profile = parseJwt(response.credential);
+  if (profile && profile.email) {
+    setGoogleAuthenticatedUser(profile);
+  }
+};
+
+/**
+ * Preenche e trava os dados oficiais da conta Google
+ */
+function setGoogleAuthenticatedUser(profile) {
+  appState.googleUser = profile;
+
+  const email = (profile.email || '').toLowerCase().trim();
+  const nome = (profile.name || '').toUpperCase().trim();
+
+  // Preenche os campos do formulário
+  if (elements.inputEmail) {
+    elements.inputEmail.value = email;
+    elements.inputEmail.readOnly = true;
+    elements.inputEmail.classList.add('input-verified');
+  }
+
+  if (elements.inputProfessor) {
+    elements.inputProfessor.value = nome;
+    elements.inputProfessor.readOnly = true;
+    elements.inputProfessor.classList.add('input-verified');
+  }
+
+  // Atualiza o card de perfil conectado
+  if (elements.googleUserName) elements.googleUserName.textContent = profile.name || nome;
+  if (elements.googleUserEmail) elements.googleUserEmail.textContent = email;
+  if (elements.googleUserPhoto) {
+    if (profile.picture) {
+      elements.googleUserPhoto.src = profile.picture;
+      elements.googleUserPhoto.classList.remove('hidden');
+    } else {
+      elements.googleUserPhoto.classList.add('hidden');
+    }
+  }
+
+  if (elements.googleBtnWrapper) elements.googleBtnWrapper.classList.add('hidden');
+  if (elements.googleConnectedCard) elements.googleConnectedCard.classList.remove('hidden');
+
+  showToast(`Conectado como ${profile.name || email}!`, "success");
+
+  // Verifica imediatamente se já existe presença registrada para esse e-mail
+  const dup = findDuplicateRecord({ email, professor: nome });
+  if (dup) {
+    currentDuplicateRecord = dup;
+    if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = dup.professor;
+    if (elements.dupEmail) elements.dupEmail.textContent = dup.email || email;
+    if (elements.dupEscola) elements.dupEscola.textContent = dup.escola;
+    if (elements.dupTimestamp) elements.dupTimestamp.textContent = dup.timestamp;
+    openModal(elements.modalDuplicado);
+    showToast("Atenção: Presença já registrada para esta conta Google!", "warning");
+  } else {
+    // Foca na seleção de escola
+    if (elements.selectEscola && !elements.selectEscola.value) {
+      elements.selectEscola.focus();
+    }
+  }
+}
+
+/**
+ * Desconecta a conta Google para permitir troca de e-mail
+ */
+function disconnectGoogleUser() {
+  appState.googleUser = null;
+
+  if (elements.inputEmail) {
+    elements.inputEmail.readOnly = false;
+    elements.inputEmail.classList.remove('input-verified');
+    elements.inputEmail.value = '';
+  }
+
+  if (elements.inputProfessor) {
+    elements.inputProfessor.readOnly = false;
+    elements.inputProfessor.classList.remove('input-verified');
+    elements.inputProfessor.value = '';
+  }
+
+  if (elements.googleConnectedCard) elements.googleConnectedCard.classList.add('hidden');
+  if (elements.googleBtnWrapper) {
+    elements.googleBtnWrapper.classList.remove('hidden');
+    initGoogleIdentity();
+  }
+
+  showToast("Conta Google desconectada. Você pode escolher outra conta ou digitar.", "info");
+}
+
 function showReceipt(record) {
   if (elements.receiptEmail) elements.receiptEmail.textContent = record.email || '-';
   elements.receiptEscola.textContent = record.escola;
@@ -762,6 +949,13 @@ function resetForNewEntry() {
   elements.form.reset();
   elements.formCard.classList.remove('hidden');
   elements.successCard.classList.add('hidden');
+  
+  if (appState.googleUser) {
+    // Mantém preenchido se o mesmo usuário for registrar novamente ou reseta
+    elements.inputEmail.value = appState.googleUser.email || '';
+    elements.inputProfessor.value = (appState.googleUser.name || '').toUpperCase();
+  }
+  
   elements.selectEscola.focus();
 }
 
@@ -1346,6 +1540,11 @@ function setupEventListeners() {
     elements.inputEmail.addEventListener('input', (e) => {
       e.target.value = e.target.value.toLowerCase().trim();
     });
+  }
+
+  // Desconectar / Trocar conta Google
+  if (elements.btnGoogleDisconnect) {
+    elements.btnGoogleDisconnect.addEventListener('click', disconnectGoogleUser);
   }
 
   // Envio do formulário principal
