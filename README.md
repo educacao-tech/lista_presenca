@@ -25,11 +25,20 @@ A lista suspensa contém as 7 escolas cadastradas:
 ---
 
 ## ✨ Recursos
-- **Envio Instantâneo:** Grava diretamente na planilha do Google Forms.
-- **Registro Único por Professor:** Bloqueia automaticamente tentativas duplicadas de registro para o mesmo professor, garantindo integridade dos dados.
+- **Envio Instantâneo:** Grava diretamente na planilha do Google Forms Oficial.
+- **Sincronização em Tempo Real (Google Planilhas):** Carrega automaticamente todas as presenças registradas de todos os dispositivos e computadores.
+- **Registro Único Global por Professor:** Bloqueia automaticamente tentativas duplicadas de registro para o mesmo professor tanto local quanto remotamente.
 - **Comprovante & Recibo:** Exibe tela de confirmação com data e hora após a confirmação.
 - **Área Administrativa Protegida:** Clique no ícone de engrenagem ⚙️ e informe a senha `admin123`.
-- **Histórico Local com Busca:** Visualização e filtragem em tempo real de todas as presenças salvas.
-- **Exportação CSV:** Download de relatório em formato `.csv`.
-- **Configurações Flexíveis:** Ajuste de links e IDs do formulário Google Forms diretamente no painel.
+- **Histórico Completo com Busca:** Visualização, filtragem e distinção de registros (Nuvem / Local).
+- **Exportação CSV:** Download de relatório consolidado em formato `.csv`.
+- **Configurações Flexíveis:** Ajuste de links e IDs do Google Forms e da Planilha Google diretamente no painel.
+
+---
+
+## 🔄 Como ativar a Sincronização em Tempo Real:
+1. Abra a Planilha de Respostas vinculada ao Google Forms no Google Drive.
+2. Vá em **Arquivo** > **Compartilhar** > **Publicar na Web**.
+3. Escolha **Página Inteira** e formato **Valores separados por vírgula (.csv)** e clique em **Publicar**.
+4. Copie o link gerado e cole no Painel do Administrador (⚙️ > aba *Configurações do Forms & Planilha*).
 

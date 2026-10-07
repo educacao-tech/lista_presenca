@@ -152,6 +152,15 @@ body {
   border-bottom: 1px solid #f1f5f9;
 }
 
+.hero-tag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
 .hero-tag {
   display: inline-flex;
   align-items: center;
@@ -164,7 +173,45 @@ body {
   border-radius: 9999px;
   background: var(--primary-light);
   color: var(--primary);
-  margin-bottom: 0.75rem;
+}
+
+.sync-pill-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.sync-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  position: relative;
+}
+
+.sync-dot.live::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  border: 2px solid #22c55e;
+  animation: pulseDot 2s infinite ease-out;
+  opacity: 0.8;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
 .card-hero h2 {
@@ -711,6 +758,199 @@ select {
   display: block;
   animation: fadeIn 0.25s ease;
 }
+
+/* Real-Time Sync Bar */
+.sync-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  padding: 0.85rem 1.15rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  margin-bottom: 1.25rem;
+  transition: all var(--transition-normal);
+}
+
+.sync-status-bar.synced {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.sync-status-bar.warning {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.sync-status-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sync-pulse-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.sync-status-bar.synced .sync-pulse-icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.sync-status-bar.warning .sync-pulse-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.sync-status-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.sync-status-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.sync-status-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.sync-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary-soft {
+  background: #eff6ff;
+  color: var(--primary);
+  border: 1px solid #bfdbfe;
+}
+
+.btn-primary-soft:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Alert Box */
+.alert-box-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.9rem 1.15rem;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--border-radius-md);
+  margin-bottom: 1.25rem;
+  font-size: 0.86rem;
+}
+
+.alert-box-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #1e40af;
+}
+
+.alert-box-content i {
+  font-size: 1.25rem;
+}
+
+.alert-box-content p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #3b82f6;
+}
+
+/* Badges */
+.badge-sync-live {
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 700;
+}
+
+.badge-light-sync {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 600;
+}
+
+/* Config Section Cards */
+.config-section-card {
+  background: #f8fafc;
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.config-section-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.config-section-header i {
+  font-size: 1.35rem;
+  margin-top: 2px;
+}
+
+.config-section-header h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.2rem;
+}
+
+.config-section-header p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.sheet-tutorial-box {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--border-radius-sm);
+  padding: 0.85rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-main);
+}
+
+.tutorial-title {
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tutorial-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+  color: #475569;
+}
+
+.text-success { color: var(--success) !important; }
 
 /* History Bar & Controls */
 .history-actions-bar {

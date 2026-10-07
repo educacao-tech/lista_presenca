@@ -56,7 +56,13 @@
       <!-- Card Principal de Preenchimento -->
       <div class="attendance-card card" id="formCard">
         <div class="card-hero">
-          <div class="hero-tag"><i class="fa-solid fa-check-to-slot"></i> Registro Oficial</div>
+          <div class="hero-tag-row">
+            <div class="hero-tag"><i class="fa-solid fa-check-to-slot"></i> Registro Oficial</div>
+            <div class="sync-pill-badge" id="mainSyncBadge" title="Envio direto para o Google Forms Oficial">
+              <span class="sync-dot live"></span>
+              <span>Conexão Ativa Google Forms</span>
+            </div>
+          </div>
           <h2>Confirmação de Presença</h2>
           <p>Por favor, selecione sua unidade escolar e informe seu nome completo para assinar a lista.</p>
         </div>
@@ -153,6 +159,10 @@
             <span>Situação:</span>
             <span class="badge badge-success"><i class="fa-solid fa-check-double"></i> Confirmado</span>
           </div>
+          <div class="receipt-row">
+            <span>Sincronização:</span>
+            <span class="badge badge-sync-live"><i class="fa-solid fa-cloud-arrow-up"></i> Gravado no Google Forms Oficial</span>
+          </div>
         </div>
 
         <div class="success-actions">
@@ -236,16 +246,51 @@
         </button>
         <button type="button" class="admin-tab-btn" data-tab="tabConfig">
           <i class="fa-brands fa-google"></i>
-          <span>Configurações do Forms</span>
+          <span>Configurações do Forms & Planilha</span>
         </button>
       </div>
 
       <div class="modal-body admin-modal-body">
         <!-- Aba 1: Histórico -->
         <div id="tabHistorico" class="admin-tab-content active">
+          
+          <!-- Barra de Status de Sincronização em Tempo Real -->
+          <div class="sync-status-bar" id="syncStatusBar">
+            <div class="sync-status-info">
+              <span class="sync-pulse-icon" id="syncStatusIcon"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+              <div class="sync-status-details">
+                <span class="sync-status-title" id="syncStatusTitle">Sincronização em Tempo Real</span>
+                <span class="sync-status-desc" id="syncStatusDesc">Verificando conexão com a planilha do Google...</span>
+              </div>
+            </div>
+            <div class="sync-status-actions">
+              <button type="button" id="btnSyncNow" class="btn btn-sm btn-primary-soft" title="Atualizar dados agora do Google Sheets">
+                <i class="fa-solid fa-arrows-rotate"></i> <span>Sincronizar Agora</span>
+              </button>
+              <a id="btnOpenSheetLink" href="#" target="_blank" class="btn btn-sm btn-outline hidden" title="Abrir Planilha de Respostas no Google Drive">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>Abrir Planilha</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Banner Informativo quando a planilha não estiver configurada -->
+          <div id="syncPromptBanner" class="alert-box-info hidden">
+            <div class="alert-box-content">
+              <i class="fa-solid fa-circle-info"></i>
+              <div>
+                <strong>Deseja sincronizar todas as respostas em tempo real?</strong>
+                <p>Cole o link da sua Planilha de Respostas do Google na aba de <em>Configurações</em> para visualizar registros de todos os dispositivos.</p>
+              </div>
+            </div>
+            <button type="button" id="btnIrParaConfig" class="btn btn-sm btn-primary">
+              <i class="fa-solid fa-gear"></i> Configurar Agora
+            </button>
+          </div>
+
           <div class="history-actions-bar">
             <div class="history-stats">
               <span id="totalPresencasBadge" class="badge badge-primary">0 registros</span>
+              <span id="syncModeBadge" class="badge badge-light-sync"><i class="fa-solid fa-cloud"></i> Nuvem</span>
             </div>
             <div class="history-controls">
               <div class="search-input-wrapper">
@@ -263,22 +308,77 @@
           <div id="historicoContainer" class="historico-table-wrapper"></div>
         </div>
 
-        <!-- Aba 2: Configurações do Google Forms -->
+        <!-- Aba 2: Configurações do Google Forms & Google Sheets -->
         <div id="tabConfig" class="admin-tab-content">
           <form id="googleConfigForm" class="config-grid">
-            <div class="input-group">
-              <label for="cfgFormUrl"><i class="fa-solid fa-link"></i> URL de Resposta do Formulário (formResponse):</label>
-              <input type="url" id="cfgFormUrl" class="input-field" value="https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse">
-              <span class="field-hint">Termina sempre com <code>/formResponse</code></span>
+            
+            <!-- Seção Google Sheets (Leitura em tempo real) -->
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <i class="fa-solid fa-table-cells text-success"></i>
+                <div>
+                  <h4>Sincronização em Tempo Real (Google Planilhas)</h4>
+                  <p>Permite ler e exibir todas as presenças de todos os professores e dispositivos na tabela.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="cfgSheetUrl">
+                  <i class="fa-solid fa-link"></i> Link da Planilha do Google ou CSV Publicado na Web:
+                </label>
+                <input 
+                  type="url" 
+                  id="cfgSheetUrl" 
+                  class="input-field" 
+                  value="https://docs.google.com/spreadsheets/d/13IcFma8Yw9Xve1KaSHBW_cq3DtGIYwYkCRSVjF8AyW8/edit?gid=1942393477"
+                  placeholder="https://docs.google.com/spreadsheets/d/.../edit ou link .csv publicado"
+                >
+                <span class="field-hint">Cole o link normal da planilha de respostas ou o link CSV publicado na Web.</span>
+              </div>
+
+              <!-- Mini Tutorial -->
+              <div class="sheet-tutorial-box">
+                <div class="tutorial-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Como obter o link da planilha:</div>
+                <ol class="tutorial-steps">
+                  <li>Abra a Planilha de Respostas gerada pelo seu Google Forms.</li>
+                  <li>Clique em <strong>Arquivo</strong> &gt; <strong>Compartilhar</strong> &gt; <strong>Publicar na Web</strong>.</li>
+                  <li>Escolha <strong>Página Inteira</strong> e <strong>Valores separados por vírgula (.csv)</strong>, clique em <strong>Publicar</strong> e copie o link.</li>
+                  <li><em>(Alternativa)</em> Ou compartilhe a planilha com <strong>"Qualquer pessoa com o link pode ver"</strong> e cole o link da planilha acima.</li>
+                </ol>
+              </div>
+
+              <div style="margin-top: 0.75rem;">
+                <button type="button" id="btnTestarSincronizacao" class="btn btn-sm btn-outline">
+                  <i class="fa-solid fa-satellite-dish"></i> Testar Conexão da Planilha
+                </button>
+              </div>
             </div>
-            <div class="input-group">
-              <label for="cfgEntryEscola"><i class="fa-solid fa-tag"></i> Entry ID - Unidade Escolar:</label>
-              <input type="text" id="cfgEntryEscola" class="input-field" value="entry.285930433">
+
+            <!-- Seção Google Forms (Envio de Respostas) -->
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <i class="fa-brands fa-google text-primary"></i>
+                <div>
+                  <h4>Envio de Respostas (Google Forms)</h4>
+                  <p>Endereço e identificadores oficiais para envio das confirmações.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="cfgFormUrl"><i class="fa-solid fa-link"></i> URL de Resposta do Formulário (formResponse):</label>
+                <input type="url" id="cfgFormUrl" class="input-field" value="https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse">
+                <span class="field-hint">Termina sempre com <code>/formResponse</code></span>
+              </div>
+              <div class="input-group">
+                <label for="cfgEntryEscola"><i class="fa-solid fa-tag"></i> Entry ID - Unidade Escolar:</label>
+                <input type="text" id="cfgEntryEscola" class="input-field" value="entry.285930433">
+              </div>
+              <div class="input-group">
+                <label for="cfgEntryProfessor"><i class="fa-solid fa-tag"></i> Entry ID - Nome do Professor(a):</label>
+                <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
+              </div>
             </div>
-            <div class="input-group">
-              <label for="cfgEntryProfessor"><i class="fa-solid fa-tag"></i> Entry ID - Nome do Professor(a):</label>
-              <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
-            </div>
+
             <div class="config-actions">
               <button type="button" id="btnSalvarConfig" class="btn btn-primary">
                 <i class="fa-solid fa-floppy-disk"></i> Salvar Parâmetros
