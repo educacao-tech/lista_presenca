@@ -10,7 +10,7 @@ const DEFAULT_CONFIG = {
   formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse",
   entryEscola: "entry.285930433",
   entryProfessor: "entry.278265355",
-  sheetUrl: "https://docs.google.com/spreadsheets/d/13IcFma8Yw9Xve1KaSHBW_cq3DtGIYwYkCRSVjF8AyW8/edit?gid=1942393477"
+  sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv"
 };
 
 const appState = {
