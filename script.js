@@ -1,7 +1,9 @@
 /**
- * Sistema de Lista de Presença - Versão Segura e Direta
- * Integrado ao Google Forms Oficial
+ * Sistema de Lista de Presença - Registro Oficial
+ * Integrado ao Google Forms com Painel Administrativo Protegido
  */
+
+const ADMIN_PASSWORD = "admin123";
 
 const DEFAULT_CONFIG = {
   formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse",
@@ -11,7 +13,8 @@ const DEFAULT_CONFIG = {
 
 const appState = {
   config: { ...DEFAULT_CONFIG },
-  history: []
+  history: [],
+  isAdmin: false
 };
 
 // Elementos do DOM
@@ -31,19 +34,41 @@ const elements = {
   receiptTimestamp: document.getElementById('receiptTimestamp'),
   btnNovoRegistro: document.getElementById('btnNovoRegistro'),
   
-  // Admin & Modais
-  adminHeaderActions: document.getElementById('adminHeaderActions'),
-  btnConfig: document.getElementById('btnConfig'),
-  btnHistorico: document.getElementById('btnHistorico'),
-  modalConfig: document.getElementById('modalConfig'),
-  btnCloseConfig: document.getElementById('btnCloseConfig'),
-  btnSalvarConfig: document.getElementById('btnSalvarConfig'),
-  modalHistorico: document.getElementById('modalHistorico'),
-  btnCloseHistorico: document.getElementById('btnCloseHistorico'),
-  btnFecharHistorico: document.getElementById('btnFecharHistorico'),
-  btnLimparHistorico: document.getElementById('btnLimparHistorico'),
+  // Header Admin & Badges
+  adminBadge: document.getElementById('adminBadge'),
+  btnAdminGear: document.getElementById('btnAdminGear'),
+  btnAdminLogout: document.getElementById('btnAdminLogout'),
+
+  // Modal Autenticação de Senha
+  modalAdminAuth: document.getElementById('modalAdminAuth'),
+  formAdminAuth: document.getElementById('formAdminAuth'),
+  adminPasswordInput: document.getElementById('adminPasswordInput'),
+  btnTogglePassword: document.getElementById('btnTogglePassword'),
+  passwordToggleIcon: document.getElementById('passwordToggleIcon'),
+  authErrorMessage: document.getElementById('authErrorMessage'),
+  btnCloseAdminAuth: document.getElementById('btnCloseAdminAuth'),
+  btnCancelarAuth: document.getElementById('btnCancelarAuth'),
+
+  // Modal Painel Administrativo
+  modalAdminPanel: document.getElementById('modalAdminPanel'),
+  btnCloseAdminPanel: document.getElementById('btnCloseAdminPanel'),
+  btnFecharAdminPanel: document.getElementById('btnFecharAdminPanel'),
+  adminTabBtns: document.querySelectorAll('.admin-tab-btn'),
+  adminTabContents: document.querySelectorAll('.admin-tab-content'),
+
+  // Aba Histórico
+  filtroHistorico: document.getElementById('filtroHistorico'),
+  totalPresencasBadge: document.getElementById('totalPresencasBadge'),
   btnExportarCSV: document.getElementById('btnExportarCSV'),
+  btnLimparHistorico: document.getElementById('btnLimparHistorico'),
   historicoContainer: document.getElementById('historicoContainer'),
+
+  // Aba Configurações
+  cfgFormUrl: document.getElementById('cfgFormUrl'),
+  cfgEntryEscola: document.getElementById('cfgEntryEscola'),
+  cfgEntryProfessor: document.getElementById('cfgEntryProfessor'),
+  btnSalvarConfig: document.getElementById('btnSalvarConfig'),
+  btnRestaurarPadrao: document.getElementById('btnRestaurarPadrao'),
   
   // Toast
   toast: document.getElementById('toast'),
@@ -55,8 +80,9 @@ const elements = {
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
   loadConfig();
+  loadHistory();
   startClock();
-  checkAdminMode();
+  checkStoredAdminSession();
   setupEventListeners();
 });
 
@@ -82,18 +108,40 @@ function startClock() {
   setInterval(update, 1000);
 }
 
-// Verifica se está no modo admin (?admin=1 na URL)
-function checkAdminMode() {
+// Verifica sessão salva de admin
+function checkStoredAdminSession() {
+  const isAuth = sessionStorage.getItem('presenca_admin_auth') === 'true';
+  if (isAuth) {
+    setAdminState(true);
+  }
+
+  // Se passou ?admin=1 na URL e não está logado, abre modal de senha
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('admin') === '1' || urlParams.get('admin') === 'true') {
-    if (elements.adminHeaderActions) {
-      elements.adminHeaderActions.classList.remove('hidden');
+    if (!appState.isAdmin) {
+      openAuthModal();
+    } else {
+      openAdminPanel();
     }
-    loadHistory();
   }
 }
 
-// Carregar Configurações
+function setAdminState(isAdmin) {
+  appState.isAdmin = isAdmin;
+  if (isAdmin) {
+    sessionStorage.setItem('presenca_admin_auth', 'true');
+    if (elements.adminBadge) elements.adminBadge.classList.remove('hidden');
+    if (elements.btnAdminLogout) elements.btnAdminLogout.classList.remove('hidden');
+  } else {
+    sessionStorage.removeItem('presenca_admin_auth');
+    if (elements.adminBadge) elements.adminBadge.classList.add('hidden');
+    if (elements.btnAdminLogout) elements.btnAdminLogout.classList.add('hidden');
+  }
+}
+
+// ==========================================================================
+// Gestão de Configurações
+// ==========================================================================
 function loadConfig() {
   const saved = localStorage.getItem('presenca_gforms_cfg');
   if (saved) {
@@ -105,19 +153,35 @@ function loadConfig() {
   } else {
     appState.config = { ...DEFAULT_CONFIG };
   }
+
+  // Preenche inputs
+  if (elements.cfgFormUrl) elements.cfgFormUrl.value = appState.config.formUrl;
+  if (elements.cfgEntryEscola) elements.cfgEntryEscola.value = appState.config.entryEscola;
+  if (elements.cfgEntryProfessor) elements.cfgEntryProfessor.value = appState.config.entryProfessor;
 }
 
 function saveConfig() {
   appState.config = {
-    formUrl: document.getElementById('cfgFormUrl').value.trim() || DEFAULT_CONFIG.formUrl,
-    entryEscola: document.getElementById('cfgEntryEscola').value.trim() || DEFAULT_CONFIG.entryEscola,
-    entryProfessor: document.getElementById('cfgEntryProfessor').value.trim() || DEFAULT_CONFIG.entryProfessor
+    formUrl: elements.cfgFormUrl.value.trim() || DEFAULT_CONFIG.formUrl,
+    entryEscola: elements.cfgEntryEscola.value.trim() || DEFAULT_CONFIG.entryEscola,
+    entryProfessor: elements.cfgEntryProfessor.value.trim() || DEFAULT_CONFIG.entryProfessor
   };
   localStorage.setItem('presenca_gforms_cfg', JSON.stringify(appState.config));
-  closeModal(elements.modalConfig);
-  showToast("Configuração salva!", "success");
+  showToast("Configurações salvas com sucesso!", "success");
 }
 
+function restoreDefaultConfig() {
+  if (confirm("Deseja restaurar as configurações originais do Google Forms?")) {
+    appState.config = { ...DEFAULT_CONFIG };
+    localStorage.removeItem('presenca_gforms_cfg');
+    loadConfig();
+    showToast("Configurações padrão restauradas!", "info");
+  }
+}
+
+// ==========================================================================
+// Gestão de Histórico
+// ==========================================================================
 function loadHistory() {
   const saved = localStorage.getItem('presenca_history_records');
   if (saved) {
@@ -132,12 +196,12 @@ function loadHistory() {
 function saveToHistory(record) {
   loadHistory();
   appState.history.unshift(record);
-  if (appState.history.length > 300) appState.history.pop();
+  if (appState.history.length > 500) appState.history.pop();
   localStorage.setItem('presenca_history_records', JSON.stringify(appState.history));
 }
 
 // ==========================================================================
-// Submissão Segura
+// Submissão do Formulário de Presença
 // ==========================================================================
 async function handleSubmit(e) {
   e.preventDefault();
@@ -146,7 +210,7 @@ async function handleSubmit(e) {
   const professor = elements.inputProfessor.value.trim();
 
   if (!escola) {
-    showToast("Selecione sua escola.", "error");
+    showToast("Selecione sua unidade escolar.", "error");
     elements.selectEscola.focus();
     return;
   }
@@ -194,7 +258,7 @@ async function handleSubmit(e) {
     submitViaHiddenIframe(escola, professor);
     saveToHistory(record);
     showReceipt(record);
-    showToast("Presença registrada!", "success");
+    showToast("Presença confirmada com sucesso!", "success");
   } finally {
     setLoading(false);
   }
@@ -255,36 +319,125 @@ function resetForNewEntry() {
 }
 
 // ==========================================================================
-// Painel Administrativo (Privado)
+// Autenticação Administrativa (Senha: admin123)
 // ==========================================================================
-function renderHistoryModal() {
+function openAuthModal() {
+  if (elements.adminPasswordInput) {
+    elements.adminPasswordInput.value = '';
+    elements.adminPasswordInput.type = 'password';
+  }
+  if (elements.passwordToggleIcon) {
+    elements.passwordToggleIcon.className = 'fa-regular fa-eye';
+  }
+  if (elements.authErrorMessage) {
+    elements.authErrorMessage.classList.add('hidden');
+  }
+  openModal(elements.modalAdminAuth);
+  setTimeout(() => {
+    if (elements.adminPasswordInput) elements.adminPasswordInput.focus();
+  }, 100);
+}
+
+function handleAuthSubmit(e) {
+  e.preventDefault();
+  const inputPass = elements.adminPasswordInput.value;
+
+  if (inputPass === ADMIN_PASSWORD) {
+    setAdminState(true);
+    closeModal(elements.modalAdminAuth);
+    showToast("Acesso administrativo liberado!", "success");
+    openAdminPanel();
+  } else {
+    if (elements.authErrorMessage) {
+      elements.authErrorMessage.classList.remove('hidden');
+    }
+    if (elements.adminPasswordInput) {
+      elements.adminPasswordInput.focus();
+      elements.adminPasswordInput.select();
+    }
+  }
+}
+
+function togglePasswordVisibility() {
+  if (!elements.adminPasswordInput) return;
+  const isPass = elements.adminPasswordInput.type === 'password';
+  elements.adminPasswordInput.type = isPass ? 'text' : 'password';
+  if (elements.passwordToggleIcon) {
+    elements.passwordToggleIcon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+}
+
+function handleAdminLogout() {
+  setAdminState(false);
+  closeModal(elements.modalAdminPanel);
+  closeModal(elements.modalAdminAuth);
+  showToast("Você saiu da área administrativa.", "info");
+}
+
+// ==========================================================================
+// Painel Administrativo
+// ==========================================================================
+function openAdminPanel() {
+  loadConfig();
+  renderHistoryTable();
+  openModal(elements.modalAdminPanel);
+}
+
+function switchAdminTab(targetTabId) {
+  elements.adminTabBtns.forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === targetTabId);
+  });
+  elements.adminTabContents.forEach(content => {
+    content.classList.toggle('active', content.id === targetTabId);
+  });
+}
+
+function renderHistoryTable() {
+  loadHistory();
   const container = elements.historicoContainer;
+  const filter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
+
+  const filtered = appState.history.filter(item => {
+    if (!filter) return true;
+    return (item.professor && item.professor.toLowerCase().includes(filter)) ||
+           (item.escola && item.escola.toLowerCase().includes(filter)) ||
+           (item.timestamp && item.timestamp.toLowerCase().includes(filter));
+  });
+
+  if (elements.totalPresencasBadge) {
+    elements.totalPresencasBadge.textContent = `${filtered.length} registro${filtered.length !== 1 ? 's' : ''}`;
+  }
+
   container.innerHTML = '';
 
-  if (appState.history.length === 0) {
-    container.innerHTML = `<p style="text-align:center; padding: 2rem; color: #64748b;">Nenhum registro local nesta máquina.</p>`;
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 2.5rem 1.5rem; color: #64748b;">
+        <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 0.5rem; color: #cbd5e1;"></i>
+        <p>${appState.history.length === 0 ? 'Nenhum registro de presença salvo localmente.' : 'Nenhum registro encontrado para a busca.'}</p>
+      </div>
+    `;
     return;
   }
 
   const table = document.createElement('table');
-  table.style.width = '100%';
-  table.style.borderCollapse = 'collapse';
+  table.className = 'historico-table';
   table.innerHTML = `
     <thead>
-      <tr style="background:#f8fafc; text-align:left; font-size:0.8rem; border-bottom:1px solid #e2e8f0;">
-        <th style="padding:8px;">#</th>
-        <th style="padding:8px;">Professor</th>
-        <th style="padding:8px;">Escola</th>
-        <th style="padding:8px;">Data/Hora</th>
+      <tr>
+        <th style="width: 45px;">#</th>
+        <th>Professor(a)</th>
+        <th>Unidade Escolar</th>
+        <th>Data / Horário</th>
       </tr>
     </thead>
     <tbody>
-      ${appState.history.map((h, i) => `
-        <tr style="border-bottom:1px solid #f1f5f9; font-size:0.85rem;">
-          <td style="padding:8px; font-weight:bold;">${i + 1}</td>
-          <td style="padding:8px;">${escapeHtml(h.professor)}</td>
-          <td style="padding:8px;">${escapeHtml(h.escola)}</td>
-          <td style="padding:8px; color:#64748b;">${h.timestamp}</td>
+      ${filtered.map((h, i) => `
+        <tr>
+          <td style="font-weight:700; color:#64748b;">${i + 1}</td>
+          <td style="font-weight:600;">${escapeHtml(h.professor)}</td>
+          <td><span class="badge" style="background:#f1f5f9; color:#334155; font-weight:600;">${escapeHtml(h.escola)}</span></td>
+          <td style="color:#64748b; font-size:0.82rem;"><i class="fa-regular fa-clock"></i> ${escapeHtml(h.timestamp)}</td>
         </tr>
       `).join('')}
     </tbody>
@@ -293,62 +446,133 @@ function renderHistoryModal() {
 }
 
 function exportCSV() {
-  if (appState.history.length === 0) return;
-  let csv = "\uFEFFProfessor;Escola;Data;Hora\n";
+  loadHistory();
+  if (appState.history.length === 0) {
+    showToast("Não há registros para exportar.", "info");
+    return;
+  }
+  let csv = "\uFEFFProfessor;Escola;Data;Hora;DataHoraCompleta\n";
   appState.history.forEach(h => {
-    csv += `"${h.professor}";"${h.escola}";"${h.date}";"${h.time}"\n`;
+    csv += `"${h.professor}";"${h.escola}";"${h.date || ''}";"${h.time || ''}";"${h.timestamp || ''}"\n`;
   });
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `presencas_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `lista_presenca_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  showToast("Planilha CSV baixada com sucesso!", "success");
+}
+
+function clearHistory() {
+  if (confirm("Tem certeza que deseja apagar os registros locais deste dispositivo? Essa ação não afeta a planilha do Google Forms.")) {
+    appState.history = [];
+    localStorage.removeItem('presenca_history_records');
+    renderHistoryTable();
+    showToast("Histórico local limpo.", "info");
+  }
 }
 
 // ==========================================================================
 // Event Listeners
 // ==========================================================================
 function setupEventListeners() {
+  // Envio do formulário principal
   elements.form.addEventListener('submit', handleSubmit);
   elements.btnNovoRegistro.addEventListener('click', resetForNewEntry);
 
-  if (elements.btnConfig) {
-    elements.btnConfig.addEventListener('click', () => openModal(elements.modalConfig));
-    elements.btnCloseConfig.addEventListener('click', () => closeModal(elements.modalConfig));
-    elements.btnSalvarConfig.addEventListener('click', saveConfig);
-  }
-
-  if (elements.btnHistorico) {
-    elements.btnHistorico.addEventListener('click', () => {
-      renderHistoryModal();
-      openModal(elements.modalHistorico);
-    });
-    elements.btnCloseHistorico.addEventListener('click', () => closeModal(elements.modalHistorico));
-    elements.btnFecharHistorico.addEventListener('click', () => closeModal(elements.modalHistorico));
-    elements.btnExportarCSV.addEventListener('click', exportCSV);
-    elements.btnLimparHistorico.addEventListener('click', () => {
-      if (confirm("Deseja apagar os registros locais deste dispositivo?")) {
-        appState.history = [];
-        localStorage.removeItem('presenca_history_records');
-        renderHistoryModal();
+  // Clique na engrenagem: pede senha admin123 ou abre painel se já autenticado
+  if (elements.btnAdminGear) {
+    elements.btnAdminGear.addEventListener('click', () => {
+      if (appState.isAdmin) {
+        openAdminPanel();
+      } else {
+        openAuthModal();
       }
     });
   }
 
-  [elements.modalConfig, elements.modalHistorico].forEach(modal => {
+  // Logout Admin
+  if (elements.btnAdminLogout) {
+    elements.btnAdminLogout.addEventListener('click', handleAdminLogout);
+  }
+
+  // Autenticação de Senha Admin
+  if (elements.formAdminAuth) {
+    elements.formAdminAuth.addEventListener('submit', handleAuthSubmit);
+  }
+  if (elements.btnTogglePassword) {
+    elements.btnTogglePassword.addEventListener('click', togglePasswordVisibility);
+  }
+  if (elements.btnCloseAdminAuth) {
+    elements.btnCloseAdminAuth.addEventListener('click', () => closeModal(elements.modalAdminAuth));
+  }
+  if (elements.btnCancelarAuth) {
+    elements.btnCancelarAuth.addEventListener('click', () => closeModal(elements.modalAdminAuth));
+  }
+
+  // Abas do Painel Administrativo
+  elements.adminTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.getAttribute('data-tab');
+      switchAdminTab(tabId);
+    });
+  });
+
+  // Fechar Painel Administrativo
+  if (elements.btnCloseAdminPanel) {
+    elements.btnCloseAdminPanel.addEventListener('click', () => closeModal(elements.modalAdminPanel));
+  }
+  if (elements.btnFecharAdminPanel) {
+    elements.btnFecharAdminPanel.addEventListener('click', () => closeModal(elements.modalAdminPanel));
+  }
+
+  // Ações da Aba Histórico
+  if (elements.filtroHistorico) {
+    elements.filtroHistorico.addEventListener('input', renderHistoryTable);
+  }
+  if (elements.btnExportarCSV) {
+    elements.btnExportarCSV.addEventListener('click', exportCSV);
+  }
+  if (elements.btnLimparHistorico) {
+    elements.btnLimparHistorico.addEventListener('click', clearHistory);
+  }
+
+  // Ações da Aba Configurações
+  if (elements.btnSalvarConfig) {
+    elements.btnSalvarConfig.addEventListener('click', saveConfig);
+  }
+  if (elements.btnRestaurarPadrao) {
+    elements.btnRestaurarPadrao.addEventListener('click', restoreDefaultConfig);
+  }
+
+  // Fechar modais ao clicar no backdrop
+  [elements.modalAdminAuth, elements.modalAdminPanel].forEach(modal => {
     if (modal) {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal(modal);
       });
     }
   });
+
+  // Tecla ESC fecha modais
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeModal(elements.modalAdminAuth);
+      closeModal(elements.modalAdminPanel);
+    }
+  });
 }
 
-function openModal(modal) { if (modal) modal.classList.add('active'); }
-function closeModal(modal) { if (modal) modal.classList.remove('active'); }
+function openModal(modal) {
+  if (modal) modal.classList.add('active');
+}
+
+function closeModal(modal) {
+  if (modal) modal.classList.remove('active');
+}
 
 function showToast(message, type = 'info') {
   elements.toastMessage.textContent = message;
@@ -365,3 +589,4 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+

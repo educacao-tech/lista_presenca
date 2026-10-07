@@ -32,15 +32,18 @@
         </div>
       </div>
       
-      <!-- Ações Administrativas (Ocultas aos professores por padrão, acessíveis com ?admin=1) -->
-      <div class="header-actions admin-only hidden" id="adminHeaderActions">
-        <button id="btnHistorico" class="btn btn-sm btn-outline" title="Ver histórico salvo localmente">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Histórico</span>
+      <!-- Ações do Cabeçalho: Engrenagem de Administração -->
+      <div class="header-actions">
+        <div id="adminBadge" class="admin-badge hidden" title="Modo Administrador Ativo">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Admin</span>
+        </div>
+        <button type="button" id="btnAdminGear" class="btn-icon btn-gear" title="Área Administrativa" aria-label="Área Administrativa">
+          <i class="fa-solid fa-gear"></i>
         </button>
-        <button id="btnConfig" class="btn btn-sm btn-ghost" title="Configurações de integração">
-          <i class="fa-solid fa-sliders"></i>
-          <span>Config</span>
+        <button type="button" id="btnAdminLogout" class="btn btn-sm btn-outline text-danger hidden" title="Sair do modo administrador">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Sair</span>
         </button>
       </div>
     </div>
@@ -167,58 +170,129 @@
     </div>
   </main>
 
-  <!-- Modal Admin: Histórico e Configurações (Apenas Coordenador) -->
-  <div id="modalHistorico" class="modal-backdrop">
-    <div class="modal-dialog modal-lg">
+  <!-- Modal 1: Autenticação de Senha Admin -->
+  <div id="modalAdminAuth" class="modal-backdrop">
+    <div class="modal-dialog modal-sm">
       <div class="modal-header">
         <div class="modal-title">
           <i class="fa-solid fa-lock text-primary"></i>
-          <h3>Painel Administrativo - Histórico Local</h3>
+          <h3>Acesso Administrativo</h3>
         </div>
-        <button type="button" class="btn-close" id="btnCloseHistorico">&times;</button>
+        <button type="button" class="btn-close" id="btnCloseAdminAuth">&times;</button>
       </div>
-      <div class="modal-body">
-        <div id="historicoContainer"></div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" id="btnExportarCSV" class="btn btn-outline">
-          <i class="fa-solid fa-file-csv"></i> Baixar CSV
-        </button>
-        <button type="button" id="btnLimparHistorico" class="btn btn-outline text-danger">
-          <i class="fa-solid fa-trash"></i> Limpar
-        </button>
-        <button type="button" id="btnFecharHistorico" class="btn btn-secondary">Fechar</button>
-      </div>
+      <form id="formAdminAuth">
+        <div class="modal-body">
+          <p class="auth-instruction">Digite a senha de administrador para acessar os relatórios e configurações.</p>
+          <div class="input-group">
+            <label for="adminPasswordInput" class="required">
+              <i class="fa-solid fa-key"></i> Senha de Acesso
+            </label>
+            <div class="input-with-icon">
+              <input 
+                type="password" 
+                id="adminPasswordInput" 
+                class="input-field" 
+                placeholder="Digite a senha..." 
+                required 
+                autocomplete="current-password"
+              >
+              <button type="button" id="btnTogglePassword" class="btn-password-toggle" title="Mostrar/Ocultar Senha" tabindex="-1">
+                <i class="fa-regular fa-eye" id="passwordToggleIcon"></i>
+              </button>
+            </div>
+            <div id="authErrorMessage" class="auth-error-box hidden">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>Senha incorreta. Tente novamente.</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btnCancelarAuth" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btnConfirmarAuth" class="btn btn-primary">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            <span>Entrar</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <div id="modalConfig" class="modal-backdrop">
-    <div class="modal-dialog">
+  <!-- Modal 2: Painel Administrativo Completo -->
+  <div id="modalAdminPanel" class="modal-backdrop">
+    <div class="modal-dialog modal-lg">
       <div class="modal-header">
         <div class="modal-title">
-          <i class="fa-brands fa-google text-primary"></i>
-          <h3>Parâmetros do Formulário</h3>
+          <i class="fa-solid fa-sliders text-primary"></i>
+          <h3>Painel Administrativo</h3>
         </div>
-        <button type="button" class="btn-close" id="btnCloseConfig">&times;</button>
+        <button type="button" class="btn-close" id="btnCloseAdminPanel">&times;</button>
       </div>
-      <div class="modal-body">
-        <form id="googleConfigForm" class="config-grid">
-          <div class="input-group">
-            <label for="cfgFormUrl">URL do Google Forms:</label>
-            <input type="url" id="cfgFormUrl" class="input-field" value="https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse">
-          </div>
-          <div class="input-group">
-            <label for="cfgEntryEscola">Entry ID - ESCOLA:</label>
-            <input type="text" id="cfgEntryEscola" class="input-field" value="entry.285930433">
-          </div>
-          <div class="input-group">
-            <label for="cfgEntryProfessor">Entry ID - NOME:</label>
-            <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
-          </div>
-        </form>
+      
+      <!-- Abas de Navegação Admin -->
+      <div class="admin-tabs">
+        <button type="button" class="admin-tab-btn active" data-tab="tabHistorico">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>Histórico de Presenças</span>
+        </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabConfig">
+          <i class="fa-brands fa-google"></i>
+          <span>Configurações do Forms</span>
+        </button>
       </div>
+
+      <div class="modal-body admin-modal-body">
+        <!-- Aba 1: Histórico -->
+        <div id="tabHistorico" class="admin-tab-content active">
+          <div class="history-actions-bar">
+            <div class="history-stats">
+              <span id="totalPresencasBadge" class="badge badge-primary">0 registros</span>
+            </div>
+            <div class="history-controls">
+              <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="filtroHistorico" class="input-field input-field-sm" placeholder="Buscar por professor ou escola...">
+              </div>
+              <button type="button" id="btnExportarCSV" class="btn btn-sm btn-outline" title="Baixar registros em formato CSV">
+                <i class="fa-solid fa-file-csv"></i> <span>Exportar CSV</span>
+              </button>
+              <button type="button" id="btnLimparHistorico" class="btn btn-sm btn-outline text-danger" title="Limpar registros salvos neste navegador">
+                <i class="fa-solid fa-trash"></i> <span>Limpar</span>
+              </button>
+            </div>
+          </div>
+          <div id="historicoContainer" class="historico-table-wrapper"></div>
+        </div>
+
+        <!-- Aba 2: Configurações do Google Forms -->
+        <div id="tabConfig" class="admin-tab-content">
+          <form id="googleConfigForm" class="config-grid">
+            <div class="input-group">
+              <label for="cfgFormUrl"><i class="fa-solid fa-link"></i> URL de Resposta do Formulário (formResponse):</label>
+              <input type="url" id="cfgFormUrl" class="input-field" value="https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse">
+              <span class="field-hint">Termina sempre com <code>/formResponse</code></span>
+            </div>
+            <div class="input-group">
+              <label for="cfgEntryEscola"><i class="fa-solid fa-tag"></i> Entry ID - Unidade Escolar:</label>
+              <input type="text" id="cfgEntryEscola" class="input-field" value="entry.285930433">
+            </div>
+            <div class="input-group">
+              <label for="cfgEntryProfessor"><i class="fa-solid fa-tag"></i> Entry ID - Nome do Professor(a):</label>
+              <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
+            </div>
+            <div class="config-actions">
+              <button type="button" id="btnSalvarConfig" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk"></i> Salvar Parâmetros
+              </button>
+              <button type="button" id="btnRestaurarPadrao" class="btn btn-outline">
+                <i class="fa-solid fa-rotate-left"></i> Restaurar Padrão
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
       <div class="modal-footer">
-        <button type="button" id="btnSalvarConfig" class="btn btn-primary">Salvar</button>
+        <button type="button" id="btnFecharAdminPanel" class="btn btn-secondary">Fechar</button>
       </div>
     </div>
   </div>

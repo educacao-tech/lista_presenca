@@ -27,5 +27,8 @@ A lista suspensa contém as 7 escolas cadastradas:
 ## ✨ Recursos
 - **Envio Instantâneo:** Grava diretamente na planilha do Google Forms.
 - **Comprovante & Recibo:** Exibe tela de confirmação com data e hora.
-- **Histórico Local:** Acompanha os registros realizados nesta sessão.
-- **Exportação CSV & Impressão:** Download em formato `.csv` e impressão em A4.
+- **Área Administrativa Protegida:** Clique no ícone de engrenagem ⚙️ e informe a senha `admin123`.
+- **Histórico Local com Busca:** Visualização e filtragem em tempo real de todas as presenças salvas.
+- **Exportação CSV:** Download de relatório em formato `.csv`.
+- **Configurações Flexíveis:** Ajuste de links e IDs do formulário Google Forms diretamente no painel.
+
