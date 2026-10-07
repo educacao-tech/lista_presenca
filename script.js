@@ -28,12 +28,14 @@ const elements = {
   form: document.getElementById('attendanceForm'),
   selectEscola: document.getElementById('selectEscola'),
   inputProfessor: document.getElementById('inputProfessor'),
+  inputEmail: document.getElementById('inputEmail'),
   displayDate: document.getElementById('displayDate'),
   displayTime: document.getElementById('displayTime'),
   btnSubmit: document.getElementById('btnSubmit'),
   
   // Card de Comprovante Individual
   successCard: document.getElementById('successCard'),
+  receiptEmail: document.getElementById('receiptEmail'),
   receiptEscola: document.getElementById('receiptEscola'),
   receiptProfessor: document.getElementById('receiptProfessor'),
   receiptTimestamp: document.getElementById('receiptTimestamp'),
@@ -72,12 +74,37 @@ const elements = {
   btnIrParaConfig: document.getElementById('btnIrParaConfig'),
   syncModeBadge: document.getElementById('syncModeBadge'),
 
-  // Aba Histórico
+  // Aba Histórico & KPIs
   filtroHistorico: document.getElementById('filtroHistorico'),
+  filtroEscolaSelect: document.getElementById('filtroEscolaSelect'),
+  ordemHistoricoSelect: document.getElementById('ordemHistoricoSelect'),
   totalPresencasBadge: document.getElementById('totalPresencasBadge'),
   btnExportarCSV: document.getElementById('btnExportarCSV'),
   btnLimparHistorico: document.getElementById('btnLimparHistorico'),
   historicoContainer: document.getElementById('historicoContainer'),
+  schoolBadgesContainer: document.getElementById('schoolBadgesContainer'),
+  kpiTotalPresencas: document.getElementById('kpiTotalPresencas'),
+  kpiTotalSub: document.getElementById('kpiTotalSub'),
+  kpiEscolasAtivas: document.getElementById('kpiEscolasAtivas'),
+  kpiNuvemStatus: document.getElementById('kpiNuvemStatus'),
+  kpiNuvemSub: document.getElementById('kpiNuvemSub'),
+  kpiUltimoRegistro: document.getElementById('kpiUltimoRegistro'),
+  kpiUltimoNome: document.getElementById('kpiUltimoNome'),
+
+  // Aba Relatório para Gestão
+  relatorioEscolaSelect: document.getElementById('relatorioEscolaSelect'),
+  btnImprimirRelatorio: document.getElementById('btnImprimirRelatorio'),
+  btnCopiarWhatsApp: document.getElementById('btnCopiarWhatsApp'),
+  btnExportarRelatorioCSV: document.getElementById('btnExportarRelatorioCSV'),
+  repDataEmissao: document.getElementById('repDataEmissao'),
+  repEscolaNome: document.getElementById('repEscolaNome'),
+  repTotalPresentes: document.getElementById('repTotalPresentes'),
+  repUnidadesCount: document.getElementById('repUnidadesCount'),
+  repPrimeiroRegistro: document.getElementById('repPrimeiroRegistro'),
+  repUltimoRegistro: document.getElementById('repUltimoRegistro'),
+  repQuadroEscolas: document.getElementById('repQuadroEscolas'),
+  repTabelaContainer: document.getElementById('repTabelaContainer'),
+  repFooterTimestamp: document.getElementById('repFooterTimestamp'),
 
   // Aba Configurações
   cfgFormUrl: document.getElementById('cfgFormUrl'),
@@ -91,6 +118,7 @@ const elements = {
   // Modal Registro Duplicado
   modalDuplicado: document.getElementById('modalDuplicado'),
   dupNomeProfessor: document.getElementById('dupNomeProfessor'),
+  dupEmail: document.getElementById('dupEmail'),
   dupEscola: document.getElementById('dupEscola'),
   dupTimestamp: document.getElementById('dupTimestamp'),
   btnVerComprovanteDuplicado: document.getElementById('btnVerComprovanteDuplicado'),
@@ -235,11 +263,17 @@ function loadHistory() {
 
 function saveToHistory(record) {
   loadHistory();
-  // Evita duplicatas exatas na lista
-  const exists = appState.history.some(h => 
-    normalizeName(h.professor) === normalizeName(record.professor) && 
-    (h.date === record.date || h.timestamp === record.timestamp)
-  );
+  const recEmail = (record.email || '').trim().toLowerCase();
+  const recProf = normalizeName(record.professor);
+
+  // Evita duplicatas na lista por e-mail ou nome
+  const exists = appState.history.some(h => {
+    const hEmail = (h.email || '').trim().toLowerCase();
+    const hProf = normalizeName(h.professor);
+    if (recEmail && hEmail && recEmail === hEmail) return true;
+    if (recProf && hProf && recProf === hProf && (h.date === record.date || h.timestamp === record.timestamp)) return true;
+    return false;
+  });
 
   if (!exists) {
     appState.history.unshift(record);
@@ -259,11 +293,26 @@ function normalizeName(name) {
     .replace(/\s+/g, ' ');
 }
 
-// Verifica se o professor já realizou registro (tanto local quanto vindo do Google Sheets)
-function findDuplicateRecord(professorName) {
+// Verifica se já realizou registro (por E-mail como chave prioritária ou por Nome)
+function findDuplicateRecord(target) {
   loadHistory();
-  const normalizedTarget = normalizeName(professorName);
-  return appState.history.find(record => normalizeName(record.professor) === normalizedTarget);
+  const targetEmail = typeof target === 'object' ? (target.email || '').trim().toLowerCase() : '';
+  const targetProf = typeof target === 'object' ? normalizeName(target.professor) : normalizeName(target);
+
+  return appState.history.find(record => {
+    const recEmail = (record.email || '').trim().toLowerCase();
+    const recProf = normalizeName(record.professor);
+
+    // 1. Chave prioritária: E-mail idêntico
+    if (targetEmail && recEmail && targetEmail === recEmail) {
+      return true;
+    }
+    // 2. Chave secundária: Nome Completo idêntico
+    if (targetProf && recProf && targetProf === recProf) {
+      return true;
+    }
+    return false;
+  });
 }
 
 // ==========================================================================
@@ -362,13 +411,15 @@ function extractRecordsFromRows(rows) {
   );
 
   let timeIdx = rawHeaders.findIndex(h => h.includes('carimbo') || h.includes('data') || h.includes('hora') || h.includes('time'));
+  let emailIdx = rawHeaders.findIndex(h => h.includes('email') || h.includes('e-mail') || h.includes('correio'));
   let escolaIdx = rawHeaders.findIndex(h => h.includes('escola') || h.includes('unidade'));
   let profIdx = rawHeaders.findIndex(h => h.includes('professor') || h.includes('nome') || h.includes('docente'));
 
   // Índices padrão do Google Forms se não identificados por nome
   if (timeIdx === -1) timeIdx = 0;
-  if (escolaIdx === -1) escolaIdx = 1;
-  if (profIdx === -1) profIdx = 2;
+  if (emailIdx === -1) emailIdx = 1;
+  if (escolaIdx === -1) escolaIdx = 2;
+  if (profIdx === -1) profIdx = 3;
 
   const records = [];
   for (let i = 1; i < rows.length; i++) {
@@ -376,13 +427,15 @@ function extractRecordsFromRows(rows) {
     if (!row || row.length <= 1) continue;
 
     const timestampRaw = row[timeIdx] || '';
+    const email = (emailIdx !== -1 && row[emailIdx]) ? row[emailIdx].trim().toLowerCase() : '';
     const escola = (row[escolaIdx] || '').trim();
     const professor = (row[profIdx] || '').trim();
 
-    if (!professor && !escola) continue;
+    if (!professor && !escola && !email) continue;
 
     records.push({
-      id: `remote_${i}_${normalizeName(professor)}`,
+      id: `remote_${i}_${email || normalizeName(professor)}`,
+      email: email,
       professor: professor.toUpperCase(),
       escola: escola.toUpperCase(),
       timestamp: timestampRaw,
@@ -464,9 +517,17 @@ async function syncRealTime(showFeedback = false) {
     // Mescla registros remotos com locais evitando duplicatas
     const merged = [...remoteRecords];
     localRecords.forEach(loc => {
-      const isAlreadyInRemote = merged.some(rem => 
-        normalizeName(rem.professor) === normalizeName(loc.professor)
-      );
+      const locEmail = (loc.email || '').trim().toLowerCase();
+      const locProf = normalizeName(loc.professor);
+
+      const isAlreadyInRemote = merged.some(rem => {
+        const remEmail = (rem.email || '').trim().toLowerCase();
+        const remProf = normalizeName(rem.professor);
+        if (locEmail && remEmail && locEmail === remEmail) return true;
+        if (locProf && remProf && locProf === remProf) return true;
+        return false;
+      });
+
       if (!isAlreadyInRemote) {
         merged.push(loc);
       }
@@ -540,6 +601,7 @@ async function handleSubmit(e) {
 
   const escola = elements.selectEscola.value;
   const professor = elements.inputProfessor.value.trim();
+  const email = elements.inputEmail ? elements.inputEmail.value.trim().toLowerCase() : '';
 
   if (!escola) {
     showToast("Selecione sua unidade escolar.", "error");
@@ -553,16 +615,23 @@ async function handleSubmit(e) {
     return;
   }
 
-  // REGRA: APENAS UM REGISTRO POR PROFESSOR (Checa histórico global e local)
-  const existingRecord = findDuplicateRecord(professor);
+  if (!email || !email.includes('@')) {
+    showToast("Por favor, digite um e-mail válido.", "error");
+    if (elements.inputEmail) elements.inputEmail.focus();
+    return;
+  }
+
+  // REGRA: CHAVE ÚNICA (E-mail prioritário ou Nome Completo)
+  const existingRecord = findDuplicateRecord({ email, professor });
   if (existingRecord) {
     currentDuplicateRecord = existingRecord;
     if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = existingRecord.professor;
+    if (elements.dupEmail) elements.dupEmail.textContent = existingRecord.email || email;
     if (elements.dupEscola) elements.dupEscola.textContent = existingRecord.escola;
     if (elements.dupTimestamp) elements.dupTimestamp.textContent = existingRecord.timestamp;
     
     openModal(elements.modalDuplicado);
-    showToast("Atenção: Presença já registrada para este professor!", "warning");
+    showToast("Atenção: Presença já registrada para este e-mail/professor!", "warning");
     return;
   }
 
@@ -571,6 +640,7 @@ async function handleSubmit(e) {
 
   const record = {
     id: Date.now(),
+    email: email,
     escola: escola,
     professor: professor,
     timestamp: timestamp,
@@ -584,6 +654,7 @@ async function handleSubmit(e) {
   try {
     // Envio direto para o Google Forms
     const formData = new URLSearchParams();
+    formData.append('emailAddress', email);
     formData.append(appState.config.entryEscola, escola);
     formData.append(appState.config.entryProfessor, professor);
 
@@ -594,7 +665,7 @@ async function handleSubmit(e) {
       body: formData.toString()
     });
 
-    submitViaHiddenIframe(escola, professor);
+    submitViaHiddenIframe(escola, professor, email);
     saveToHistory(record);
     showReceipt(record);
     showToast("Presença confirmada e enviada!", "success");
@@ -606,7 +677,7 @@ async function handleSubmit(e) {
 
   } catch (error) {
     console.error("Envio:", error);
-    submitViaHiddenIframe(escola, professor);
+    submitViaHiddenIframe(escola, professor, email);
     saveToHistory(record);
     showReceipt(record);
     showToast("Presença confirmada com sucesso!", "success");
@@ -615,13 +686,22 @@ async function handleSubmit(e) {
   }
 }
 
-function submitViaHiddenIframe(escola, professor) {
+function submitViaHiddenIframe(escola, professor, email) {
   try {
     const form = document.createElement('form');
     form.action = appState.config.formUrl;
     form.method = 'POST';
     form.target = 'hidden_iframe';
     form.style.display = 'none';
+
+    // Campo E-mail
+    if (email) {
+      const inputEmail = document.createElement('input');
+      inputEmail.type = 'hidden';
+      inputEmail.name = 'emailAddress';
+      inputEmail.value = email;
+      form.appendChild(inputEmail);
+    }
 
     // Campo Escola
     const inputEscola = document.createElement('input');
@@ -668,6 +748,7 @@ function setLoading(isLoading) {
 }
 
 function showReceipt(record) {
+  if (elements.receiptEmail) elements.receiptEmail.textContent = record.email || '-';
   elements.receiptEscola.textContent = record.escola;
   elements.receiptProfessor.textContent = record.professor;
   elements.receiptTimestamp.textContent = record.timestamp;
@@ -778,19 +859,143 @@ function switchAdminTab(targetTabId) {
   elements.adminTabContents.forEach(content => {
     content.classList.toggle('active', content.id === targetTabId);
   });
+
+  if (targetTabId === 'tabRelatorios') {
+    const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+    renderManagementReport(selectedSchool);
+  } else if (targetTabId === 'tabHistorico') {
+    renderHistoryTable();
+  }
 }
 
+// Retorna iniciais do nome para o avatar
+function getInitials(name) {
+  if (!name) return 'PR';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// Atualiza os Cards de KPIs e as pílulas de contagem por escola
+function updateKPIsAndSchools(records) {
+  const total = records.length;
+  const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+
+  // Contagem por escola
+  const schoolCounts = {};
+  ALL_SCHOOLS.forEach(s => schoolCounts[s] = 0);
+  
+  records.forEach(r => {
+    const sName = (r.escola || '').trim().toUpperCase();
+    if (schoolCounts[sName] !== undefined) {
+      schoolCounts[sName]++;
+    } else if (sName) {
+      schoolCounts[sName] = (schoolCounts[sName] || 0) + 1;
+    }
+  });
+
+  const activeSchoolsCount = Object.values(schoolCounts).filter(c => c > 0).length;
+  const remoteCount = records.filter(r => r.isRemote).length;
+  const remotePercent = total > 0 ? Math.round((remoteCount / total) * 100) : 100;
+
+  // Atualiza KPIs
+  if (elements.kpiTotalPresencas) elements.kpiTotalPresencas.textContent = total;
+  if (elements.kpiTotalSub) elements.kpiTotalSub.textContent = `${total} docente${total !== 1 ? 's' : ''} registrado${total !== 1 ? 's' : ''}`;
+  if (elements.kpiEscolasAtivas) elements.kpiEscolasAtivas.textContent = `${activeSchoolsCount} / ${ALL_SCHOOLS.length}`;
+  if (elements.kpiNuvemStatus) elements.kpiNuvemStatus.textContent = `${remotePercent}% Nuvem`;
+  if (elements.kpiNuvemSub) elements.kpiNuvemSub.textContent = `${remoteCount} da planilha Google`;
+
+  if (records.length > 0) {
+    const latest = records[0];
+    const timeMatch = (latest.timestamp || '').match(/([0-9]{2}:[0-9]{2})/);
+    const displayTimeStr = timeMatch ? timeMatch[1] : (latest.time || '--:--');
+    if (elements.kpiUltimoRegistro) elements.kpiUltimoRegistro.textContent = displayTimeStr;
+    if (elements.kpiUltimoNome) elements.kpiUltimoNome.textContent = latest.professor ? latest.professor.split(' ')[0] : 'Registrado';
+  } else {
+    if (elements.kpiUltimoRegistro) elements.kpiUltimoRegistro.textContent = '--:--';
+    if (elements.kpiUltimoNome) elements.kpiUltimoNome.textContent = 'Aguardando envios';
+  }
+
+  // Renderiza Pílulas de Escolas
+  if (elements.schoolBadgesContainer) {
+    const currentSchoolFilter = elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value : '';
+    
+    let html = `
+      <div class="school-pill ${!currentSchoolFilter ? 'active' : ''}" data-school="">
+        <span>🏫 Todas</span>
+        <span class="school-pill-count">${total}</span>
+      </div>
+    `;
+
+    ALL_SCHOOLS.forEach(school => {
+      const count = schoolCounts[school] || 0;
+      const isActive = currentSchoolFilter === school;
+      html += `
+        <div class="school-pill ${isActive ? 'active' : ''}" data-school="${escapeHtml(school)}">
+          <span>${escapeHtml(school)}</span>
+          <span class="school-pill-count">${count}</span>
+        </div>
+      `;
+    });
+
+    elements.schoolBadgesContainer.innerHTML = html;
+
+    // Adiciona evento de clique nas pílulas para filtrar a tabela
+    elements.schoolBadgesContainer.querySelectorAll('.school-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const targetSchool = pill.getAttribute('data-school');
+        if (elements.filtroEscolaSelect) {
+          elements.filtroEscolaSelect.value = targetSchool;
+        }
+        renderHistoryTable();
+      });
+    });
+  }
+}
+
+// Renderiza a Tabela do Histórico Geral com visual moderno
 function renderHistoryTable() {
   loadHistory();
   const container = elements.historicoContainer;
-  const filter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
+  const textFilter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
+  const schoolFilter = (elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value.trim().toUpperCase() : '');
+  const sortOrder = (elements.ordemHistoricoSelect ? elements.ordemHistoricoSelect.value : 'recent');
 
-  const filtered = appState.history.filter(item => {
-    if (!filter) return true;
-    return (item.professor && item.professor.toLowerCase().includes(filter)) ||
-           (item.escola && item.escola.toLowerCase().includes(filter)) ||
-           (item.timestamp && item.timestamp.toLowerCase().includes(filter));
+  // Atualiza KPIs com todos os registros
+  updateKPIsAndSchools(appState.history);
+
+  // Filtra registros
+  let filtered = appState.history.filter(item => {
+    // Filtro por Escola
+    if (schoolFilter && (item.escola || '').trim().toUpperCase() !== schoolFilter) {
+      return false;
+    }
+
+    // Filtro por Texto (Nome, E-mail, Escola, Horário)
+    if (textFilter) {
+      const matchName = item.professor && item.professor.toLowerCase().includes(textFilter);
+      const matchEmail = item.email && item.email.toLowerCase().includes(textFilter);
+      const matchSchool = item.escola && item.escola.toLowerCase().includes(textFilter);
+      const matchTime = item.timestamp && item.timestamp.toLowerCase().includes(textFilter);
+      if (!matchName && !matchEmail && !matchSchool && !matchTime) {
+        return false;
+      }
+    }
+
+    return true;
   });
+
+  // Ordenação
+  filtered = [...filtered];
+  if (sortOrder === 'oldest') {
+    filtered.reverse();
+  } else if (sortOrder === 'name_asc') {
+    filtered.sort((a, b) => (a.professor || '').localeCompare(b.professor || ''));
+  } else if (sortOrder === 'name_desc') {
+    filtered.sort((a, b) => (b.professor || '').localeCompare(a.professor || ''));
+  } else if (sortOrder === 'school') {
+    filtered.sort((a, b) => (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || ''));
+  }
 
   if (elements.totalPresencasBadge) {
     elements.totalPresencasBadge.textContent = `${filtered.length} registro${filtered.length !== 1 ? 's' : ''}`;
@@ -800,9 +1005,10 @@ function renderHistoryTable() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div style="text-align:center; padding: 2.5rem 1.5rem; color: #64748b;">
-        <i class="fa-solid fa-folder-open" style="font-size: 2rem; margin-bottom: 0.5rem; color: #cbd5e1;"></i>
-        <p>${appState.history.length === 0 ? 'Nenhum registro de presença encontrado.' : 'Nenhum registro encontrado para a busca.'}</p>
+      <div style="text-align:center; padding: 3rem 1.5rem; color: #64748b;">
+        <i class="fa-solid fa-folder-open" style="font-size: 2.25rem; margin-bottom: 0.75rem; color: #cbd5e1;"></i>
+        <p style="font-weight:600; font-size:1rem;">Nenhum registro encontrado para os filtros selecionados.</p>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:0.25rem;">Tente limpar a busca ou selecionar outra escola.</p>
       </div>
     `;
     return;
@@ -813,52 +1019,301 @@ function renderHistoryTable() {
   table.innerHTML = `
     <thead>
       <tr>
-        <th style="width: 45px;">#</th>
+        <th style="width: 45px; text-align: center;">#</th>
         <th>Professor(a)</th>
+        <th>E-mail</th>
         <th>Unidade Escolar</th>
         <th>Data / Horário</th>
-        <th style="width: 110px; text-align: center;">Origem</th>
+        <th style="width: 95px; text-align: center;">Origem</th>
       </tr>
     </thead>
     <tbody>
-      ${filtered.map((h, i) => `
-        <tr>
-          <td style="font-weight:700; color:#64748b;">${i + 1}</td>
-          <td style="font-weight:600;">${escapeHtml(h.professor)}</td>
-          <td><span class="badge" style="background:#f1f5f9; color:#334155; font-weight:600;">${escapeHtml(h.escola)}</span></td>
-          <td style="color:#64748b; font-size:0.82rem;"><i class="fa-regular fa-clock"></i> ${escapeHtml(h.timestamp)}</td>
-          <td style="text-align:center;">
-            ${h.isRemote 
-              ? `<span class="badge badge-success" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
-              : `<span class="badge" style="background:#f8fafc; color:#64748b;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
-            }
-          </td>
-        </tr>
-      `).join('')}
+      ${filtered.map((h, i) => {
+        const initials = getInitials(h.professor);
+        return `
+          <tr>
+            <td style="font-weight:700; color:#64748b; text-align:center;">${i + 1}</td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar-circle">${escapeHtml(initials)}</div>
+                <div class="user-details">
+                  <span class="user-name-text">${escapeHtml(h.professor)}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="email-cell-wrapper">
+                <span class="email-text">${escapeHtml(h.email || '-')}</span>
+                ${h.email ? `
+                  <button type="button" class="btn-copy-email" onclick="copyEmailToClipboard('${escapeHtml(h.email)}', this)" title="Copiar e-mail">
+                    <i class="fa-regular fa-copy"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+            <td>
+              <span class="school-badge-tag">
+                <i class="fa-solid fa-school"></i> ${escapeHtml(h.escola)}
+              </span>
+            </td>
+            <td style="color:#475569; font-size:0.83rem; white-space:nowrap;">
+              <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(h.timestamp)}
+            </td>
+            <td style="text-align:center;">
+              ${h.isRemote 
+                ? `<span class="badge badge-success" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
+                : `<span class="badge" style="background:#f8fafc; color:#64748b;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('')}
     </tbody>
   `;
   container.appendChild(table);
 }
 
-function exportCSV() {
+// Copia o e-mail para a área de transferência com feedback
+window.copyEmailToClipboard = function(email, btn) {
+  if (!email) return;
+  navigator.clipboard.writeText(email).then(() => {
+    if (btn) {
+      btn.innerHTML = `<i class="fa-solid fa-check text-success"></i>`;
+      setTimeout(() => {
+        btn.innerHTML = `<i class="fa-regular fa-copy"></i>`;
+      }, 1500);
+    }
+    showToast(`E-mail ${email} copiado!`, "success");
+  }).catch(() => {
+    showToast("Não foi possível copiar o e-mail.", "error");
+  });
+};
+
+// ==========================================================================
+// Módulo de Relatório Executivo para a Gestão Escolar
+// ==========================================================================
+function renderManagementReport(schoolFilter = '') {
   loadHistory();
-  if (appState.history.length === 0) {
+  const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+
+  const filtered = appState.history.filter(item => {
+    if (!schoolFilter) return true;
+    return (item.escola || '').trim().toUpperCase() === schoolFilter.trim().toUpperCase();
+  });
+
+  const now = new Date();
+  const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  // Metadados do Relatório
+  if (elements.repDataEmissao) elements.repDataEmissao.textContent = emissaoStr;
+  if (elements.repEscolaNome) elements.repEscolaNome.textContent = schoolFilter || "Todas as Unidades Escolares";
+  if (elements.repTotalPresentes) elements.repTotalPresentes.textContent = filtered.length;
+  if (elements.repFooterTimestamp) elements.repFooterTimestamp.textContent = `Documento emitido em ${emissaoStr} | Total: ${filtered.length} participantes.`;
+
+  // Contagem por escola
+  const schoolCounts = {};
+  ALL_SCHOOLS.forEach(s => schoolCounts[s] = 0);
+  filtered.forEach(r => {
+    const sName = (r.escola || '').trim().toUpperCase();
+    if (schoolCounts[sName] !== undefined) {
+      schoolCounts[sName]++;
+    } else if (sName) {
+      schoolCounts[sName] = (schoolCounts[sName] || 0) + 1;
+    }
+  });
+
+  const activeCount = Object.values(schoolCounts).filter(c => c > 0).length;
+  if (elements.repUnidadesCount) elements.repUnidadesCount.textContent = `${activeCount} unidade${activeCount !== 1 ? 's' : ''}`;
+
+  if (filtered.length > 0) {
+    const firstReg = filtered[filtered.length - 1];
+    const lastReg = filtered[0];
+    const firstTimeMatch = (firstReg.timestamp || '').match(/([0-9]{2}:[0-9]{2})/);
+    const lastTimeMatch = (lastReg.timestamp || '').match(/([0-9]{2}:[0-9]{2})/);
+    if (elements.repPrimeiroRegistro) elements.repPrimeiroRegistro.textContent = firstTimeMatch ? firstTimeMatch[1] : '--:--';
+    if (elements.repUltimoRegistro) elements.repUltimoRegistro.textContent = lastTimeMatch ? lastTimeMatch[1] : '--:--';
+  } else {
+    if (elements.repPrimeiroRegistro) elements.repPrimeiroRegistro.textContent = '--:--';
+    if (elements.repUltimoRegistro) elements.repUltimoRegistro.textContent = '--:--';
+  }
+
+  // Quadro de Escolas no Relatório
+  if (elements.repQuadroEscolas) {
+    if (!schoolFilter) {
+      let gridHtml = `<div class="rep-schools-grid">`;
+      ALL_SCHOOLS.forEach(school => {
+        const count = schoolCounts[school] || 0;
+        gridHtml += `
+          <div class="rep-school-card">
+            <span class="rep-school-name" title="${escapeHtml(school)}">${escapeHtml(school)}</span>
+            <strong class="rep-school-total">${count} <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">presentes</span></strong>
+          </div>
+        `;
+      });
+      gridHtml += `</div>`;
+      elements.repQuadroEscolas.innerHTML = gridHtml;
+      elements.repQuadroEscolas.classList.remove('hidden');
+    } else {
+      elements.repQuadroEscolas.innerHTML = '';
+      elements.repQuadroEscolas.classList.add('hidden');
+    }
+  }
+
+  // Tabela Nominal Formal
+  if (elements.repTabelaContainer) {
+    if (filtered.length === 0) {
+      elements.repTabelaContainer.innerHTML = `
+        <div style="text-align:center; padding: 2rem; color: #64748b; background: #f8fafc; border-radius: 6px;">
+          <p>Nenhuma presença registrada para esta unidade escolar até o momento.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Ordena alfabeticamente para o relatório formal da gestão
+    const sortedForReport = [...filtered].sort((a, b) => 
+      (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+    );
+
+    let tableHtml = `
+      <table class="report-formal-table">
+        <thead>
+          <tr>
+            <th style="width: 40px; text-align: center;">Nº</th>
+            <th>Nome do Docente</th>
+            <th>E-mail</th>
+            <th>Unidade Escolar</th>
+            <th style="width: 130px;">Data / Horário</th>
+            <th style="width: 100px; text-align: center;">Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    sortedForReport.forEach((item, idx) => {
+      tableHtml += `
+        <tr>
+          <td style="text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
+          <td style="font-weight: 700; color: #0f172a;">${escapeHtml(item.professor)}</td>
+          <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.email || '-')}</td>
+          <td><span style="font-weight: 600;">${escapeHtml(item.escola)}</span></td>
+          <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.timestamp)}</td>
+          <td style="text-align: center;">
+            <span class="badge badge-success" style="font-size: 0.72rem;">Confirmado</span>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `
+        </tbody>
+      </table>
+    `;
+
+    elements.repTabelaContainer.innerHTML = tableHtml;
+  }
+}
+
+// Dispara a Impressão / Salvar em PDF
+function printManagementReport() {
+  const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+  renderManagementReport(selectedSchool);
+  window.print();
+}
+
+// Copia o Resumo Formatado com Emojis para o WhatsApp da Gestão
+function copyWhatsAppSummary() {
+  loadHistory();
+  const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+  const filtered = appState.history.filter(item => {
+    if (!selectedSchool) return true;
+    return (item.escola || '').trim().toUpperCase() === selectedSchool.trim().toUpperCase();
+  });
+
+  if (filtered.length === 0) {
+    showToast("Não há registros para compartilhar.", "info");
+    return;
+  }
+
+  const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+  const now = new Date();
+  const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  let text = `📋 *RELATÓRIO DE FREQUÊNCIA - ENCONTRO FORMATIVO*\n`;
+  text += `📅 *Data:* 07 de outubro de 2026\n`;
+  text += `🏢 *Escola:* ${selectedSchool || "Consolidado (Todas as Escolas)"}\n`;
+  text += `👥 *Total de Presentes:* ${filtered.length} docentes\n`;
+  text += `⏱️ *Emissão:* ${emissaoStr}\n\n`;
+
+  if (!selectedSchool) {
+    text += `🏫 *RESUMO POR UNIDADE ESCOLAR:*\n`;
+    const schoolCounts = {};
+    ALL_SCHOOLS.forEach(s => schoolCounts[s] = 0);
+    filtered.forEach(r => {
+      const sName = (r.escola || '').trim().toUpperCase();
+      if (schoolCounts[sName] !== undefined) schoolCounts[sName]++;
+      else if (sName) schoolCounts[sName] = (schoolCounts[sName] || 0) + 1;
+    });
+
+    ALL_SCHOOLS.forEach(s => {
+      if (schoolCounts[s] > 0) {
+        text += `• *${s}:* ${schoolCounts[s]} presente${schoolCounts[s] > 1 ? 's' : ''}\n`;
+      }
+    });
+    text += `\n`;
+  }
+
+  text += `📝 *RELAÇÃO NOMINAL:*\n`;
+  const sorted = [...filtered].sort((a, b) => 
+    (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+  );
+
+  sorted.forEach((item, i) => {
+    text += `${i + 1}. ${item.professor} - ${item.escola} (${item.timestamp})\n`;
+  });
+
+  text += `\n_Lista oficial sincronizada com Google Forms._`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("Resumo formatado copiado! Cole no WhatsApp da gestão.", "success");
+  }).catch(() => {
+    showToast("Não foi possível copiar o texto.", "error");
+  });
+}
+
+// Exporta CSV do Relatório
+function exportReportCSV() {
+  loadHistory();
+  const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+  const filtered = appState.history.filter(item => {
+    if (!selectedSchool) return true;
+    return (item.escola || '').trim().toUpperCase() === selectedSchool.trim().toUpperCase();
+  });
+
+  if (filtered.length === 0) {
     showToast("Não há registros para exportar.", "info");
     return;
   }
-  let csv = "\uFEFFProfessor;Escola;DataHoraCompleta;Origem\n";
-  appState.history.forEach(h => {
-    csv += `"${h.professor}";"${h.escola}";"${h.timestamp || ''}";"${h.isRemote ? 'Nuvem' : 'Local'}"\n`;
+
+  let csv = "\uFEFFNº;Professor;Email;Escola;DataHoraCompleta;Situacao\n";
+  const sorted = [...filtered].sort((a, b) => 
+    (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+  );
+
+  sorted.forEach((h, idx) => {
+    csv += `"${idx + 1}";"${h.professor}";"${h.email || ''}";"${h.escola}";"${h.timestamp || ''}";"Confirmado"\n`;
   });
+
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `lista_presenca_${new Date().toISOString().slice(0,10)}.csv`;
+  const fileNameSuffix = selectedSchool ? selectedSchool.replace(/[^a-zA-Z0-9]/g, '_') : 'todas_escolas';
+  a.download = `relatorio_frequencia_${fileNameSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  showToast("Planilha CSV baixada com sucesso!", "success");
+  showToast("Relatório CSV baixado com sucesso!", "success");
 }
 
 function clearHistory() {
@@ -883,6 +1338,13 @@ function setupEventListeners() {
       if (start !== null && end !== null) {
         e.target.setSelectionRange(start, end);
       }
+    });
+  }
+
+  // Conversão automática para minúsculas ao digitar o e-mail
+  if (elements.inputEmail) {
+    elements.inputEmail.addEventListener('input', (e) => {
+      e.target.value = e.target.value.toLowerCase().trim();
     });
   }
 
@@ -988,11 +1450,33 @@ function setupEventListeners() {
   if (elements.filtroHistorico) {
     elements.filtroHistorico.addEventListener('input', renderHistoryTable);
   }
+  if (elements.filtroEscolaSelect) {
+    elements.filtroEscolaSelect.addEventListener('change', renderHistoryTable);
+  }
+  if (elements.ordemHistoricoSelect) {
+    elements.ordemHistoricoSelect.addEventListener('change', renderHistoryTable);
+  }
   if (elements.btnExportarCSV) {
     elements.btnExportarCSV.addEventListener('click', exportCSV);
   }
   if (elements.btnLimparHistorico) {
     elements.btnLimparHistorico.addEventListener('click', clearHistory);
+  }
+
+  // Ações da Aba Relatórios para Gestão
+  if (elements.relatorioEscolaSelect) {
+    elements.relatorioEscolaSelect.addEventListener('change', (e) => {
+      renderManagementReport(e.target.value);
+    });
+  }
+  if (elements.btnImprimirRelatorio) {
+    elements.btnImprimirRelatorio.addEventListener('click', printManagementReport);
+  }
+  if (elements.btnCopiarWhatsApp) {
+    elements.btnCopiarWhatsApp.addEventListener('click', copyWhatsAppSummary);
+  }
+  if (elements.btnExportarRelatorioCSV) {
+    elements.btnExportarRelatorioCSV.addEventListener('click', exportReportCSV);
   }
 
   // Ações da Aba Configurações

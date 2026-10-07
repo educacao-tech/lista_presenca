@@ -610,6 +610,11 @@ select {
   max-width: 820px;
 }
 
+.modal-dialog.modal-xl {
+  max-width: 1100px;
+  width: 95vw;
+}
+
 .modal-backdrop.active .modal-dialog {
   transform: translateY(0) scale(1);
 }
@@ -1115,5 +1120,611 @@ select {
 .toast.success { background: #065f46; color: #ffffff; }
 .toast.error { background: #991b1b; color: #ffffff; }
 .toast.warning { background: #b45309; color: #ffffff; }
+
+/* ==========================================================================
+   Dashboard KPIs & Estatísticas (Admin)
+   ========================================================================== */
+.admin-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  padding: 1rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.kpi-blue { background: #eff6ff; color: #2563eb; }
+.kpi-green { background: #ecfdf5; color: #059669; }
+.kpi-purple { background: #f5f3ff; color: #7c3aed; }
+.kpi-amber { background: #fffbeb; color: #d97706; }
+
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kpi-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+.kpi-value-sm {
+  font-size: 1.1rem;
+}
+
+.kpi-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+/* Quadro de Distribuição por Escola */
+.school-summary-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-title-sm {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.school-badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.school-pill {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.school-pill:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.school-pill.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+}
+
+.school-pill-count {
+  background: rgba(0,0,0,0.07);
+  padding: 0.1rem 0.45rem;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.school-pill.active .school-pill-count {
+  background: rgba(255,255,255,0.25);
+  color: #ffffff;
+}
+
+/* Filtros Avançados */
+.filter-select-wrapper {
+  position: relative;
+}
+
+.select-filter {
+  padding: 0.45rem 0.75rem !important;
+  font-size: 0.85rem !important;
+  border-radius: var(--border-radius-sm) !important;
+  background-color: #ffffff !important;
+  cursor: pointer;
+  font-weight: 600;
+  color: #334155;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* Tabela Rica & Células com Avatar */
+.historico-table-wrapper {
+  max-height: 400px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.user-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name-text {
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.email-cell-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.email-text {
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.btn-copy-email {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-copy-email:hover {
+  color: var(--primary);
+  background: #eff6ff;
+}
+
+/* Tags coloridas de Escolas */
+.school-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+/* ==========================================================================
+   Relatório Executivo para a Gestão Escolar
+   ========================================================================== */
+.report-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1rem 1.25rem;
+  border-radius: var(--border-radius-md);
+  margin-bottom: 1.5rem;
+}
+
+.report-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.report-filter-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.report-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.btn-whatsapp {
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.btn-whatsapp:hover {
+  background: #15803d;
+}
+
+/* Documento Timbrado Oficial */
+.official-report-document {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-md);
+  padding: 2.25rem 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.report-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.report-emblem {
+  width: 52px;
+  height: 52px;
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: var(--border-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.report-titles h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+.report-titles h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #4338ca;
+  margin-bottom: 4px;
+}
+
+.report-event-info {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.report-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.report-meta-item strong {
+  color: #0f172a;
+}
+
+.report-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.rep-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.rep-card-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.rep-card-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.rep-card-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+/* Quadro Resumo de Escolas no Relatório */
+.report-schools-table-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.rep-schools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.65rem;
+}
+
+.rep-school-card {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.rep-school-name {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rep-school-total {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Tabela Formal do Relatório */
+.report-table-section {
+  margin-bottom: 2rem;
+}
+
+.report-section-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.report-formal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.report-formal-table th {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.report-formal-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+.report-formal-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+/* Assinaturas */
+.report-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+}
+
+.signature-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.signature-line {
+  width: 100%;
+  max-width: 280px;
+  border-top: 1px solid #334155;
+  margin-bottom: 0.5rem;
+}
+
+.signature-role {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.signature-sub {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.report-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #cbd5e1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   Modo de Impressão Profissional (@media print)
+   ========================================================================== */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #modalAdminPanel,
+  #modalAdminPanel * {
+    visibility: visible;
+  }
+
+  #modalAdminPanel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent !important;
+  }
+
+  .modal-dialog {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .modal-header,
+  .admin-tabs,
+  .report-toolbar,
+  .modal-footer,
+  #tabHistorico,
+  #tabConfig {
+    display: none !important;
+  }
+
+  .admin-modal-body,
+  .official-report-document {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .official-report-document {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .official-report-document * {
+    visibility: visible !important;
+  }
+
+  .report-header {
+    border-bottom: 2px solid #000000 !important;
+  }
+
+  .report-formal-table th {
+    background: #000000 !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .report-formal-table td {
+    border-bottom: 1px solid #cccccc !important;
+  }
+
+  .report-signatures {
+    page-break-inside: avoid;
+    margin-top: 2.5rem;
+  }
+}
+
 
 

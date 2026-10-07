@@ -113,6 +113,26 @@
               </div>
               <span class="field-hint"><i class="fa-solid fa-shield-halved"></i> Preencha sem abreviações</span>
             </div>
+
+            <!-- 3. Campo E-MAIL (emailAddress) - Chave Única -->
+            <div class="input-group">
+              <label for="inputEmail" class="required">
+                <i class="fa-solid fa-envelope"></i> E-mail do Professor(a)
+              </label>
+              <div class="input-with-icon">
+                <input 
+                  type="email" 
+                  id="inputEmail" 
+                  name="emailAddress" 
+                  placeholder="seu.email@educacao... ou @gmail.com" 
+                  required 
+                  autocomplete="email"
+                  class="input-field"
+                >
+                <i class="fa-regular fa-envelope input-icon"></i>
+              </div>
+              <span class="field-hint"><i class="fa-solid fa-key"></i> Chave única para validação da presença</span>
+            </div>
           </div>
 
           <!-- Data e Hora do Registro Atual -->
@@ -147,6 +167,10 @@
         <p>Seus dados foram computados na lista oficial.</p>
         
         <div class="receipt-box">
+          <div class="receipt-row">
+            <span>E-mail:</span>
+            <strong id="receiptEmail">-</strong>
+          </div>
           <div class="receipt-row">
             <span>Escola:</span>
             <strong id="receiptEscola">-</strong>
@@ -233,11 +257,11 @@
 
   <!-- Modal 2: Painel Administrativo Completo -->
   <div id="modalAdminPanel" class="modal-backdrop">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
       <div class="modal-header">
         <div class="modal-title">
           <i class="fa-solid fa-sliders text-primary"></i>
-          <h3>Painel Administrativo</h3>
+          <h3>Painel Administrativo & Gestão de Presenças</h3>
         </div>
         <button type="button" class="btn-close" id="btnCloseAdminPanel">&times;</button>
       </div>
@@ -245,8 +269,12 @@
       <!-- Abas de Navegação Admin -->
       <div class="admin-tabs">
         <button type="button" class="admin-tab-btn active" data-tab="tabHistorico">
-          <i class="fa-solid fa-clock-rotate-left"></i>
-          <span>Histórico de Presenças</span>
+          <i class="fa-solid fa-users-viewfinder"></i>
+          <span>Painel & Histórico Geral</span>
+        </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabRelatorios">
+          <i class="fa-solid fa-file-invoice"></i>
+          <span>Relatório para a Gestão</span>
         </button>
         <button type="button" class="admin-tab-btn" data-tab="tabConfig">
           <i class="fa-brands fa-google"></i>
@@ -255,7 +283,7 @@
       </div>
 
       <div class="modal-body admin-modal-body">
-        <!-- Aba 1: Histórico -->
+        <!-- Aba 1: Histórico & Painel Geral -->
         <div id="tabHistorico" class="admin-tab-content active">
           
           <!-- Barra de Status de Sincronização em Tempo Real -->
@@ -277,6 +305,53 @@
             </div>
           </div>
 
+          <!-- Cards de Métricas Rápidas (KPIs) -->
+          <div class="admin-kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-blue"><i class="fa-solid fa-user-check"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Total de Presenças</span>
+                <strong class="kpi-value" id="kpiTotalPresencas">0</strong>
+                <span class="kpi-sub" id="kpiTotalSub">Docentes registrados</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-green"><i class="fa-solid fa-school"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Escolas Ativas</span>
+                <strong class="kpi-value" id="kpiEscolasAtivas">0 / 7</strong>
+                <span class="kpi-sub">Unidades representadas</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-purple"><i class="fa-solid fa-cloud-arrow-down"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Origem dos Dados</span>
+                <strong class="kpi-value" id="kpiNuvemStatus">100% Nuvem</strong>
+                <span class="kpi-sub" id="kpiNuvemSub">Google Planilhas</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-amber"><i class="fa-regular fa-clock"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Último Registro</span>
+                <strong class="kpi-value kpi-value-sm" id="kpiUltimoRegistro">--:--</strong>
+                <span class="kpi-sub" id="kpiUltimoNome">Aguardando envios</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quadro de Distribuição por Escola (Pills Interativos) -->
+          <div class="school-summary-section">
+            <div class="section-title-sm">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Presenças por Unidade Escolar (clique para filtrar):</span>
+            </div>
+            <div id="schoolBadgesContainer" class="school-badges-container">
+              <!-- Gerado dinamicamente via JS -->
+            </div>
+          </div>
+
           <!-- Banner Informativo quando a planilha não estiver configurada -->
           <div id="syncPromptBanner" class="alert-box-info hidden">
             <div class="alert-box-content">
@@ -291,19 +366,44 @@
             </button>
           </div>
 
+          <!-- Barra de Filtros e Controles Avançados -->
           <div class="history-actions-bar">
             <div class="history-stats">
               <span id="totalPresencasBadge" class="badge badge-primary">0 registros</span>
               <span id="syncModeBadge" class="badge badge-light-sync"><i class="fa-solid fa-cloud"></i> Nuvem</span>
             </div>
             <div class="history-controls">
+              <!-- Filtro por Escola -->
+              <div class="filter-select-wrapper">
+                <select id="filtroEscolaSelect" class="input-field input-field-sm select-filter">
+                  <option value="">🏫 Todas as Escolas</option>
+                  <option value="ALZIRA ACRA">ALZIRA ACRA</option>
+                  <option value="ANNA BONAGURA">ANNA BONAGURA</option>
+                  <option value="BRAGA MORATO">BRAGA MORATO</option>
+                  <option value="CAIC">CAIC</option>
+                  <option value="CÉLIA BUENO">CÉLIA BUENO</option>
+                  <option value="ESTHER VIANNA">ESTHER VIANNA</option>
+                  <option value="PADRE BENITO">PADRE BENITO</option>
+                </select>
+              </div>
+
+              <!-- Busca Textual -->
               <div class="search-input-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="filtroHistorico" class="input-field input-field-sm" placeholder="Buscar por professor ou escola...">
+                <input type="text" id="filtroHistorico" class="input-field input-field-sm" placeholder="Buscar por professor, e-mail ou data...">
               </div>
-              <button type="button" id="btnSyncNowBar" class="btn btn-sm btn-primary-soft btn-sync-trigger" title="Sincronizar presenças da nuvem em tempo real">
-                <i class="fa-solid fa-arrows-rotate"></i> <span>Sincronizar Agora</span>
-              </button>
+
+              <!-- Ordenação -->
+              <div class="filter-select-wrapper">
+                <select id="ordemHistoricoSelect" class="input-field input-field-sm select-filter">
+                  <option value="recent">⏱️ Mais recentes</option>
+                  <option value="oldest">⏳ Mais antigos</option>
+                  <option value="name_asc">🔤 Nome (A-Z)</option>
+                  <option value="name_desc">🔤 Nome (Z-A)</option>
+                  <option value="school">🏫 Por Escola</option>
+                </select>
+              </div>
+
               <button type="button" id="btnExportarCSV" class="btn btn-sm btn-outline" title="Baixar registros em formato CSV">
                 <i class="fa-solid fa-file-csv"></i> <span>Exportar CSV</span>
               </button>
@@ -312,10 +412,118 @@
               </button>
             </div>
           </div>
+
+          <!-- Tabela de Histórico -->
           <div id="historicoContainer" class="historico-table-wrapper"></div>
         </div>
 
-        <!-- Aba 2: Configurações do Google Forms & Google Sheets -->
+        <!-- Aba 2: Relatório Oficial para a Gestão da Escola -->
+        <div id="tabRelatorios" class="admin-tab-content">
+          
+          <!-- Controles do Relatório -->
+          <div class="report-toolbar">
+            <div class="report-filter-group">
+              <label for="relatorioEscolaSelect"><i class="fa-solid fa-filter"></i> Selecionar Unidade Escolar:</label>
+              <select id="relatorioEscolaSelect" class="input-field input-field-sm">
+                <option value="">🏢 Relatório Consolidado (Todas as 7 Escolas)</option>
+                <option value="ALZIRA ACRA">ALZIRA ACRA</option>
+                <option value="ANNA BONAGURA">ANNA BONAGURA</option>
+                <option value="BRAGA MORATO">BRAGA MORATO</option>
+                <option value="CAIC">CAIC</option>
+                <option value="CÉLIA BUENO">CÉLIA BUENO</option>
+                <option value="ESTHER VIANNA">ESTHER VIANNA</option>
+                <option value="PADRE BENITO">PADRE BENITO</option>
+              </select>
+            </div>
+
+            <div class="report-action-buttons">
+              <button type="button" id="btnImprimirRelatorio" class="btn btn-primary" title="Imprimir em impressora física ou salvar como PDF formatado">
+                <i class="fa-solid fa-print"></i> <span>Imprimir / Salvar PDF</span>
+              </button>
+              <button type="button" id="btnCopiarWhatsApp" class="btn btn-whatsapp" title="Copiar resumo formatado para enviar no WhatsApp da Gestão">
+                <i class="fa-brands fa-whatsapp"></i> <span>Copiar p/ WhatsApp</span>
+              </button>
+              <button type="button" id="btnExportarRelatorioCSV" class="btn btn-outline" title="Baixar lista filtrada da escola em CSV">
+                <i class="fa-solid fa-file-excel"></i> <span>Baixar CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Área do Documento Timbrado Oficial (Visível na tela e perfeito para impressão) -->
+          <div id="relatorioDocumento" class="official-report-document">
+            <!-- Cabeçalho Institucional -->
+            <div class="report-header">
+              <div class="report-brand">
+                <div class="report-emblem"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="report-titles">
+                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h2>
+                  <h3>RELATÓRIO OFICIAL DE FREQUÊNCIA E PARTICIPAÇÃO</h3>
+                  <p class="report-event-info"><strong>Encontro Formativo:</strong> 07 de outubro de 2026</p>
+                </div>
+              </div>
+              <div class="report-meta">
+                <div class="report-meta-item"><span>Emissão:</span> <strong id="repDataEmissao">--/--/---- --:--</strong></div>
+                <div class="report-meta-item"><span>Escola:</span> <strong id="repEscolaNome">Todas as Unidades</strong></div>
+                <div class="report-meta-item"><span>Status:</span> <span class="badge badge-success"><i class="fa-solid fa-check-double"></i> Homologado</span></div>
+              </div>
+            </div>
+
+            <!-- Resumo Executivo da Gestão -->
+            <div class="report-summary-cards">
+              <div class="rep-card">
+                <span class="rep-card-title">Docentes Presentes</span>
+                <strong class="rep-card-num" id="repTotalPresentes">0</strong>
+              </div>
+              <div class="rep-card">
+                <span class="rep-card-title">Unidades com Registro</span>
+                <strong class="rep-card-num" id="repUnidadesCount">0</strong>
+              </div>
+              <div class="rep-card">
+                <span class="rep-card-title">Primeiro Registro</span>
+                <strong class="rep-card-text" id="repPrimeiroRegistro">--:--</strong>
+              </div>
+              <div class="rep-card">
+                <span class="rep-card-title">Último Registro</span>
+                <strong class="rep-card-text" id="repUltimoRegistro">--:--</strong>
+              </div>
+            </div>
+
+            <!-- Quadro de Quantitativo por Unidade -->
+            <div id="repQuadroEscolas" class="report-schools-table-wrap">
+              <!-- Gerado via JS -->
+            </div>
+
+            <!-- Tabela Nominal Oficial -->
+            <div class="report-table-section">
+              <h4 class="report-section-title"><i class="fa-solid fa-list-check"></i> Relação Nominal de Presença</h4>
+              <div id="repTabelaContainer" class="report-table-container">
+                <!-- Gerado via JS -->
+              </div>
+            </div>
+
+            <!-- Bloco de Assinaturas Formais para Impressão -->
+            <div class="report-signatures">
+              <div class="signature-box">
+                <div class="signature-line"></div>
+                <span class="signature-role">Coordenação Pedagógica / Formador</span>
+                <span class="signature-sub">Assinatura / Visto</span>
+              </div>
+              <div class="signature-box">
+                <div class="signature-line"></div>
+                <span class="signature-role">Direção Escolar</span>
+                <span class="signature-sub">Carimbo e Assinatura</span>
+              </div>
+            </div>
+
+            <!-- Rodapé Institucional -->
+            <div class="report-footer">
+              <span>Documento gerado automaticamente pelo Sistema de Lista de Presença Digital Integrado.</span>
+              <span id="repFooterTimestamp">Autenticidade vinculada ao Google Forms Oficial.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aba 3: Configurações do Google Forms & Google Sheets -->
         <div id="tabConfig" class="admin-tab-content">
           <form id="googleConfigForm" class="config-grid">
             
@@ -419,6 +627,10 @@
           <p class="duplicate-msg">O(A) professor(a) <strong id="dupNomeProfessor">-</strong> já confirmou presença na lista oficial.</p>
           
           <div class="receipt-box" style="margin: 1.25rem 0 1rem; font-size: 0.88rem;">
+            <div class="receipt-row">
+              <span>E-mail:</span>
+              <strong id="dupEmail">-</strong>
+            </div>
             <div class="receipt-row">
               <span>Escola:</span>
               <strong id="dupEscola">-</strong>

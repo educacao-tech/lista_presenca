@@ -19,16 +19,17 @@ A lista suspensa contém as 7 escolas cadastradas:
 
 ## ⚙️ Mapeamento de Campos
 - **URL de Envio:** `https://docs.google.com/forms/d/e/1FAIpQLSd7uCn6oryJkV4UGpQdMiRa0a3CUW-gqqPPMlXy2EWx06zEYA/formResponse`
+- **E-MAIL DO PROFESSOR(A):** `emailAddress` *(Chave única primária)*
 - **ESCOLA:** `entry.285930433`
 - **NOME COMPLETO:** `entry.278265355`
 
 ---
 
 ## ✨ Recursos
-- **Envio Instantâneo:** Grava diretamente na planilha do Google Forms Oficial.
-- **Sincronização em Tempo Real (Google Planilhas):** Carrega automaticamente todas as presenças registradas de todos os dispositivos e computadores.
-- **Registro Único Global por Professor:** Bloqueia automaticamente tentativas duplicadas de registro para o mesmo professor tanto local quanto remotamente.
-- **Comprovante & Recibo:** Exibe tela de confirmação com data e hora após a confirmação.
+- **Envio Instantâneo:** Grava diretamente no Google Forms Oficial e na Planilha vinculada.
+- **Validação com Chave Única (E-mail):** Bloqueia tentativas de respostas duplicadas usando o e-mail cadastrado ou nome completo.
+- **Sincronização em Tempo Real (Google Planilhas):** Carrega automaticamente todas as presenças registradas em qualquer dispositivo.
+- **Comprovante & Recibo:** Exibe tela de confirmação com e-mail, escola, nome, data e hora após o envio.
 - **Área Administrativa Protegida:** Clique no ícone de engrenagem ⚙️ e informe a senha `admin123`.
 - **Histórico Completo com Busca:** Visualização, filtragem e distinção de registros (Nuvem / Local).
 - **Exportação CSV:** Download de relatório consolidado em formato `.csv`.
