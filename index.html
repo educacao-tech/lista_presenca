@@ -14,7 +14,7 @@
   <!-- FontAwesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.2">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -38,6 +38,10 @@
           <i class="fa-solid fa-shield-halved"></i>
           <span>Admin</span>
         </div>
+        <button type="button" id="btnHeaderSync" class="btn btn-sm btn-primary-soft btn-sync-trigger" title="Sincronizar Presenças da Nuvem">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Sincronizar</span>
+        </button>
         <button type="button" id="btnAdminGear" class="btn-icon btn-gear" title="Área Administrativa" aria-label="Área Administrativa">
           <i class="fa-solid fa-gear"></i>
         </button>
@@ -297,6 +301,9 @@
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
                 <input type="text" id="filtroHistorico" class="input-field input-field-sm" placeholder="Buscar por professor ou escola...">
               </div>
+              <button type="button" id="btnSyncNowBar" class="btn btn-sm btn-primary-soft btn-sync-trigger" title="Sincronizar presenças da nuvem em tempo real">
+                <i class="fa-solid fa-arrows-rotate"></i> <span>Sincronizar Agora</span>
+              </button>
               <button type="button" id="btnExportarCSV" class="btn btn-sm btn-outline" title="Baixar registros em formato CSV">
                 <i class="fa-solid fa-file-csv"></i> <span>Exportar CSV</span>
               </button>
@@ -451,6 +458,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js"></script>
+  <script src="script.js?v=2.2"></script>
 </body>
 </html>

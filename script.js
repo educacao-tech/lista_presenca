@@ -890,10 +890,12 @@ function setupEventListeners() {
   elements.form.addEventListener('submit', handleSubmit);
   elements.btnNovoRegistro.addEventListener('click', resetForNewEntry);
 
-  // Botão Sincronizar Agora
-  if (elements.btnSyncNow) {
-    elements.btnSyncNow.addEventListener('click', () => syncRealTime(true));
-  }
+  // Botões de Sincronização (Header, Barra de Ações, Painel)
+  document.querySelectorAll('.btn-sync-trigger').forEach(btn => {
+    btn.addEventListener('click', () => {
+      syncRealTime(true);
+    });
+  });
 
   // Atalho do banner para ir à aba de configurações
   if (elements.btnIrParaConfig) {
