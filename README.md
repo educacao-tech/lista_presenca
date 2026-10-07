@@ -26,7 +26,8 @@ A lista suspensa contém as 7 escolas cadastradas:
 
 ## ✨ Recursos
 - **Envio Instantâneo:** Grava diretamente na planilha do Google Forms.
-- **Comprovante & Recibo:** Exibe tela de confirmação com data e hora.
+- **Registro Único por Professor:** Bloqueia automaticamente tentativas duplicadas de registro para o mesmo professor, garantindo integridade dos dados.
+- **Comprovante & Recibo:** Exibe tela de confirmação com data e hora após a confirmação.
 - **Área Administrativa Protegida:** Clique no ícone de engrenagem ⚙️ e informe a senha `admin123`.
 - **Histórico Local com Busca:** Visualização e filtragem em tempo real de todas as presenças salvas.
 - **Exportação CSV:** Download de relatório em formato `.csv`.

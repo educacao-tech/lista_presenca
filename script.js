@@ -70,10 +70,21 @@ const elements = {
   btnSalvarConfig: document.getElementById('btnSalvarConfig'),
   btnRestaurarPadrao: document.getElementById('btnRestaurarPadrao'),
   
+  // Modal Registro Duplicado
+  modalDuplicado: document.getElementById('modalDuplicado'),
+  dupNomeProfessor: document.getElementById('dupNomeProfessor'),
+  dupEscola: document.getElementById('dupEscola'),
+  dupTimestamp: document.getElementById('dupTimestamp'),
+  btnVerComprovanteDuplicado: document.getElementById('btnVerComprovanteDuplicado'),
+  btnFecharDuplicado: document.getElementById('btnFecharDuplicado'),
+  btnCloseDuplicado: document.getElementById('btnCloseDuplicado'),
+
   // Toast
   toast: document.getElementById('toast'),
   toastMessage: document.getElementById('toastMessage')
 };
+
+let currentDuplicateRecord = null;
 
 // ==========================================================================
 // Inicialização
@@ -200,6 +211,24 @@ function saveToHistory(record) {
   localStorage.setItem('presenca_history_records', JSON.stringify(appState.history));
 }
 
+// Normalização de nomes para comparação sem case e sem acento
+function normalizeName(name) {
+  if (!name) return '';
+  return name
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, ' ');
+}
+
+// Verifica se o professor já realizou registro
+function findDuplicateRecord(professorName) {
+  loadHistory();
+  const normalizedTarget = normalizeName(professorName);
+  return appState.history.find(record => normalizeName(record.professor) === normalizedTarget);
+}
+
 // ==========================================================================
 // Submissão do Formulário de Presença
 // ==========================================================================
@@ -218,6 +247,19 @@ async function handleSubmit(e) {
   if (!professor || professor.length < 3) {
     showToast("Por favor, digite seu nome completo.", "error");
     elements.inputProfessor.focus();
+    return;
+  }
+
+  // REGRA: APENAS UM REGISTRO POR PROFESSOR
+  const existingRecord = findDuplicateRecord(professor);
+  if (existingRecord) {
+    currentDuplicateRecord = existingRecord;
+    if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = existingRecord.professor;
+    if (elements.dupEscola) elements.dupEscola.textContent = existingRecord.escola;
+    if (elements.dupTimestamp) elements.dupTimestamp.textContent = existingRecord.timestamp;
+    
+    openModal(elements.modalDuplicado);
+    showToast("Atenção: Presença já registrada para este professor!", "warning");
     return;
   }
 
@@ -272,21 +314,36 @@ function submitViaHiddenIframe(escola, professor) {
     form.target = 'hidden_iframe';
     form.style.display = 'none';
 
+    // Campo Escola
     const inputEscola = document.createElement('input');
     inputEscola.type = 'hidden';
     inputEscola.name = appState.config.entryEscola;
     inputEscola.value = escola;
     form.appendChild(inputEscola);
 
+    // Campo Professor
     const inputProf = document.createElement('input');
     inputProf.type = 'hidden';
     inputProf.name = appState.config.entryProfessor;
     inputProf.value = professor;
     form.appendChild(inputProf);
 
+    // Parâmetros de integridade do Google Forms
+    const inputFvv = document.createElement('input');
+    inputFvv.type = 'hidden';
+    inputFvv.name = 'fvv';
+    inputFvv.value = '1';
+    form.appendChild(inputFvv);
+
+    const inputPage = document.createElement('input');
+    inputPage.type = 'hidden';
+    inputPage.name = 'pageHistory';
+    inputPage.value = '0';
+    form.appendChild(inputPage);
+
     document.body.appendChild(form);
     form.submit();
-    setTimeout(() => form.remove(), 1200);
+    setTimeout(() => form.remove(), 1500);
   } catch (err) {
     console.warn("Iframe submit helper:", err);
   }
@@ -371,6 +428,7 @@ function handleAdminLogout() {
   setAdminState(false);
   closeModal(elements.modalAdminPanel);
   closeModal(elements.modalAdminAuth);
+  closeModal(elements.modalDuplicado);
   showToast("Você saiu da área administrativa.", "info");
 }
 
@@ -479,6 +537,18 @@ function clearHistory() {
 // Event Listeners
 // ==========================================================================
 function setupEventListeners() {
+  // Conversão automática para maiúsculas ao digitar o nome do professor
+  if (elements.inputProfessor) {
+    elements.inputProfessor.addEventListener('input', (e) => {
+      const start = e.target.selectionStart;
+      const end = e.target.selectionEnd;
+      e.target.value = e.target.value.toUpperCase();
+      if (start !== null && end !== null) {
+        e.target.setSelectionRange(start, end);
+      }
+    });
+  }
+
   // Envio do formulário principal
   elements.form.addEventListener('submit', handleSubmit);
   elements.btnNovoRegistro.addEventListener('click', resetForNewEntry);
@@ -529,6 +599,22 @@ function setupEventListeners() {
     elements.btnFecharAdminPanel.addEventListener('click', () => closeModal(elements.modalAdminPanel));
   }
 
+  // Ações do Modal de Registro Duplicado
+  if (elements.btnCloseDuplicado) {
+    elements.btnCloseDuplicado.addEventListener('click', () => closeModal(elements.modalDuplicado));
+  }
+  if (elements.btnFecharDuplicado) {
+    elements.btnFecharDuplicado.addEventListener('click', () => closeModal(elements.modalDuplicado));
+  }
+  if (elements.btnVerComprovanteDuplicado) {
+    elements.btnVerComprovanteDuplicado.addEventListener('click', () => {
+      closeModal(elements.modalDuplicado);
+      if (currentDuplicateRecord) {
+        showReceipt(currentDuplicateRecord);
+      }
+    });
+  }
+
   // Ações da Aba Histórico
   if (elements.filtroHistorico) {
     elements.filtroHistorico.addEventListener('input', renderHistoryTable);
@@ -549,7 +635,7 @@ function setupEventListeners() {
   }
 
   // Fechar modais ao clicar no backdrop
-  [elements.modalAdminAuth, elements.modalAdminPanel].forEach(modal => {
+  [elements.modalAdminAuth, elements.modalAdminPanel, elements.modalDuplicado].forEach(modal => {
     if (modal) {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal(modal);
@@ -562,6 +648,7 @@ function setupEventListeners() {
     if (e.key === 'Escape') {
       closeModal(elements.modalAdminAuth);
       closeModal(elements.modalAdminPanel);
+      closeModal(elements.modalDuplicado);
     }
   });
 }
@@ -589,4 +676,5 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
 

@@ -297,6 +297,53 @@
     </div>
   </div>
 
+  <!-- Modal 3: Alerta de Registro Duplicado -->
+  <div id="modalDuplicado" class="modal-backdrop">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #b45309;">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <h3>Presença Já Registrada</h3>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseDuplicado">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="duplicate-alert-card">
+          <p class="duplicate-msg">O(A) professor(a) <strong id="dupNomeProfessor">-</strong> já confirmou presença na lista oficial.</p>
+          
+          <div class="receipt-box" style="margin: 1.25rem 0 1rem; font-size: 0.88rem;">
+            <div class="receipt-row">
+              <span>Escola:</span>
+              <strong id="dupEscola">-</strong>
+            </div>
+            <div class="receipt-row">
+              <span>Registrado em:</span>
+              <strong id="dupTimestamp">-</strong>
+            </div>
+            <div class="receipt-row">
+              <span>Situação:</span>
+              <span class="badge badge-warning"><i class="fa-solid fa-lock"></i> Já Computado</span>
+            </div>
+          </div>
+
+          <p class="duplicate-note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Por regra do sistema, é permitido <strong>apenas um registro por professor</strong>.</span>
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btnVerComprovanteDuplicado" class="btn btn-outline">
+          <i class="fa-solid fa-receipt"></i>
+          <span>Ver Comprovante</span>
+        </button>
+        <button type="button" id="btnFecharDuplicado" class="btn btn-primary">
+          <span>Entendido</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast">
     <i class="toast-icon fa-solid fa-circle-check"></i>
