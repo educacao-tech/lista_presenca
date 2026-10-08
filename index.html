@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=3.3">
+  <link rel="stylesheet" href="styles.css?v=3.4">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -38,7 +38,7 @@
         </div>
       </div>
       
-      <!-- Ações do Cabeçalho: Tema, Sincronização e Administração -->
+      <!-- Ações do Cabeçalho: Tema e Administração -->
       <div class="header-actions">
         <div id="adminBadge" class="admin-badge hidden" title="Modo Administrador Ativo">
           <i class="fa-solid fa-shield-halved"></i>
@@ -46,10 +46,6 @@
         </div>
         <button type="button" id="btnThemeToggle" class="btn-icon btn-theme-toggle" title="Alternar Tema Claro/Escuro" aria-label="Alternar Tema Claro/Escuro" onclick="toggleTheme()">
           <i class="fa-solid fa-moon" id="themeIcon"></i>
-        </button>
-        <button type="button" id="btnHeaderSync" class="btn btn-sm btn-primary-soft btn-sync-trigger" title="Sincronizar Presenças da Nuvem">
-          <i class="fa-solid fa-arrows-rotate"></i>
-          <span>Sincronizar</span>
         </button>
         <button type="button" id="btnAdminGear" class="btn-icon btn-gear" title="Área Administrativa" aria-label="Área Administrativa">
           <i class="fa-solid fa-gear"></i>
@@ -71,10 +67,6 @@
         <div class="card-hero">
           <div class="hero-tag-row">
             <div class="hero-tag"><i class="fa-solid fa-laptop-code"></i> EDM — Educação Digital e Midiática</div>
-            <div class="sync-pill-badge" id="mainSyncBadge" title="Envio direto para o Google Forms Oficial">
-              <span class="sync-dot live"></span>
-              <span>Conexão Ativa Google Forms</span>
-            </div>
           </div>
           <h2>Confirmação de Presença Docente</h2>
           <p>Encontro Formativo • Selecione sua unidade escolar e confirme seus dados para assinar a lista.</p>
@@ -802,6 +794,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=3.3"></script>
+  <script src="script.js?v=3.4"></script>
 </body>
 </html>
