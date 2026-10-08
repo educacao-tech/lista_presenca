@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=3.1">
+  <link rel="stylesheet" href="styles.css?v=3.2">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -77,31 +77,26 @@
           <p>Encontro Formativo • Selecione sua unidade escolar e confirme seus dados para assinar a lista.</p>
         </div>
 
-        <!-- Bloco de Autenticação Oficial do Google (Captura Automática com 1 Clique) -->
+        <!-- Bloco Compacto de Identificação com Conta Google / 1 Clique -->
         <div class="google-auth-box" id="googleAuthSection">
-          <div class="google-auth-header">
-            <div class="google-icon-circle"><i class="fa-brands fa-google"></i></div>
-            <div class="google-auth-titles">
-              <h4>Identificação Automática com a Conta Google</h4>
-              <p>Preencha seu e-mail e nome oficial com 1 clique usando a conta já conectada:</p>
-            </div>
-          </div>
-
-          <!-- Container do Botão de Identificação Google -->
+          <!-- Estado 1: Botão Compacto de Conexão -->
           <div id="googleBtnWrapper" class="google-btn-wrapper">
             <div id="g_id_signin_button"></div>
-            <button type="button" id="btnGoogleSignInAction" onclick="handleGoogleSignInClick()" class="btn-google-action" title="Identificar com a Conta Google ou Perfil Salvo">
-              <svg viewBox="0 0 48 48" width="22" height="22" class="google-svg-icon">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              <span>Conectar com a Conta Google</span>
+            <button type="button" id="btnGoogleSignInAction" onclick="handleGoogleSignInClick(event)" class="btn-google-compact" title="Preencher nome e e-mail com 1 clique">
+              <div class="google-btn-left">
+                <svg viewBox="0 0 48 48" width="18" height="18" class="google-svg-icon">
+                  <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                  <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                  <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                <span class="btn-google-text">Conectar com a <strong>Conta Google</strong></span>
+              </div>
+              <span class="btn-google-badge"><i class="fa-solid fa-bolt"></i> 1 Clique</span>
             </button>
           </div>
 
-          <!-- Card de Conta Google Autenticada -->
+          <!-- Estado 2: Card Compacto de Conta Google Autenticada -->
           <div id="googleConnectedCard" class="google-connected-card hidden">
             <div class="google-user-profile">
               <img id="googleUserPhoto" class="google-user-avatar hidden" src="" alt="Foto Google" />
@@ -109,7 +104,7 @@
               <div class="google-user-info-text">
                 <div class="google-user-name-line">
                   <strong id="googleUserName">-</strong>
-                  <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> 1 Clique</span>
+                  <span class="badge badge-success badge-sm"><i class="fa-solid fa-circle-check"></i> Identificado</span>
                 </div>
                 <span id="googleUserEmail" class="google-user-email-text">-</span>
               </div>
@@ -121,7 +116,7 @@
         </div>
 
         <div class="form-divider">
-          <span>ou digite seus dados manualmente</span>
+          <span>ou preencha manualmente</span>
         </div>
 
         <form id="attendanceForm" class="attendance-form" novalidate>
@@ -804,6 +799,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=3.1"></script>
+  <script src="script.js?v=3.2"></script>
 </body>
 </html>
