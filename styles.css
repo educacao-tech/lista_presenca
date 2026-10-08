@@ -130,6 +130,32 @@ body {
   padding: 0 1.25rem;
 }
 
+/* Banner Institucional Oficial no Topo da Aplicação */
+.top-banner-wrapper {
+  background: #ffffff;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--card-border);
+  padding: 0.6rem 0.85rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  transition: transform var(--transition-normal);
+}
+
+.top-banner-wrapper:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.top-banner-img {
+  width: 100%;
+  max-height: 95px;
+  object-fit: contain;
+  display: block;
+}
+
 .form-wrapper {
   display: flex;
   flex-direction: column;
@@ -1667,6 +1693,24 @@ select {
   box-shadow: 0 4px 20px rgba(0,0,0,0.04);
 }
 
+/* Banner Timbrado Oficial no Relatório */
+.report-banner-header {
+  width: 100%;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.report-banner-img {
+  width: 100%;
+  max-height: 90px;
+  object-fit: contain;
+  display: block;
+}
+
 .report-header {
   display: flex;
   justify-content: space-between;
@@ -2010,6 +2054,22 @@ select {
 
   .official-report-document * {
     visibility: visible !important;
+  }
+
+  .report-banner-header {
+    width: 100% !important;
+    padding-bottom: 0.65rem !important;
+    margin-bottom: 0.65rem !important;
+    border-bottom: 2px solid #0f172a !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .report-banner-img {
+    width: 100% !important;
+    max-height: 80px !important;
+    object-fit: contain !important;
+    display: block !important;
   }
 
   .report-header {

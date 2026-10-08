@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=2.8">
+  <link rel="stylesheet" href="styles.css?v=2.9">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -61,6 +61,12 @@
 
   <!-- Conteúdo Principal -->
   <main class="main-content">
+    
+    <!-- Banner Institucional Oficial da Aplicação -->
+    <div class="top-banner-wrapper">
+      <img src="cabecalho_oficial.png" alt="Estância Turística de Batatais • Educação Digital e Midiática • Secretaria Municipal de Educação" class="top-banner-img" />
+    </div>
+
     <div class="form-wrapper">
 
       <!-- Card Principal de Preenchimento -->
@@ -507,15 +513,19 @@
 
           <!-- Área do Documento Timbrado Oficial (Visível na tela e perfeito para impressão) -->
           <div id="relatorioDocumento" class="official-report-document">
+            <!-- Banner Timbrado Oficial no Relatório -->
+            <div class="report-banner-header">
+              <img src="cabecalho_oficial.png" alt="Estância Turística de Batatais • Educação Digital e Midiática • Secretaria Municipal de Educação" class="report-banner-img" />
+            </div>
+
             <!-- Cabeçalho Institucional -->
             <div class="report-header">
               <div class="report-brand">
-                <div class="report-emblem"><i class="fa-solid fa-graduation-cap"></i></div>
                 <div class="report-titles">
-                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h2>
+                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO DE BATATAIS</h2>
                   <h3>RELATÓRIO OFICIAL DE FREQUÊNCIA E PARTICIPAÇÃO</h3>
                   <div class="report-event-info">
-                    <p><strong>Disciplina:</strong> EDM — Educação Digital e Midiática</p>
+                    <p><strong>Componente Curricular / Disciplina:</strong> EDM — Educação Digital e Midiática</p>
                     <p><strong>Encontro Formativo:</strong> 07 de outubro de 2026</p>
                   </div>
                 </div>
@@ -804,6 +814,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=2.8"></script>
+  <script src="script.js?v=2.9"></script>
 </body>
 </html>
