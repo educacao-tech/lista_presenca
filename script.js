@@ -1612,6 +1612,23 @@ async function exportReportPDF() {
     const fileName = `Relatorio_Gestao_${schoolLabel}_${dateStr}.pdf`;
 
     if (window.html2pdf) {
+      // Cria um container visível e desvinculado dos modais para renderização perfeita
+      const exportWrap = document.createElement('div');
+      exportWrap.id = 'exportPdfRoot';
+      exportWrap.className = 'official-report-document';
+      exportWrap.style.position = 'fixed';
+      exportWrap.style.left = '0';
+      exportWrap.style.top = '0';
+      exportWrap.style.width = '780px';
+      exportWrap.style.backgroundColor = '#ffffff';
+      exportWrap.style.color = '#0f172a';
+      exportWrap.style.zIndex = '9999999';
+      exportWrap.style.padding = '24px';
+      exportWrap.style.boxSizing = 'border-box';
+      exportWrap.innerHTML = reportElement.innerHTML;
+
+      document.body.appendChild(exportWrap);
+
       const opt = {
         margin: [8, 10, 8, 10],
         filename: fileName,
@@ -1620,6 +1637,7 @@ async function exportReportPDF() {
           scale: 2, 
           useCORS: true, 
           letterRendering: true, 
+          backgroundColor: '#ffffff',
           logging: false,
           scrollY: 0,
           scrollX: 0
@@ -1628,8 +1646,14 @@ async function exportReportPDF() {
         pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      await window.html2pdf().set(opt).from(reportElement).save();
-      showToast("Relatório em PDF baixado com sucesso!", "success");
+      try {
+        await window.html2pdf().set(opt).from(exportWrap).save();
+        if (exportWrap.parentNode) exportWrap.parentNode.removeChild(exportWrap);
+        showToast("Relatório em PDF baixado com sucesso!", "success");
+      } catch (pdfErr) {
+        if (exportWrap.parentNode) exportWrap.parentNode.removeChild(exportWrap);
+        throw pdfErr;
+      }
     } else {
       // Fallback para impressão/salvar em PDF via navegador
       showToast("Abrindo diálogo de impressão/PDF...", "info");
