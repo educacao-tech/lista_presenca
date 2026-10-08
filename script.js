@@ -1696,6 +1696,7 @@ function copyWhatsAppSummary() {
   const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   let text = `📋 *RELATÓRIO DE FREQUÊNCIA - ENCONTRO FORMATIVO*\n`;
+  text += `💻 *Disciplina:* EDM — Educação Digital e Midiática\n`;
   text += `📅 *Data:* 07 de outubro de 2026\n`;
   text += `🏢 *Escola:* ${selectedSchool || "Consolidado (Todas as Escolas)"}\n`;
   text += `👥 *Total de Presentes:* ${filtered.length} docentes\n`;
@@ -1752,13 +1753,13 @@ function exportReportCSV() {
     return;
   }
 
-  let csv = "\uFEFFNº;Professor;Email;Escola;DataHoraCompleta;Situacao\n";
+  let csv = "\uFEFFNº;Disciplina;Professor;Email;Escola;DataHoraCompleta;Situacao\n";
   const sorted = [...filtered].sort((a, b) => 
     (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
   );
 
   sorted.forEach((h, idx) => {
-    csv += `"${idx + 1}";"${(h.professor || '').replace(/"/g, '""')}";"${(h.email || '').replace(/"/g, '""')}";"${(h.escola || '').replace(/"/g, '""')}";"${(h.timestamp || '').replace(/"/g, '""')}";"Confirmado"\n`;
+    csv += `"${idx + 1}";"EDM - Educação Digital e Midiática";"${(h.professor || '').replace(/"/g, '""')}";"${(h.email || '').replace(/"/g, '""')}";"${(h.escola || '').replace(/"/g, '""')}";"${(h.timestamp || '').replace(/"/g, '""')}";"Confirmado"\n`;
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
