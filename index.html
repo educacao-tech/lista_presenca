@@ -17,7 +17,10 @@
   <!-- Google Identity Services (Sign In with Google) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 
-  <link rel="stylesheet" href="styles.css?v=2.3">
+  <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css?v=2.4">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -84,19 +87,29 @@
             </div>
           </div>
 
-          <!-- Container do Botão Oficial do Google -->
+          <!-- Container do Botão de Identificação Google -->
           <div id="googleBtnWrapper" class="google-btn-wrapper">
             <div id="g_id_signin_button"></div>
+            <button type="button" id="btnGoogleSignInAction" class="btn-google-action" title="Identificar com a Conta Google ou Perfil Salvo">
+              <svg viewBox="0 0 48 48" width="22" height="22" class="google-svg-icon">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              <span>Conectar com a Conta Google</span>
+            </button>
           </div>
 
           <!-- Card de Conta Google Autenticada -->
           <div id="googleConnectedCard" class="google-connected-card hidden">
             <div class="google-user-profile">
-              <img id="googleUserPhoto" class="google-user-avatar" src="" alt="Foto Google" />
+              <img id="googleUserPhoto" class="google-user-avatar hidden" src="" alt="Foto Google" />
+              <div id="googleUserAvatarFallback" class="google-user-avatar-fallback hidden">PR</div>
               <div class="google-user-info-text">
                 <div class="google-user-name-line">
                   <strong id="googleUserName">-</strong>
-                  <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Conta Verificada</span>
+                  <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> 1 Clique</span>
                 </div>
                 <span id="googleUserEmail" class="google-user-email-text">-</span>
               </div>
@@ -477,8 +490,11 @@
             </div>
 
             <div class="report-action-buttons">
-              <button type="button" id="btnImprimirRelatorio" class="btn btn-primary" title="Imprimir em impressora física ou salvar como PDF formatado">
-                <i class="fa-solid fa-print"></i> <span>Imprimir / Salvar PDF</span>
+              <button type="button" id="btnGerarPDF" class="btn btn-primary" title="Gerar e baixar o relatório oficial em formato PDF">
+                <i class="fa-solid fa-file-pdf"></i> <span>Gerar Relatório em PDF</span>
+              </button>
+              <button type="button" id="btnImprimirRelatorio" class="btn btn-outline" title="Imprimir ou salvar via diálogo do navegador">
+                <i class="fa-solid fa-print"></i> <span>Imprimir</span>
               </button>
               <button type="button" id="btnCopiarWhatsApp" class="btn btn-whatsapp" title="Copiar resumo formatado para enviar no WhatsApp da Gestão">
                 <i class="fa-brands fa-whatsapp"></i> <span>Copiar p/ WhatsApp</span>
@@ -720,6 +736,64 @@
     </div>
   </div>
 
+  <!-- Modal 4: Identificação Rápida / Conta Google -->
+  <div id="modalGoogleQuickAuth" class="modal-backdrop">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-brands fa-google text-danger"></i>
+          <h3>Identificação do Docente</h3>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseGoogleQuickAuth">&times;</button>
+      </div>
+      <form id="formGoogleQuickAuth">
+        <div class="modal-body">
+          <p class="auth-instruction">Preencha seus dados uma única vez. Eles ficarão salvos para você confirmar suas presenças com 1 clique.</p>
+          
+          <div id="quickRecentProfilesWrap" class="quick-profiles-section hidden">
+            <span class="quick-profiles-label"><i class="fa-solid fa-clock-rotate-left"></i> Perfis recentes neste dispositivo:</span>
+            <div id="quickRecentProfilesList" class="quick-profiles-list"></div>
+          </div>
+
+          <div class="input-group">
+            <label for="quickAuthEmail" class="required">
+              <i class="fa-solid fa-envelope"></i> E-mail (@gmail.com ou institucional)
+            </label>
+            <input 
+              type="email" 
+              id="quickAuthEmail" 
+              class="input-field" 
+              placeholder="seuemail@gmail.com" 
+              required 
+              autocomplete="email"
+            >
+          </div>
+
+          <div class="input-group">
+            <label for="quickAuthNome" class="required">
+              <i class="fa-solid fa-user-graduate"></i> Nome Completo Oficial
+            </label>
+            <input 
+              type="text" 
+              id="quickAuthNome" 
+              class="input-field" 
+              placeholder="Ex: NOME DO PROFESSOR" 
+              required 
+              autocomplete="name"
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="btnCancelarQuickAuth" class="btn btn-secondary">Cancelar</button>
+          <button type="submit" id="btnSalvarQuickAuth" class="btn btn-primary">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>Salvar e Identificar</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast">
     <i class="toast-icon fa-solid fa-circle-check"></i>
@@ -727,6 +801,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=2.2"></script>
+  <script src="script.js?v=2.4"></script>
 </body>
 </html>

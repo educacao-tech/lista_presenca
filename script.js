@@ -95,6 +95,7 @@ const elements = {
 
   // Aba Relatório para Gestão
   relatorioEscolaSelect: document.getElementById('relatorioEscolaSelect'),
+  btnGerarPDF: document.getElementById('btnGerarPDF'),
   btnImprimirRelatorio: document.getElementById('btnImprimirRelatorio'),
   btnCopiarWhatsApp: document.getElementById('btnCopiarWhatsApp'),
   btnExportarRelatorioCSV: document.getElementById('btnExportarRelatorioCSV'),
@@ -111,12 +112,24 @@ const elements = {
   // Google Sign-In (Captura Automática)
   googleAuthSection: document.getElementById('googleAuthSection'),
   googleBtnWrapper: document.getElementById('googleBtnWrapper'),
+  btnGoogleSignInAction: document.getElementById('btnGoogleSignInAction'),
   googleConnectedCard: document.getElementById('googleConnectedCard'),
   googleUserPhoto: document.getElementById('googleUserPhoto'),
+  googleUserAvatarFallback: document.getElementById('googleUserAvatarFallback'),
   googleUserName: document.getElementById('googleUserName'),
   googleUserEmail: document.getElementById('googleUserEmail'),
   btnGoogleDisconnect: document.getElementById('btnGoogleDisconnect'),
   cfgGoogleClientId: document.getElementById('cfgGoogleClientId'),
+
+  // Modal Identificação Rápida
+  modalGoogleQuickAuth: document.getElementById('modalGoogleQuickAuth'),
+  formGoogleQuickAuth: document.getElementById('formGoogleQuickAuth'),
+  quickAuthEmail: document.getElementById('quickAuthEmail'),
+  quickAuthNome: document.getElementById('quickAuthNome'),
+  quickRecentProfilesWrap: document.getElementById('quickRecentProfilesWrap'),
+  quickRecentProfilesList: document.getElementById('quickRecentProfilesList'),
+  btnCloseGoogleQuickAuth: document.getElementById('btnCloseGoogleQuickAuth'),
+  btnCancelarQuickAuth: document.getElementById('btnCancelarQuickAuth'),
 
   // Aba Configurações
   cfgFormUrl: document.getElementById('cfgFormUrl'),
@@ -154,7 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
   checkStoredAdminSession();
   setupEventListeners();
 
-  // Inicializa o Google Identity Services para login com 1 clique
+  // Carrega identidade salva do docente ou inicializa o Google Identity
+  loadSavedDocenteIdentity();
   setTimeout(initGoogleIdentity, 400);
 
   // Se já tiver URL da planilha configurada, tenta sincronizar em segundo plano
@@ -770,7 +784,7 @@ function setLoading(isLoading) {
 }
 
 // ==========================================================================
-// Módulo de Autenticação Google Identity Services (Opção 1)
+// Módulo de Autenticação Google Identity & Identificação Rápida
 // ==========================================================================
 
 /**
@@ -791,16 +805,38 @@ function parseJwt(token) {
 }
 
 /**
- * Inicializa o botão oficial e One-Tap do Google
+ * Carrega a identidade do docente salva localmente neste dispositivo
+ */
+function loadSavedDocenteIdentity() {
+  try {
+    const saved = localStorage.getItem('presenca_saved_docente');
+    if (saved) {
+      const profile = JSON.parse(saved);
+      if (profile && (profile.name || profile.email)) {
+        setGoogleAuthenticatedUser(profile, false);
+      }
+    }
+  } catch (err) {
+    console.warn("Erro ao carregar docente salvo:", err);
+  }
+}
+
+/**
+ * Inicializa o Google Identity Services (GSI)
  */
 function initGoogleIdentity() {
+  // Se já estiver conectado, não precisa reinicializar
+  if (appState.googleUser) return;
+
   if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
-    setTimeout(initGoogleIdentity, 600);
     return;
   }
 
-  // Se não tiver Client ID configurado, usa um ID padrão do projeto ou inicializa
-  const clientId = appState.config.googleClientId || "1028373307521-g8k41a982l9m68i46n54a1u28mquh44p.apps.googleusercontent.com";
+  const clientId = appState.config.googleClientId;
+  if (!clientId) {
+    // Sem client ID oficial configurado, o botão personalizado chamará a identificação rápida
+    return;
+  }
 
   try {
     google.accounts.id.initialize({
@@ -810,7 +846,6 @@ function initGoogleIdentity() {
       cancel_on_tap_outside: true
     });
 
-    // Renderiza o botão oficial do Google
     const btnContainer = document.getElementById('g_id_signin_button');
     if (btnContainer) {
       btnContainer.innerHTML = '';
@@ -821,17 +856,12 @@ function initGoogleIdentity() {
         text: 'signin_with',
         shape: 'rectangular',
         logo_alignment: 'left',
-        width: 300
+        width: 320
       });
     }
 
-    // Tenta One Tap se não estiver conectado ainda
     if (!appState.googleUser) {
-      google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // One tap dispensado ou não exibido, mantém o botão visível
-        }
-      });
+      google.accounts.id.prompt(() => {});
     }
   } catch (err) {
     console.warn("Google Identity Init:", err);
@@ -839,27 +869,148 @@ function initGoogleIdentity() {
 }
 
 /**
- * Callback executado após o professor selecionar a conta Google
+ * Clique no botão "Conectar com a Conta Google"
+ */
+function handleGoogleSignInClick() {
+  // 1. Se o Google GSI estiver disponível com Client ID, tenta disparar o prompt
+  if (appState.config.googleClientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    try {
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          openGoogleQuickAuthModal();
+        }
+      });
+      return;
+    } catch (e) {
+      console.warn("Falha no prompt do Google:", e);
+    }
+  }
+
+  // 2. Fallback interativo e infalível: Modal de Identificação Rápida
+  openGoogleQuickAuthModal();
+}
+
+/**
+ * Abre o Modal de Identificação Rápida
+ */
+function openGoogleQuickAuthModal() {
+  loadHistory();
+
+  // Lista os perfis recentes registrados no histórico local
+  const uniqueProfiles = [];
+  const seenEmails = new Set();
+
+  appState.history.forEach(item => {
+    const email = (item.email || '').trim().toLowerCase();
+    const prof = (item.professor || '').trim().toUpperCase();
+    if (email && prof && !seenEmails.has(email)) {
+      seenEmails.add(email);
+      uniqueProfiles.push({ professor: prof, email: email, escola: item.escola });
+    }
+  });
+
+  if (elements.quickRecentProfilesWrap && elements.quickRecentProfilesList) {
+    if (uniqueProfiles.length > 0) {
+      elements.quickRecentProfilesWrap.classList.remove('hidden');
+      elements.quickRecentProfilesList.innerHTML = uniqueProfiles.slice(0, 4).map(p => `
+        <button type="button" class="quick-profile-chip" onclick="selectQuickProfile('${escapeHtml(p.professor)}', '${escapeHtml(p.email)}')">
+          <div class="quick-chip-info">
+            <span class="quick-chip-name">${escapeHtml(p.professor)}</span>
+            <span class="quick-chip-email">${escapeHtml(p.email)} • ${escapeHtml(p.escola || '')}</span>
+          </div>
+          <span class="quick-chip-action"><i class="fa-solid fa-arrow-right"></i> Usar</span>
+        </button>
+      `).join('');
+    } else {
+      elements.quickRecentProfilesWrap.classList.add('hidden');
+      elements.quickRecentProfilesList.innerHTML = '';
+    }
+  }
+
+  // Pré-preenche se o usuário já tiver digitado algo nos campos
+  if (elements.quickAuthEmail && elements.inputEmail) {
+    elements.quickAuthEmail.value = elements.inputEmail.value || '';
+  }
+  if (elements.quickAuthNome && elements.inputProfessor) {
+    elements.quickAuthNome.value = elements.inputProfessor.value || '';
+  }
+
+  openModal(elements.modalGoogleQuickAuth);
+  setTimeout(() => {
+    if (elements.quickAuthEmail && !elements.quickAuthEmail.value) {
+      elements.quickAuthEmail.focus();
+    } else if (elements.quickAuthNome) {
+      elements.quickAuthNome.focus();
+    }
+  }, 200);
+}
+
+/**
+ * Seleciona um perfil rápido da lista
+ */
+window.selectQuickProfile = function(nome, email) {
+  closeModal(elements.modalGoogleQuickAuth);
+  setGoogleAuthenticatedUser({ name: nome, email: email }, true);
+};
+
+/**
+ * Submissão do formulário de identificação rápida
+ */
+function handleQuickAuthSubmit(e) {
+  if (e) e.preventDefault();
+
+  const email = (elements.quickAuthEmail ? elements.quickAuthEmail.value : '').toLowerCase().trim();
+  const nome = (elements.quickAuthNome ? elements.quickAuthNome.value : '').toUpperCase().trim();
+
+  if (!email || !email.includes('@')) {
+    showToast("Por favor, insira um e-mail válido.", "warning");
+    if (elements.quickAuthEmail) elements.quickAuthEmail.focus();
+    return;
+  }
+
+  if (!nome || nome.length < 3) {
+    showToast("Por favor, insira o seu nome completo.", "warning");
+    if (elements.quickAuthNome) elements.quickAuthNome.focus();
+    return;
+  }
+
+  closeModal(elements.modalGoogleQuickAuth);
+  setGoogleAuthenticatedUser({ name: nome, email: email }, true);
+}
+
+/**
+ * Callback executado após o professor selecionar a conta Google via GSI
  */
 window.handleGoogleCredentialResponse = function(response) {
   if (!response || !response.credential) return;
 
   const profile = parseJwt(response.credential);
   if (profile && profile.email) {
-    setGoogleAuthenticatedUser(profile);
+    setGoogleAuthenticatedUser(profile, true);
   }
 };
 
 /**
- * Preenche e trava os dados oficiais da conta Google
+ * Preenche e trava os dados oficiais da conta do docente
  */
-function setGoogleAuthenticatedUser(profile) {
+function setGoogleAuthenticatedUser(profile, showFeedback = true) {
   appState.googleUser = profile;
 
   const email = (profile.email || '').toLowerCase().trim();
   const nome = (profile.name || '').toUpperCase().trim();
 
-  // Preenche os campos do formulário
+  // Salva no armazenamento local para preenchimento com 1 clique sempre
+  try {
+    localStorage.setItem('presenca_saved_docente', JSON.stringify({
+      name: nome,
+      email: email,
+      picture: profile.picture || ''
+    }));
+  } catch (e) {
+    console.warn("Storage:", e);
+  }
+
+  // Preenche os campos do formulário principal
   if (elements.inputEmail) {
     elements.inputEmail.value = email;
     elements.inputEmail.readOnly = true;
@@ -875,43 +1026,51 @@ function setGoogleAuthenticatedUser(profile) {
   // Atualiza o card de perfil conectado
   if (elements.googleUserName) elements.googleUserName.textContent = profile.name || nome;
   if (elements.googleUserEmail) elements.googleUserEmail.textContent = email;
-  if (elements.googleUserPhoto) {
-    if (profile.picture) {
-      elements.googleUserPhoto.src = profile.picture;
-      elements.googleUserPhoto.classList.remove('hidden');
-    } else {
-      elements.googleUserPhoto.classList.add('hidden');
+
+  if (profile.picture && elements.googleUserPhoto) {
+    elements.googleUserPhoto.src = profile.picture;
+    elements.googleUserPhoto.classList.remove('hidden');
+    if (elements.googleUserAvatarFallback) elements.googleUserAvatarFallback.classList.add('hidden');
+  } else {
+    if (elements.googleUserPhoto) elements.googleUserPhoto.classList.add('hidden');
+    if (elements.googleUserAvatarFallback) {
+      elements.googleUserAvatarFallback.textContent = getInitials(nome || email);
+      elements.googleUserAvatarFallback.classList.remove('hidden');
     }
   }
 
   if (elements.googleBtnWrapper) elements.googleBtnWrapper.classList.add('hidden');
   if (elements.googleConnectedCard) elements.googleConnectedCard.classList.remove('hidden');
 
-  showToast(`Conectado como ${profile.name || email}!`, "success");
+  if (showFeedback) {
+    showToast(`Identificado como ${profile.name || email}!`, "success");
 
-  // Verifica imediatamente se já existe presença registrada para esse e-mail
-  const dup = findDuplicateRecord({ email, professor: nome });
-  if (dup) {
-    currentDuplicateRecord = dup;
-    if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = dup.professor;
-    if (elements.dupEmail) elements.dupEmail.textContent = dup.email || email;
-    if (elements.dupEscola) elements.dupEscola.textContent = dup.escola;
-    if (elements.dupTimestamp) elements.dupTimestamp.textContent = dup.timestamp;
-    openModal(elements.modalDuplicado);
-    showToast("Atenção: Presença já registrada para esta conta Google!", "warning");
-  } else {
-    // Foca na seleção de escola
-    if (elements.selectEscola && !elements.selectEscola.value) {
-      elements.selectEscola.focus();
+    // Verifica imediatamente se já existe presença registrada para esse e-mail
+    const dup = findDuplicateRecord({ email, professor: nome });
+    if (dup) {
+      currentDuplicateRecord = dup;
+      if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = dup.professor;
+      if (elements.dupEmail) elements.dupEmail.textContent = dup.email || email;
+      if (elements.dupEscola) elements.dupEscola.textContent = dup.escola;
+      if (elements.dupTimestamp) elements.dupTimestamp.textContent = dup.timestamp;
+      openModal(elements.modalDuplicado);
+      showToast("Atenção: Presença já registrada para esta conta!", "warning");
+    } else {
+      if (elements.selectEscola && !elements.selectEscola.value) {
+        elements.selectEscola.focus();
+      }
     }
   }
 }
 
 /**
- * Desconecta a conta Google para permitir troca de e-mail
+ * Desconecta a conta para permitir troca de e-mail / docente
  */
 function disconnectGoogleUser() {
   appState.googleUser = null;
+  try {
+    localStorage.removeItem('presenca_saved_docente');
+  } catch (e) {}
 
   if (elements.inputEmail) {
     elements.inputEmail.readOnly = false;
@@ -928,10 +1087,9 @@ function disconnectGoogleUser() {
   if (elements.googleConnectedCard) elements.googleConnectedCard.classList.add('hidden');
   if (elements.googleBtnWrapper) {
     elements.googleBtnWrapper.classList.remove('hidden');
-    initGoogleIdentity();
   }
 
-  showToast("Conta Google desconectada. Você pode escolher outra conta ou digitar.", "info");
+  showToast("Identificação limpa. Você pode conectar outra conta ou digitar.", "info");
 }
 
 function showReceipt(record) {
@@ -1408,7 +1566,49 @@ function renderManagementReport(schoolFilter = '') {
   }
 }
 
-// Dispara a Impressão / Salvar em PDF
+// Gera e Baixa o Arquivo PDF do Relatório Oficial
+async function exportReportPDF() {
+  try {
+    const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+    renderManagementReport(selectedSchool);
+
+    const reportElement = document.getElementById('relatorioDocumento');
+    if (!reportElement) {
+      showToast("Elemento do relatório não encontrado.", "error");
+      return;
+    }
+
+    showToast("Gerando arquivo PDF para a gestão...", "info");
+
+    const schoolLabel = selectedSchool ? selectedSchool.replace(/[^a-zA-Z0-9]/g, '_') : 'todas_escolas';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Relatorio_Gestao_${schoolLabel}_${dateStr}.pdf`;
+
+    if (window.html2pdf) {
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      await window.html2pdf().set(opt).from(reportElement).save();
+      showToast("Relatório em PDF baixado com sucesso!", "success");
+    } else {
+      // Fallback para impressão/salvar em PDF via navegador
+      showToast("Abrindo diálogo de impressão/PDF...", "info");
+      window.print();
+    }
+  } catch (err) {
+    console.error("Erro ao gerar PDF:", err);
+    showToast("Abrindo diálogo de impressão/PDF...", "info");
+    window.print();
+  }
+}
+
+// Dispara a Impressão / Salvar em PDF pelo navegador
 function printManagementReport() {
   const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
   renderManagementReport(selectedSchool);
@@ -1668,6 +1868,9 @@ function setupEventListeners() {
       renderManagementReport(e.target.value);
     });
   }
+  if (elements.btnGerarPDF) {
+    elements.btnGerarPDF.addEventListener('click', exportReportPDF);
+  }
   if (elements.btnImprimirRelatorio) {
     elements.btnImprimirRelatorio.addEventListener('click', printManagementReport);
   }
@@ -1686,8 +1889,22 @@ function setupEventListeners() {
     elements.btnRestaurarPadrao.addEventListener('click', restoreDefaultConfig);
   }
 
+  // Ações da Identificação Google & Rápida
+  if (elements.btnGoogleSignInAction) {
+    elements.btnGoogleSignInAction.addEventListener('click', handleGoogleSignInClick);
+  }
+  if (elements.formGoogleQuickAuth) {
+    elements.formGoogleQuickAuth.addEventListener('submit', handleQuickAuthSubmit);
+  }
+  if (elements.btnCloseGoogleQuickAuth) {
+    elements.btnCloseGoogleQuickAuth.addEventListener('click', () => closeModal(elements.modalGoogleQuickAuth));
+  }
+  if (elements.btnCancelarQuickAuth) {
+    elements.btnCancelarQuickAuth.addEventListener('click', () => closeModal(elements.modalGoogleQuickAuth));
+  }
+
   // Fechar modais ao clicar no backdrop
-  [elements.modalAdminAuth, elements.modalAdminPanel, elements.modalDuplicado].forEach(modal => {
+  [elements.modalAdminAuth, elements.modalAdminPanel, elements.modalDuplicado, elements.modalGoogleQuickAuth].forEach(modal => {
     if (modal) {
       modal.addEventListener('click', (e) => {
         if (e.target === modal) {
@@ -1705,6 +1922,7 @@ function setupEventListeners() {
       closeModal(elements.modalAdminAuth);
       closeModal(elements.modalAdminPanel);
       closeModal(elements.modalDuplicado);
+      closeModal(elements.modalGoogleQuickAuth);
     }
   });
 }
