@@ -1612,33 +1612,24 @@ async function exportReportPDF() {
     const fileName = `Relatorio_Gestao_${schoolLabel}_${dateStr}.pdf`;
 
     if (window.html2pdf) {
-      // Clona o elemento fora do modal para evitar conflitos de transform / CSS
-      const clone = reportElement.cloneNode(true);
-      clone.style.position = 'fixed';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      clone.style.width = '800px';
-      clone.style.background = '#ffffff';
-      clone.style.zIndex = '-9999';
-      document.body.appendChild(clone);
-
       const opt = {
-        margin: [8, 8, 8, 8],
+        margin: [8, 10, 8, 10],
         filename: fileName,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true, 
+          logging: false,
+          scrollY: 0,
+          scrollX: 0
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: ['css', 'legacy'] }
       };
 
-      try {
-        await window.html2pdf().set(opt).from(clone).save();
-        document.body.removeChild(clone);
-        showToast("Relatório em PDF baixado com sucesso!", "success");
-      } catch (innerErr) {
-        if (clone.parentNode) clone.parentNode.removeChild(clone);
-        throw innerErr;
-      }
+      await window.html2pdf().set(opt).from(reportElement).save();
+      showToast("Relatório em PDF baixado com sucesso!", "success");
     } else {
       // Fallback para impressão/salvar em PDF via navegador
       showToast("Abrindo diálogo de impressão/PDF...", "info");
