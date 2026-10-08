@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=2.9">
+  <link rel="stylesheet" href="styles.css?v=3.1">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -90,7 +90,7 @@
           <!-- Container do Botão de Identificação Google -->
           <div id="googleBtnWrapper" class="google-btn-wrapper">
             <div id="g_id_signin_button"></div>
-            <button type="button" id="btnGoogleSignInAction" class="btn-google-action" title="Identificar com a Conta Google ou Perfil Salvo">
+            <button type="button" id="btnGoogleSignInAction" onclick="handleGoogleSignInClick()" class="btn-google-action" title="Identificar com a Conta Google ou Perfil Salvo">
               <svg viewBox="0 0 48 48" width="22" height="22" class="google-svg-icon">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                 <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -114,7 +114,7 @@
                 <span id="googleUserEmail" class="google-user-email-text">-</span>
               </div>
             </div>
-            <button type="button" id="btnGoogleDisconnect" class="btn btn-sm btn-outline" title="Desconectar ou usar outro e-mail">
+            <button type="button" id="btnGoogleDisconnect" onclick="disconnectGoogleUser()" class="btn btn-sm btn-outline" title="Desconectar ou usar outro e-mail">
               <i class="fa-solid fa-arrow-right-from-bracket"></i> <span>Trocar</span>
             </button>
           </div>
@@ -747,9 +747,9 @@
           <i class="fa-brands fa-google text-danger"></i>
           <h3>Identificação do Docente</h3>
         </div>
-        <button type="button" class="btn-close" id="btnCloseGoogleQuickAuth">&times;</button>
+        <button type="button" class="btn-close" id="btnCloseGoogleQuickAuth" onclick="closeModal('modalGoogleQuickAuth')">&times;</button>
       </div>
-      <form id="formGoogleQuickAuth">
+      <form id="formGoogleQuickAuth" onsubmit="handleQuickAuthSubmit(event)">
         <div class="modal-body">
           <p class="auth-instruction">Preencha seus dados uma única vez. Eles ficarão salvos para você confirmar suas presenças com 1 clique.</p>
           
@@ -787,7 +787,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" id="btnCancelarQuickAuth" class="btn btn-secondary">Cancelar</button>
+          <button type="button" id="btnCancelarQuickAuth" onclick="closeModal('modalGoogleQuickAuth')" class="btn btn-secondary">Cancelar</button>
           <button type="submit" id="btnSalvarQuickAuth" class="btn btn-primary">
             <i class="fa-solid fa-circle-check"></i>
             <span>Salvar e Identificar</span>
@@ -804,6 +804,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=2.9"></script>
+  <script src="script.js?v=3.1"></script>
 </body>
 </html>

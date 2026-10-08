@@ -900,19 +900,24 @@ function openGoogleQuickAuthModal() {
   const uniqueProfiles = [];
   const seenEmails = new Set();
 
-  appState.history.forEach(item => {
-    const email = (item.email || '').trim().toLowerCase();
-    const prof = (item.professor || '').trim().toUpperCase();
-    if (email && prof && !seenEmails.has(email)) {
-      seenEmails.add(email);
-      uniqueProfiles.push({ professor: prof, email: email, escola: item.escola });
-    }
-  });
+  if (Array.isArray(appState.history)) {
+    appState.history.forEach(item => {
+      const email = (item.email || '').trim().toLowerCase();
+      const prof = (item.professor || '').trim().toUpperCase();
+      if (email && prof && !seenEmails.has(email)) {
+        seenEmails.add(email);
+        uniqueProfiles.push({ professor: prof, email: email, escola: item.escola });
+      }
+    });
+  }
 
-  if (elements.quickRecentProfilesWrap && elements.quickRecentProfilesList) {
+  const quickRecentProfilesWrap = elements.quickRecentProfilesWrap || document.getElementById('quickRecentProfilesWrap');
+  const quickRecentProfilesList = elements.quickRecentProfilesList || document.getElementById('quickRecentProfilesList');
+
+  if (quickRecentProfilesWrap && quickRecentProfilesList) {
     if (uniqueProfiles.length > 0) {
-      elements.quickRecentProfilesWrap.classList.remove('hidden');
-      elements.quickRecentProfilesList.innerHTML = uniqueProfiles.slice(0, 4).map(p => `
+      quickRecentProfilesWrap.classList.remove('hidden');
+      quickRecentProfilesList.innerHTML = uniqueProfiles.slice(0, 4).map(p => `
         <button type="button" class="quick-profile-chip" onclick="selectQuickProfile('${escapeHtml(p.professor)}', '${escapeHtml(p.email)}')">
           <div class="quick-chip-info">
             <span class="quick-chip-name">${escapeHtml(p.professor)}</span>
@@ -922,27 +927,34 @@ function openGoogleQuickAuthModal() {
         </button>
       `).join('');
     } else {
-      elements.quickRecentProfilesWrap.classList.add('hidden');
-      elements.quickRecentProfilesList.innerHTML = '';
+      quickRecentProfilesWrap.classList.add('hidden');
+      quickRecentProfilesList.innerHTML = '';
     }
   }
+
+  const quickAuthEmail = elements.quickAuthEmail || document.getElementById('quickAuthEmail');
+  const quickAuthNome = elements.quickAuthNome || document.getElementById('quickAuthNome');
+  const inputEmail = elements.inputEmail || document.getElementById('inputEmail');
+  const inputProfessor = elements.inputProfessor || document.getElementById('inputProfessor');
 
   // Pré-preenche se o usuário já tiver digitado algo nos campos
-  if (elements.quickAuthEmail && elements.inputEmail) {
-    elements.quickAuthEmail.value = elements.inputEmail.value || '';
+  if (quickAuthEmail && inputEmail) {
+    quickAuthEmail.value = inputEmail.value || '';
   }
-  if (elements.quickAuthNome && elements.inputProfessor) {
-    elements.quickAuthNome.value = elements.inputProfessor.value || '';
+  if (quickAuthNome && inputProfessor) {
+    quickAuthNome.value = inputProfessor.value || '';
   }
 
-  openModal(elements.modalGoogleQuickAuth);
+  const modal = elements.modalGoogleQuickAuth || document.getElementById('modalGoogleQuickAuth');
+  openModal(modal);
+
   setTimeout(() => {
-    if (elements.quickAuthEmail && !elements.quickAuthEmail.value) {
-      elements.quickAuthEmail.focus();
-    } else if (elements.quickAuthNome) {
-      elements.quickAuthNome.focus();
+    if (quickAuthEmail && !quickAuthEmail.value) {
+      quickAuthEmail.focus();
+    } else if (quickAuthNome) {
+      quickAuthNome.focus();
     }
-  }, 200);
+  }, 150);
 }
 
 /**
@@ -2001,17 +2013,36 @@ function setupEventListeners() {
 }
 
 function openModal(modal) {
-  if (modal) modal.classList.add('active');
+  if (typeof modal === 'string') modal = document.getElementById(modal);
+  if (modal) {
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'auto';
+  }
 }
 
 function closeModal(modal) {
-  if (modal) modal.classList.remove('active');
+  if (typeof modal === 'string') modal = document.getElementById(modal);
+  if (modal) {
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+    modal.style.opacity = '0';
+    modal.style.pointerEvents = 'none';
+  }
 }
 
 function showToast(message, type = 'info') {
-  elements.toastMessage.textContent = message;
-  elements.toast.className = `toast show ${type}`;
-  setTimeout(() => elements.toast.classList.remove('show'), 3500);
+  const toast = document.getElementById('toast');
+  const toastMsg = document.getElementById('toastMessage');
+  if (toastMsg) toastMsg.textContent = message;
+  if (toast) {
+    toast.className = `toast show ${type}`;
+    if (window._toastTimeout) clearTimeout(window._toastTimeout);
+    window._toastTimeout = setTimeout(() => toast.classList.remove('show'), 3500);
+  } else {
+    alert(message);
+  }
 }
 
 function escapeHtml(text) {
@@ -2023,6 +2054,16 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+
+// Funções globais expostas no window
+window.handleGoogleSignInClick = handleGoogleSignInClick;
+window.openGoogleQuickAuthModal = openGoogleQuickAuthModal;
+window.handleQuickAuthSubmit = handleQuickAuthSubmit;
+window.selectQuickProfile = selectQuickProfile;
+window.disconnectGoogleUser = disconnectGoogleUser;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.showToast = showToast;
 
 
 
