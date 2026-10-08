@@ -11,7 +11,8 @@ const DEFAULT_CONFIG = {
   entryEscola: "entry.285930433",
   entryProfessor: "entry.278265355",
   sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv",
-  googleClientId: ""
+  googleClientId: "",
+  isFormOpen: true
 };
 
 const appState = {
@@ -27,6 +28,7 @@ const appState = {
 // Elementos do DOM
 const elements = {
   formCard: document.getElementById('formCard'),
+  formClosedBanner: document.getElementById('formClosedBanner'),
   form: document.getElementById('attendanceForm'),
   selectEscola: document.getElementById('selectEscola'),
   inputProfessor: document.getElementById('inputProfessor'),
@@ -132,6 +134,7 @@ const elements = {
   btnCancelarQuickAuth: document.getElementById('btnCancelarQuickAuth'),
 
   // Aba Configurações
+  cfgFormStatusSelect: document.getElementById('cfgFormStatusSelect'),
   cfgFormUrl: document.getElementById('cfgFormUrl'),
   cfgEntryEscola: document.getElementById('cfgEntryEscola'),
   cfgEntryProfessor: document.getElementById('cfgEntryProfessor'),
@@ -250,23 +253,56 @@ function loadConfig() {
   }
 
   // Preenche inputs
+  if (elements.cfgFormStatusSelect) {
+    elements.cfgFormStatusSelect.value = (appState.config.isFormOpen !== false) ? 'open' : 'closed';
+  }
   if (elements.cfgFormUrl) elements.cfgFormUrl.value = appState.config.formUrl || DEFAULT_CONFIG.formUrl;
   if (elements.cfgEntryEscola) elements.cfgEntryEscola.value = appState.config.entryEscola || DEFAULT_CONFIG.entryEscola;
   if (elements.cfgEntryProfessor) elements.cfgEntryProfessor.value = appState.config.entryProfessor || DEFAULT_CONFIG.entryProfessor;
   if (elements.cfgSheetUrl) elements.cfgSheetUrl.value = appState.config.sheetUrl || '';
   if (elements.cfgGoogleClientId) elements.cfgGoogleClientId.value = appState.config.googleClientId || '';
+
+  updateFormStatusUI();
+}
+
+function updateFormStatusUI() {
+  const isOpen = appState.config.isFormOpen !== false;
+  const closedBanner = document.getElementById('formClosedBanner');
+  const googleAuthSection = document.getElementById('googleAuthSection');
+  const formDividers = document.querySelectorAll('.form-divider');
+  const form = document.getElementById('attendanceForm');
+
+  if (isOpen) {
+    if (closedBanner) closedBanner.classList.add('hidden');
+    if (googleAuthSection) googleAuthSection.classList.remove('hidden');
+    formDividers.forEach(el => el.classList.remove('hidden'));
+    if (form) form.classList.remove('hidden');
+  } else {
+    if (closedBanner) closedBanner.classList.remove('hidden');
+    if (googleAuthSection) googleAuthSection.classList.add('hidden');
+    formDividers.forEach(el => el.classList.add('hidden'));
+    if (form) form.classList.add('hidden');
+  }
+
+  if (elements.cfgFormStatusSelect) {
+    elements.cfgFormStatusSelect.value = isOpen ? 'open' : 'closed';
+  }
 }
 
 function saveConfig() {
   const oldClientId = appState.config.googleClientId;
+  const isFormOpen = elements.cfgFormStatusSelect ? (elements.cfgFormStatusSelect.value === 'open') : true;
+
   appState.config = {
     formUrl: (elements.cfgFormUrl ? elements.cfgFormUrl.value.trim() : '') || DEFAULT_CONFIG.formUrl,
     entryEscola: (elements.cfgEntryEscola ? elements.cfgEntryEscola.value.trim() : '') || DEFAULT_CONFIG.entryEscola,
     entryProfessor: (elements.cfgEntryProfessor ? elements.cfgEntryProfessor.value.trim() : '') || DEFAULT_CONFIG.entryProfessor,
     sheetUrl: (elements.cfgSheetUrl ? elements.cfgSheetUrl.value.trim() : ''),
-    googleClientId: (elements.cfgGoogleClientId ? elements.cfgGoogleClientId.value.trim() : '')
+    googleClientId: (elements.cfgGoogleClientId ? elements.cfgGoogleClientId.value.trim() : ''),
+    isFormOpen: isFormOpen
   };
   localStorage.setItem('presenca_gforms_cfg', JSON.stringify(appState.config));
+  updateFormStatusUI();
   showToast("Configurações salvas com sucesso!", "success");
 
   if (oldClientId !== appState.config.googleClientId) {
@@ -638,6 +674,12 @@ async function syncRealTime(showFeedback = false) {
 // ==========================================================================
 async function handleSubmit(e) {
   e.preventDefault();
+
+  if (appState.config.isFormOpen === false) {
+    showToast("A lista de presença está encerrada e não aceita novos envios.", "warning");
+    updateFormStatusUI();
+    return;
+  }
 
   const escola = elements.selectEscola.value;
   const professor = elements.inputProfessor.value.trim();

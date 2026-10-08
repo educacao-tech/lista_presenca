@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=3.4">
+  <link rel="stylesheet" href="styles.css?v=3.5">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -70,6 +70,19 @@
           </div>
           <h2>Confirmação de Presença Docente</h2>
           <p>Encontro Formativo • Selecione sua unidade escolar e confirme seus dados para assinar a lista.</p>
+        </div>
+
+        <!-- Banner de Formulário Fechado / Não Aceitando Respostas -->
+        <div id="formClosedBanner" class="form-closed-box hidden">
+          <div class="closed-icon-badge">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <h3>Lista de Presença Encerrada</h3>
+          <p class="closed-main-text">Este formulário não está aceitando novas respostas no momento.</p>
+          <div class="closed-details-box">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>O período de confirmação de presença deste encontro formativo foi finalizado ou suspenso. Se você precisa justificar ou confirmar sua presença, procure a coordenação pedagógica de EDM.</span>
+          </div>
         </div>
 
         <!-- Bloco Compacto de Identificação com Conta Google / 1 Clique -->
@@ -576,6 +589,31 @@
         <div id="tabConfig" class="admin-tab-content">
           <form id="googleConfigForm" class="config-grid">
             
+            <!-- Seção de Controle de Status da Lista (Aberta / Fechada) -->
+            <div class="config-section-card" style="border-left: 4px solid var(--primary);">
+              <div class="config-section-header">
+                <i class="fa-solid fa-door-open text-primary"></i>
+                <div>
+                  <h4>Status da Lista de Presença</h4>
+                  <p>Abra ou encerre o recebimento de novas confirmações dos professores.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="cfgFormStatusSelect">
+                  <i class="fa-solid fa-toggle-on"></i> Recebimento de Respostas:
+                </label>
+                <div class="select-wrapper">
+                  <select id="cfgFormStatusSelect" class="input-field select-field">
+                    <option value="open">🟢 Aberta — Aceitando respostas normalmente</option>
+                    <option value="closed">🔴 Encerrada — Bloquear preenchimento e exibir aviso</option>
+                  </select>
+                  <i class="fa-solid fa-chevron-down select-arrow"></i>
+                </div>
+                <span class="field-hint">Quando encerrada, o formulário e o botão do Google são ocultados e substituídos pelo aviso oficial de lista encerrada.</span>
+              </div>
+            </div>
+
             <!-- Seção Google Sheets (Leitura em tempo real) -->
             <div class="config-section-card">
               <div class="config-section-header">
@@ -794,6 +832,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=3.4"></script>
+  <script src="script.js?v=3.5"></script>
 </body>
 </html>
