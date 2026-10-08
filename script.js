@@ -157,10 +157,14 @@ const elements = {
 
 let currentDuplicateRecord = null;
 
+// Inicializa o tema imediatamente para evitar flash de tela clara/escura
+initTheme();
+
 // ==========================================================================
 // Inicialização
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   loadConfig();
   loadHistory();
   startClock();
@@ -2055,7 +2059,64 @@ function escapeHtml(text) {
     .replace(/'/g, "&#039;");
 }
 
+// ==========================================================================
+// Gestão de Tema (Claro / Escuro)
+// ==========================================================================
+function initTheme() {
+  try {
+    const savedTheme = localStorage.getItem('presenca_theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      applyTheme('dark');
+    } else {
+      applyTheme('light');
+    }
+  } catch (e) {
+    applyTheme('light');
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+  try {
+    localStorage.setItem('presenca_theme', newTheme);
+  } catch (e) {
+    console.warn("Storage tema:", e);
+  }
+  showToast(newTheme === 'dark' ? "Modo Escuro ativado" : "Modo Claro ativado", "info");
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const themeIcon = document.getElementById('themeIcon');
+  const btnToggle = document.getElementById('btnThemeToggle');
+  
+  if (theme === 'dark') {
+    if (themeIcon) {
+      themeIcon.className = 'fa-solid fa-sun';
+    }
+    if (btnToggle) {
+      btnToggle.title = 'Alternar para Modo Claro';
+      btnToggle.setAttribute('aria-label', 'Alternar para Modo Claro');
+    }
+  } else {
+    if (themeIcon) {
+      themeIcon.className = 'fa-solid fa-moon';
+    }
+    if (btnToggle) {
+      btnToggle.title = 'Alternar para Modo Escuro';
+      btnToggle.setAttribute('aria-label', 'Alternar para Modo Escuro');
+    }
+  }
+}
+
 // Funções globais expostas no window
+window.initTheme = initTheme;
+window.toggleTheme = toggleTheme;
+window.applyTheme = applyTheme;
 window.handleGoogleSignInClick = handleGoogleSignInClick;
 window.openGoogleQuickAuthModal = openGoogleQuickAuthModal;
 window.handleQuickAuthSubmit = handleQuickAuthSubmit;
