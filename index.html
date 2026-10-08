@@ -490,16 +490,16 @@
             </div>
 
             <div class="report-action-buttons">
-              <button type="button" id="btnGerarPDF" class="btn btn-primary" title="Gerar e baixar o relatório oficial em formato PDF">
+              <button type="button" id="btnGerarPDF" onclick="exportReportPDF()" class="btn btn-primary" title="Gerar e baixar o relatório oficial em formato PDF">
                 <i class="fa-solid fa-file-pdf"></i> <span>Gerar Relatório em PDF</span>
               </button>
-              <button type="button" id="btnImprimirRelatorio" class="btn btn-outline" title="Imprimir ou salvar via diálogo do navegador">
+              <button type="button" id="btnImprimirRelatorio" onclick="printManagementReport()" class="btn btn-outline" title="Imprimir ou salvar via diálogo do navegador">
                 <i class="fa-solid fa-print"></i> <span>Imprimir</span>
               </button>
-              <button type="button" id="btnCopiarWhatsApp" class="btn btn-whatsapp" title="Copiar resumo formatado para enviar no WhatsApp da Gestão">
+              <button type="button" id="btnCopiarWhatsApp" onclick="copyWhatsAppSummary()" class="btn btn-whatsapp" title="Copiar resumo formatado para enviar no WhatsApp da Gestão">
                 <i class="fa-brands fa-whatsapp"></i> <span>Copiar p/ WhatsApp</span>
               </button>
-              <button type="button" id="btnExportarRelatorioCSV" class="btn btn-outline" title="Baixar lista filtrada da escola em CSV">
+              <button type="button" id="btnExportarRelatorioCSV" onclick="exportReportCSV()" class="btn btn-outline" title="Baixar lista filtrada da escola em CSV">
                 <i class="fa-solid fa-file-excel"></i> <span>Baixar CSV</span>
               </button>
             </div>
@@ -801,6 +801,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=2.4"></script>
+  <script src="script.js?v=2.5"></script>
 </body>
 </html>

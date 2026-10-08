@@ -1566,10 +1566,37 @@ function renderManagementReport(schoolFilter = '') {
   }
 }
 
+// Copia texto para a área de transferência de forma universal (com fallback)
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  } else {
+    return new Promise((resolve, reject) => {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        textArea.remove();
+        if (successful) resolve();
+        else reject(new Error("Falha ao copiar"));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+}
+
 // Gera e Baixa o Arquivo PDF do Relatório Oficial
 async function exportReportPDF() {
   try {
-    const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+    const schoolSelect = document.getElementById('relatorioEscolaSelect');
+    const selectedSchool = schoolSelect ? schoolSelect.value : '';
     renderManagementReport(selectedSchool);
 
     const reportElement = document.getElementById('relatorioDocumento');
@@ -1585,6 +1612,16 @@ async function exportReportPDF() {
     const fileName = `Relatorio_Gestao_${schoolLabel}_${dateStr}.pdf`;
 
     if (window.html2pdf) {
+      // Clona o elemento fora do modal para evitar conflitos de transform / CSS
+      const clone = reportElement.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = '800px';
+      clone.style.background = '#ffffff';
+      clone.style.zIndex = '-9999';
+      document.body.appendChild(clone);
+
       const opt = {
         margin: [8, 8, 8, 8],
         filename: fileName,
@@ -1594,8 +1631,14 @@ async function exportReportPDF() {
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      await window.html2pdf().set(opt).from(reportElement).save();
-      showToast("Relatório em PDF baixado com sucesso!", "success");
+      try {
+        await window.html2pdf().set(opt).from(clone).save();
+        document.body.removeChild(clone);
+        showToast("Relatório em PDF baixado com sucesso!", "success");
+      } catch (innerErr) {
+        if (clone.parentNode) clone.parentNode.removeChild(clone);
+        throw innerErr;
+      }
     } else {
       // Fallback para impressão/salvar em PDF via navegador
       showToast("Abrindo diálogo de impressão/PDF...", "info");
@@ -1603,29 +1646,33 @@ async function exportReportPDF() {
     }
   } catch (err) {
     console.error("Erro ao gerar PDF:", err);
-    showToast("Abrindo diálogo de impressão/PDF...", "info");
+    showToast("Abrindo diálogo de impressão...", "info");
     window.print();
   }
 }
 
 // Dispara a Impressão / Salvar em PDF pelo navegador
 function printManagementReport() {
-  const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+  const schoolSelect = document.getElementById('relatorioEscolaSelect');
+  const selectedSchool = schoolSelect ? schoolSelect.value : '';
   renderManagementReport(selectedSchool);
-  window.print();
+  setTimeout(() => {
+    window.print();
+  }, 50);
 }
 
 // Copia o Resumo Formatado com Emojis para o WhatsApp da Gestão
 function copyWhatsAppSummary() {
   loadHistory();
-  const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+  const schoolSelect = document.getElementById('relatorioEscolaSelect');
+  const selectedSchool = schoolSelect ? schoolSelect.value : '';
   const filtered = appState.history.filter(item => {
     if (!selectedSchool) return true;
     return (item.escola || '').trim().toUpperCase() === selectedSchool.trim().toUpperCase();
   });
 
   if (filtered.length === 0) {
-    showToast("Não há registros para compartilhar.", "info");
+    showToast("Não há registros para compartilhar nesta escola.", "warning");
     return;
   }
 
@@ -1668,24 +1715,25 @@ function copyWhatsAppSummary() {
 
   text += `\n_Lista oficial sincronizada com Google Forms._`;
 
-  navigator.clipboard.writeText(text).then(() => {
+  copyTextToClipboard(text).then(() => {
     showToast("Resumo formatado copiado! Cole no WhatsApp da gestão.", "success");
   }).catch(() => {
-    showToast("Não foi possível copiar o texto.", "error");
+    showToast("Não foi possível copiar automaticamente.", "error");
   });
 }
 
 // Exporta CSV do Relatório
 function exportReportCSV() {
   loadHistory();
-  const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+  const schoolSelect = document.getElementById('relatorioEscolaSelect');
+  const selectedSchool = schoolSelect ? schoolSelect.value : '';
   const filtered = appState.history.filter(item => {
     if (!selectedSchool) return true;
     return (item.escola || '').trim().toUpperCase() === selectedSchool.trim().toUpperCase();
   });
 
   if (filtered.length === 0) {
-    showToast("Não há registros para exportar.", "info");
+    showToast("Não há registros para exportar nesta escola.", "warning");
     return;
   }
 
@@ -1695,7 +1743,7 @@ function exportReportCSV() {
   );
 
   sorted.forEach((h, idx) => {
-    csv += `"${idx + 1}";"${h.professor}";"${h.email || ''}";"${h.escola}";"${h.timestamp || ''}";"Confirmado"\n`;
+    csv += `"${idx + 1}";"${(h.professor || '').replace(/"/g, '""')}";"${(h.email || '').replace(/"/g, '""')}";"${(h.escola || '').replace(/"/g, '""')}";"${(h.timestamp || '').replace(/"/g, '""')}";"Confirmado"\n`;
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1706,9 +1754,18 @@ function exportReportCSV() {
   a.download = `relatorio_frequencia_${fileNameSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
+  setTimeout(() => {
+    if (a.parentNode) document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
   showToast("Relatório CSV baixado com sucesso!", "success");
 }
+
+// Expõe globalmente no objeto window para execução imediata via onclick
+window.exportReportPDF = exportReportPDF;
+window.printManagementReport = printManagementReport;
+window.copyWhatsAppSummary = copyWhatsAppSummary;
+window.exportReportCSV = exportReportCSV;
 
 function clearHistory() {
   if (confirm("Tem certeza que deseja apagar os registros locais deste dispositivo? Essa ação não afeta a planilha do Google Forms.")) {
