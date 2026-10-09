@@ -160,14 +160,16 @@
                   type="text" 
                   id="inputProfessor" 
                   name="entry.278265355" 
+                  list="listaSugestoesProfessores"
                   placeholder="Digite seu nome completo..." 
                   required 
                   autocomplete="name"
                   class="input-field"
                 >
+                <datalist id="listaSugestoesProfessores"></datalist>
                 <i class="fa-regular fa-user input-icon"></i>
               </div>
-              <span class="field-hint"><i class="fa-solid fa-shield-halved"></i> Preencha sem abreviações</span>
+              <span class="field-hint"><i class="fa-solid fa-shield-halved"></i> Preencha sem abreviações (auto-sugestão disponível)</span>
             </div>
 
             <!-- 3. Campo E-MAIL (emailAddress) - Chave Única -->
@@ -328,13 +330,17 @@
           <i class="fa-solid fa-users-viewfinder"></i>
           <span>Painel & Histórico Geral</span>
         </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabAuditoriaFaltas">
+          <i class="fa-solid fa-user-xmark"></i>
+          <span>Cruzamento & Faltas</span>
+        </button>
         <button type="button" class="admin-tab-btn" data-tab="tabRelatorios">
           <i class="fa-solid fa-file-invoice"></i>
           <span>Relatório para a Gestão</span>
         </button>
         <button type="button" class="admin-tab-btn" data-tab="tabConfig">
           <i class="fa-brands fa-google"></i>
-          <span>Configurações do Forms & Planilha</span>
+          <span>Configurações & Conexões</span>
         </button>
       </div>
 
@@ -473,7 +479,198 @@
           <div id="historicoContainer" class="historico-table-wrapper"></div>
         </div>
 
-        <!-- Aba 2: Relatório Oficial para a Gestão da Escola -->
+        <!-- Aba 2: Cruzamento da Base de Dados EDM & Auditoria de Faltas -->
+        <div id="tabAuditoriaFaltas" class="admin-tab-content">
+          
+          <!-- Barra de Status da Base EDM Firestore -->
+          <div class="sync-status-bar firestore-status-bar" id="edmStatusBar">
+            <div class="sync-status-info">
+              <span class="sync-pulse-icon text-primary" id="edmStatusIcon"><i class="fa-solid fa-database"></i></span>
+              <div class="sync-status-details">
+                <span class="sync-status-title" id="edmStatusTitle">Base Oficial de Professores (EDM Firestore)</span>
+                <span class="sync-status-desc" id="edmStatusDesc">Conectado ao repositório oficial de docentes.</span>
+              </div>
+            </div>
+            <div class="sync-status-actions">
+              <button type="button" id="btnSyncEDMNow" class="btn btn-sm btn-primary-soft" title="Atualizar dados cadastrais de professores do Firestore">
+                <i class="fa-solid fa-arrows-rotate"></i> <span>Sincronizar Base EDM</span>
+              </button>
+              <a id="btnOpenEDMSite" href="https://educacao-tech.github.io/edmprofessor/" target="_blank" class="btn btn-sm btn-outline" title="Abrir Painel Oficial EDM de Professores">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> <span>Abrir Sistema EDM</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Cards de Indicadores de Auditoria (KPIs) -->
+          <div class="admin-kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-purple"><i class="fa-solid fa-address-book"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Cadastrados (EDM)</span>
+                <strong class="kpi-value" id="kpiAuditoriaCadastrados">0</strong>
+                <span class="kpi-sub">Docentes na base oficial</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-green"><i class="fa-solid fa-user-check"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Presentes Confirmados</span>
+                <strong class="kpi-value" id="kpiAuditoriaPresentes">0</strong>
+                <span class="kpi-sub" id="kpiAuditoriaPresentesSub">0% de presença</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-danger"><i class="fa-solid fa-user-xmark"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Faltas Detectadas</span>
+                <strong class="kpi-value text-danger" id="kpiAuditoriaFaltas">0</strong>
+                <span class="kpi-sub" id="kpiAuditoriaFaltasSub">Docentes ausentes</span>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-icon kpi-blue"><i class="fa-solid fa-chart-line"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Taxa Geral de Adesão</span>
+                <strong class="kpi-value" id="kpiAuditoriaTaxa">0%</strong>
+                <span class="kpi-sub" id="kpiAuditoriaExtrasSub">+0 extras participantes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quadro Interativo de Frequência por Escola (Barras de Progresso e Filtros) -->
+          <div class="school-summary-section">
+            <div class="section-title-sm">
+              <i class="fa-solid fa-chart-column"></i>
+              <span>Frequência e Adesão por Unidade Escolar (clique para filtrar):</span>
+            </div>
+            <div id="auditoriaSchoolsContainer" class="auditoria-schools-grid">
+              <!-- Gerado dinamicamente via JS -->
+            </div>
+          </div>
+
+          <!-- Barra de Filtros e Ações de Auditoria -->
+          <div class="history-actions-bar">
+            <div class="history-stats">
+              <span id="totalAuditoriaBadge" class="badge badge-primary">0 registros</span>
+              <span id="badgeFaltasDestaque" class="badge badge-danger"><i class="fa-solid fa-triangle-exclamation"></i> 0 Faltas</span>
+            </div>
+            <div class="history-controls">
+              <!-- Filtro por Escola -->
+              <div class="filter-select-wrapper">
+                <select id="auditoriaFiltroEscolaSelect" class="input-field input-field-sm select-filter">
+                  <option value="">🏫 Todas as Escolas</option>
+                  <option value="ALZIRA ACRA">ALZIRA ACRA</option>
+                  <option value="ANNA BONAGURA">ANNA BONAGURA</option>
+                  <option value="BRAGA MORATO">BRAGA MORATO</option>
+                  <option value="CAIC">CAIC</option>
+                  <option value="CÉLIA BUENO">CÉLIA BUENO</option>
+                  <option value="ESTHER VIANNA">ESTHER VIANNA</option>
+                  <option value="PADRE BENITO">PADRE BENITO</option>
+                </select>
+              </div>
+
+              <!-- Filtro por Status -->
+              <div class="filter-select-wrapper">
+                <select id="auditoriaFiltroStatusSelect" class="input-field input-field-sm select-filter">
+                  <option value="all">📋 Todos os Docentes</option>
+                  <option value="faltas" selected>❌ Apenas Faltantes / Ausentes</option>
+                  <option value="presentes">✅ Apenas Presentes Confirmados</option>
+                  <option value="extras">⚠️ Extras (Não Cadastrados)</option>
+                </select>
+              </div>
+
+              <!-- Busca Textual -->
+              <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="auditoriaFiltroBusca" class="input-field input-field-sm" placeholder="Buscar por professor, turma, ano ou e-mail...">
+              </div>
+
+              <!-- Botões de Ação de Auditoria -->
+              <button type="button" id="btnGerarPDFFaltas" onclick="exportarRelatorioFaltasPDF()" class="btn btn-sm btn-primary" title="Gerar Relatório de Faltas em PDF com cabeçalho oficial">
+                <i class="fa-solid fa-file-pdf"></i> <span>PDF de Faltas</span>
+              </button>
+              <button type="button" id="btnCopiarFaltasWhatsApp" onclick="copiarFaltasWhatsApp()" class="btn btn-sm btn-whatsapp" title="Copiar resumo de faltas para WhatsApp da Gestão">
+                <i class="fa-brands fa-whatsapp"></i> <span>Copiar WhatsApp</span>
+              </button>
+              <button type="button" id="btnExportarAuditoriaCSV" onclick="exportarAuditoriaCSV()" class="btn btn-sm btn-outline" title="Exportar tabela completa em CSV">
+                <i class="fa-solid fa-file-csv"></i> <span>CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Tabela de Auditoria e Cruzamento -->
+          <div id="auditoriaTabelaContainer" class="historico-table-wrapper"></div>
+
+          <!-- Documento Timbrado Oficial de Faltas (Preparado para Impressão/PDF) -->
+          <div id="relatorioFaltasDocumento" class="official-report-document hidden-print-only">
+            <div class="report-header">
+              <div class="report-brand">
+                <div class="report-emblem"><i class="fa-solid fa-triangle-exclamation text-danger"></i></div>
+                <div class="report-titles">
+                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h2>
+                  <h3>RELATÓRIO OFICIAL DE AUSÊNCIAS E FALTAS DOCENTES</h3>
+                  <div class="report-event-info">
+                    <p><strong>Disciplina:</strong> EDM — Educação Digital e Midiática</p>
+                    <p><strong>Encontro Formativo:</strong> 07 de outubro de 2026</p>
+                  </div>
+                </div>
+              </div>
+              <div class="report-meta">
+                <div class="report-meta-item"><span>Emissão:</span> <strong id="repFaltasDataEmissao">--/--/---- --:--</strong></div>
+                <div class="report-meta-item"><span>Escopo:</span> <strong id="repFaltasEscopo">Todas as Unidades</strong></div>
+                <div class="report-meta-item"><span>Total Faltas:</span> <span class="badge badge-danger" id="repFaltasTotalBadge">0 Faltantes</span></div>
+              </div>
+            </div>
+
+            <!-- Resumo das Faltas -->
+            <div class="report-summary-cards">
+              <div class="rep-card">
+                <span class="rep-card-title">Docentes Cadastrados</span>
+                <strong class="rep-card-num" id="repFaltasTotalCad">0</strong>
+              </div>
+              <div class="rep-card">
+                <span class="rep-card-title">Presentes Confirmados</span>
+                <strong class="rep-card-num" id="repFaltasTotalPres">0</strong>
+              </div>
+              <div class="rep-card">
+                <span class="rep-card-title text-danger">Faltas Detectadas</span>
+                <strong class="rep-card-num text-danger" id="repFaltasTotalFaltas">0</strong>
+              </div>
+              <div class="rep-card">
+                <span class="rep-card-title">Taxa de Presença</span>
+                <strong class="rep-card-text" id="repFaltasTaxa">0%</strong>
+              </div>
+            </div>
+
+            <!-- Tabela Nominal de Ausências -->
+            <div class="report-table-section">
+              <h4 class="report-section-title text-danger"><i class="fa-solid fa-user-xmark"></i> Relação Nominal de Professores Ausentes</h4>
+              <div id="repFaltasTabelaContainer" class="report-table-container"></div>
+            </div>
+
+            <!-- Bloco de Justificativas e Assinaturas -->
+            <div class="report-signatures">
+              <div class="signature-box">
+                <div class="signature-line"></div>
+                <span class="signature-role">Coordenação EDM / Formador Responsável</span>
+                <span class="signature-sub">Assinatura / Visto</span>
+              </div>
+              <div class="signature-box">
+                <div class="signature-line"></div>
+                <span class="signature-role">Direção Escolar / Gestão de Recursos Humanos</span>
+                <span class="signature-sub">Recebido em ____/____/________</span>
+              </div>
+            </div>
+
+            <div class="report-footer">
+              <span>Documento de auditoria gerado pelo cruzamento automático entre o Cadastro Oficial EDM e a Lista de Presença Digital.</span>
+              <span id="repFaltasFooterTimestamp">Autenticidade vinculada ao banco Firestore EDM e Google Sheets.</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Aba 3: Relatório Oficial para a Gestão da Escola -->
         <div id="tabRelatorios" class="admin-tab-content">
           
           <!-- Controles do Relatório -->
@@ -678,6 +875,35 @@
               <div class="input-group">
                 <label for="cfgEntryProfessor"><i class="fa-solid fa-tag"></i> Entry ID - Nome do Professor(a):</label>
                 <input type="text" id="cfgEntryProfessor" class="input-field" value="entry.278265355">
+              </div>
+            </div>
+
+            <!-- Seção Base Oficial EDM (Firestore API) -->
+            <div class="config-section-card">
+              <div class="config-section-header">
+                <i class="fa-solid fa-database text-purple" style="color: #9333ea;"></i>
+                <div>
+                  <h4>Base Oficial de Professores (EDM Firestore)</h4>
+                  <p>Repositório de cadastro docente utilizado para o cruzamento e auditoria de faltas.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="cfgFirestoreUrl"><i class="fa-solid fa-cloud"></i> Endpoint REST da Coleção Firestore:</label>
+                <input 
+                  type="url" 
+                  id="cfgFirestoreUrl" 
+                  class="input-field" 
+                  value="https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/professores?pageSize=300"
+                  placeholder="https://firestore.googleapis.com/v1/projects/.../professores"
+                >
+                <span class="field-hint">Conectado ao projeto <code>edmprofessor-1542b</code> (52 docentes).</span>
+              </div>
+
+              <div style="margin-top: 0.75rem;">
+                <button type="button" id="btnTestarEDM" class="btn btn-sm btn-outline">
+                  <i class="fa-solid fa-arrows-rotate"></i> Testar Conexão com Firestore EDM
+                </button>
               </div>
             </div>
 

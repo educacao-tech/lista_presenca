@@ -11,6 +11,7 @@ const DEFAULT_CONFIG = {
   entryEscola: "entry.285930433",
   entryProfessor: "entry.278265355",
   sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv",
+  firestoreUrl: "https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/professores?pageSize=300",
   googleClientId: "",
   isFormOpen: true
 };
@@ -18,9 +19,15 @@ const DEFAULT_CONFIG = {
 const appState = {
   config: { ...DEFAULT_CONFIG },
   history: [],
+  cadastrados: [],
+  auditoriaFilterSchool: '',
+  auditoriaFilterStatus: 'faltas',
+  auditoriaFilterSearch: '',
   isAdmin: false,
   isSyncing: false,
+  isSyncingEDM: false,
   lastSyncTime: null,
+  lastSyncEDMTime: null,
   syncTimer: null,
   googleUser: null
 };
@@ -32,6 +39,7 @@ const elements = {
   form: document.getElementById('attendanceForm'),
   selectEscola: document.getElementById('selectEscola'),
   inputProfessor: document.getElementById('inputProfessor'),
+  listaSugestoesProfessores: document.getElementById('listaSugestoesProfessores'),
   inputEmail: document.getElementById('inputEmail'),
   displayDate: document.getElementById('displayDate'),
   displayTime: document.getElementById('displayTime'),
@@ -95,6 +103,31 @@ const elements = {
   kpiUltimoRegistro: document.getElementById('kpiUltimoRegistro'),
   kpiUltimoNome: document.getElementById('kpiUltimoNome'),
 
+  // Aba Cruzamento & Auditoria de Faltas (EDM Firestore)
+  edmStatusBar: document.getElementById('edmStatusBar'),
+  edmStatusIcon: document.getElementById('edmStatusIcon'),
+  edmStatusTitle: document.getElementById('edmStatusTitle'),
+  edmStatusDesc: document.getElementById('edmStatusDesc'),
+  btnSyncEDMNow: document.getElementById('btnSyncEDMNow'),
+  btnOpenEDMSite: document.getElementById('btnOpenEDMSite'),
+  kpiAuditoriaCadastrados: document.getElementById('kpiAuditoriaCadastrados'),
+  kpiAuditoriaPresentes: document.getElementById('kpiAuditoriaPresentes'),
+  kpiAuditoriaPresentesSub: document.getElementById('kpiAuditoriaPresentesSub'),
+  kpiAuditoriaFaltas: document.getElementById('kpiAuditoriaFaltas'),
+  kpiAuditoriaFaltasSub: document.getElementById('kpiAuditoriaFaltasSub'),
+  kpiAuditoriaTaxa: document.getElementById('kpiAuditoriaTaxa'),
+  kpiAuditoriaExtrasSub: document.getElementById('kpiAuditoriaExtrasSub'),
+  auditoriaSchoolsContainer: document.getElementById('auditoriaSchoolsContainer'),
+  totalAuditoriaBadge: document.getElementById('totalAuditoriaBadge'),
+  badgeFaltasDestaque: document.getElementById('badgeFaltasDestaque'),
+  auditoriaFiltroEscolaSelect: document.getElementById('auditoriaFiltroEscolaSelect'),
+  auditoriaFiltroStatusSelect: document.getElementById('auditoriaFiltroStatusSelect'),
+  auditoriaFiltroBusca: document.getElementById('auditoriaFiltroBusca'),
+  btnGerarPDFFaltas: document.getElementById('btnGerarPDFFaltas'),
+  btnCopiarFaltasWhatsApp: document.getElementById('btnCopiarFaltasWhatsApp'),
+  btnExportarAuditoriaCSV: document.getElementById('btnExportarAuditoriaCSV'),
+  auditoriaTabelaContainer: document.getElementById('auditoriaTabelaContainer'),
+
   // Aba Relatório para Gestão
   relatorioEscolaSelect: document.getElementById('relatorioEscolaSelect'),
   btnGerarPDF: document.getElementById('btnGerarPDF'),
@@ -139,9 +172,11 @@ const elements = {
   cfgEntryEscola: document.getElementById('cfgEntryEscola'),
   cfgEntryProfessor: document.getElementById('cfgEntryProfessor'),
   cfgSheetUrl: document.getElementById('cfgSheetUrl'),
+  cfgFirestoreUrl: document.getElementById('cfgFirestoreUrl'),
   btnSalvarConfig: document.getElementById('btnSalvarConfig'),
   btnRestaurarPadrao: document.getElementById('btnRestaurarPadrao'),
   btnTestarSincronizacao: document.getElementById('btnTestarSincronizacao'),
+  btnTestarEDM: document.getElementById('btnTestarEDM'),
   
   // Modal Registro Duplicado
   modalDuplicado: document.getElementById('modalDuplicado'),
@@ -170,6 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   loadConfig();
   loadHistory();
+  loadCachedCadastrados();
   startClock();
   checkStoredAdminSession();
   setupEventListeners();
@@ -177,6 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Carrega identidade salva do docente ou inicializa o Google Identity
   loadSavedDocenteIdentity();
   setTimeout(initGoogleIdentity, 400);
+
+  // Sincroniza Base Oficial de Professores (Firestore EDM)
+  syncCadastradosEDM(false);
 
   // Se já tiver URL da planilha configurada, tenta sincronizar em segundo plano
   if (appState.config.sheetUrl) {
@@ -260,6 +299,7 @@ function loadConfig() {
   if (elements.cfgEntryEscola) elements.cfgEntryEscola.value = appState.config.entryEscola || DEFAULT_CONFIG.entryEscola;
   if (elements.cfgEntryProfessor) elements.cfgEntryProfessor.value = appState.config.entryProfessor || DEFAULT_CONFIG.entryProfessor;
   if (elements.cfgSheetUrl) elements.cfgSheetUrl.value = appState.config.sheetUrl || '';
+  if (elements.cfgFirestoreUrl) elements.cfgFirestoreUrl.value = appState.config.firestoreUrl || DEFAULT_CONFIG.firestoreUrl;
   if (elements.cfgGoogleClientId) elements.cfgGoogleClientId.value = appState.config.googleClientId || '';
 
   updateFormStatusUI();
@@ -298,6 +338,7 @@ function saveConfig() {
     entryEscola: (elements.cfgEntryEscola ? elements.cfgEntryEscola.value.trim() : '') || DEFAULT_CONFIG.entryEscola,
     entryProfessor: (elements.cfgEntryProfessor ? elements.cfgEntryProfessor.value.trim() : '') || DEFAULT_CONFIG.entryProfessor,
     sheetUrl: (elements.cfgSheetUrl ? elements.cfgSheetUrl.value.trim() : ''),
+    firestoreUrl: (elements.cfgFirestoreUrl ? elements.cfgFirestoreUrl.value.trim() : '') || DEFAULT_CONFIG.firestoreUrl,
     googleClientId: (elements.cfgGoogleClientId ? elements.cfgGoogleClientId.value.trim() : ''),
     isFormOpen: isFormOpen
   };
@@ -634,6 +675,7 @@ async function syncRealTime(showFeedback = false) {
     }
 
     renderHistoryTable();
+    renderAuditoriaUI();
 
     if (showFeedback) {
       showToast(`Sincronizado! ${merged.length} presenças atualizadas.`, "success");
@@ -660,6 +702,7 @@ async function syncRealTime(showFeedback = false) {
     }
 
     renderHistoryTable();
+    renderAuditoriaUI();
 
     if (showFeedback) {
       showToast("Verifique se a planilha foi publicada como CSV na Web (Arquivo > Compartilhar > Publicar na Web).", "warning");
@@ -1275,6 +1318,8 @@ function switchAdminTab(targetTabId) {
     renderManagementReport(selectedSchool);
   } else if (targetTabId === 'tabHistorico') {
     renderHistoryTable();
+  } else if (targetTabId === 'tabAuditoriaFaltas') {
+    renderAuditoriaUI();
   }
 }
 
@@ -1841,11 +1886,676 @@ window.printManagementReport = printManagementReport;
 window.copyWhatsAppSummary = copyWhatsAppSummary;
 window.exportReportCSV = exportReportCSV;
 
+// ==========================================================================
+// Base Oficial de Professores (EDM Firestore) & Auditoria de Faltas
+// ==========================================================================
+
+function loadCachedCadastrados() {
+  const cached = localStorage.getItem('presenca_cadastrados_cache');
+  if (cached) {
+    try {
+      appState.cadastrados = JSON.parse(cached);
+      updateTeacherDatalist();
+      renderAuditoriaUI();
+    } catch (e) {
+      appState.cadastrados = [];
+    }
+  }
+}
+
+async function syncCadastradosEDM(showFeedback = false) {
+  const firestoreUrl = appState.config.firestoreUrl || DEFAULT_CONFIG.firestoreUrl;
+  if (!firestoreUrl) return;
+
+  appState.isSyncingEDM = true;
+  if (elements.edmStatusIcon) {
+    elements.edmStatusIcon.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i>`;
+  }
+  if (elements.edmStatusTitle) {
+    elements.edmStatusTitle.textContent = "Sincronizando Base EDM Firestore...";
+  }
+
+  try {
+    const res = await fetch(firestoreUrl, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    const docs = data.documents || [];
+    const cadastrados = docs.map(doc => {
+      const f = doc.fields || {};
+      const id = doc.name ? doc.name.split('/').pop() : '';
+      return {
+        id: id,
+        nome: (f.nome?.stringValue || f.nome_processado?.stringValue || '').trim(),
+        escola: (f.escola?.stringValue || '').trim(),
+        disciplina: (f.disciplina?.stringValue || 'EDM').trim(),
+        turma: (f.turma?.stringValue || '').trim(),
+        ano: (f.ano?.stringValue || '').trim(),
+        turno: (f.turno?.stringValue || '').trim(),
+        telefone: (f.telefone?.stringValue || '').trim()
+      };
+    }).filter(c => c.nome.length > 0);
+
+    appState.cadastrados = cadastrados;
+    localStorage.setItem('presenca_cadastrados_cache', JSON.stringify(cadastrados));
+    appState.lastSyncEDMTime = new Date();
+    const timeStr = appState.lastSyncEDMTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+    if (elements.edmStatusBar) {
+      elements.edmStatusBar.className = "sync-status-bar firestore-status-bar synced";
+    }
+    if (elements.edmStatusIcon) {
+      elements.edmStatusIcon.innerHTML = `<i class="fa-solid fa-database" style="color: #9333ea;"></i>`;
+    }
+    if (elements.edmStatusTitle) {
+      elements.edmStatusTitle.textContent = `Base Oficial EDM: ${cadastrados.length} Professores Cadastrados`;
+    }
+    if (elements.edmStatusDesc) {
+      elements.edmStatusDesc.textContent = `Sincronizado com o Firestore às ${timeStr}`;
+    }
+
+    updateTeacherDatalist();
+    renderAuditoriaUI();
+
+    if (showFeedback) {
+      showToast(`Base EDM atualizada! ${cadastrados.length} docentes carregados.`, "success");
+    }
+  } catch (err) {
+    console.warn("Erro ao buscar professores do Firestore:", err);
+    if (elements.edmStatusIcon) {
+      elements.edmStatusIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-warning"></i>`;
+    }
+    if (elements.edmStatusTitle) {
+      elements.edmStatusTitle.textContent = `Base EDM (Offline/Cache: ${appState.cadastrados.length} docentes)`;
+    }
+    if (elements.edmStatusDesc) {
+      elements.edmStatusDesc.textContent = `Não foi possível atualizar em tempo real: ${err.message}`;
+    }
+    if (showFeedback) {
+      showToast(`Falha na conexão com Firestore: ${err.message}`, "warning");
+    }
+  } finally {
+    appState.isSyncingEDM = false;
+  }
+}
+
+// Normaliza o nome da escola para comparação padronizada
+function normalizeSchoolName(name) {
+  if (!name) return '';
+  const n = normalizeName(name);
+  if (n.includes('ALZIRA')) return 'ALZIRA ACRA';
+  if (n.includes('ANNA') || n.includes('BONAGURA')) return 'ANNA BONAGURA';
+  if (n.includes('BRAGA') || n.includes('MORATO')) return 'BRAGA MORATO';
+  if (n.includes('CAIC')) return 'CAIC';
+  if (n.includes('CELIA') || n.includes('BUENO')) return 'CÉLIA BUENO';
+  if (n.includes('ESTHER') || n.includes('VIANNA')) return 'ESTHER VIANNA';
+  if (n.includes('PADRE') || n.includes('BENITO')) return 'PADRE BENITO';
+  return name.trim().toUpperCase();
+}
+
+// Atualiza o <datalist> de auto-sugestão do formulário
+function updateTeacherDatalist() {
+  const datalist = elements.listaSugestoesProfessores;
+  if (!datalist) return;
+
+  const selectedSchool = elements.selectEscola ? elements.selectEscola.value : '';
+  const normSelectedSchool = normalizeSchoolName(selectedSchool);
+
+  let options = appState.cadastrados || [];
+  if (normSelectedSchool) {
+    options = options.filter(c => normalizeSchoolName(c.escola) === normSelectedSchool);
+  }
+
+  options.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  datalist.innerHTML = options.map(c => {
+    const meta = [c.ano, c.turma, c.turno ? `(${c.turno})` : ''].filter(Boolean).join(' ');
+    return `<option value="${escapeHtml(c.nome)}">${meta ? escapeHtml(meta) : ''}</option>`;
+  }).join('');
+}
+
+// Executa o cruzamento completo dos dados (Presentes vs Faltantes vs Extras)
+function computeAuditoriaData() {
+  const cadastrados = appState.cadastrados || [];
+  const presencas = appState.history || [];
+
+  const presencasMap = new Map();
+  const presencasByEmail = new Map();
+
+  presencas.forEach(p => {
+    const n = normalizeName(p.professor);
+    const email = (p.email || '').trim().toLowerCase();
+    if (n) {
+      if (!presencasMap.has(n)) presencasMap.set(n, []);
+      presencasMap.get(n).push(p);
+    }
+    if (email) {
+      if (!presencasByEmail.has(email)) presencasByEmail.set(email, []);
+      presencasByEmail.get(email).push(p);
+    }
+  });
+
+  const matchedPresencasKeys = new Set();
+  const matchedPresencasEmails = new Set();
+  const presentes = [];
+  const faltantes = [];
+
+  cadastrados.forEach(cad => {
+    const cadNorm = normalizeName(cad.nome);
+    const cadSchool = normalizeSchoolName(cad.escola);
+
+    let match = null;
+    let matchKey = null;
+
+    // 1. Match direto por nome normalizado
+    if (presencasMap.has(cadNorm)) {
+      match = presencasMap.get(cadNorm)[0];
+      matchKey = cadNorm;
+    }
+
+    // 2. Match inteligente por primeiro e último nome ou inclusão
+    if (!match) {
+      for (const [presNorm, pList] of presencasMap.entries()) {
+        const wordsCad = cadNorm.split(' ').filter(w => w.length > 1);
+        const wordsPres = presNorm.split(' ').filter(w => w.length > 1);
+        const pRecord = pList[0];
+        const pSchool = normalizeSchoolName(pRecord.escola);
+
+        const sameSchool = !cadSchool || !pSchool || cadSchool === pSchool;
+
+        if (sameSchool) {
+          if (cadNorm.includes(presNorm) || presNorm.includes(cadNorm)) {
+            match = pRecord;
+            matchKey = presNorm;
+            break;
+          }
+          if (wordsCad.length >= 2 && wordsPres.length >= 2) {
+            if (wordsCad[0] === wordsPres[0] && wordsCad[wordsCad.length - 1] === wordsPres[wordsPres.length - 1]) {
+              match = pRecord;
+              matchKey = presNorm;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    // 3. Match de apelidos conhecidos ou e-mails específicos
+    if (!match) {
+      if (cadNorm.includes('SAQUETO') && presencasMap.has(normalizeName('LUCIA SAQUETO'))) {
+        match = presencasMap.get(normalizeName('LUCIA SAQUETO'))[0];
+        matchKey = normalizeName('LUCIA SAQUETO');
+      } else if (cadNorm.includes('VERENA') && presencasByEmail.has('verenamichel.19@gmail.com')) {
+        match = presencasByEmail.get('verenamichel.19@gmail.com')[0];
+        matchKey = normalizeName(match.professor);
+      }
+    }
+
+    if (match) {
+      matchedPresencasKeys.add(matchKey || normalizeName(match.professor));
+      if (match.email) matchedPresencasEmails.add(match.email.toLowerCase());
+      presentes.push({
+        tipo: 'presente',
+        cadastrado: cad,
+        presenca: match,
+        nome: cad.nome,
+        escola: normalizeSchoolName(cad.escola),
+        ano: cad.ano || '-',
+        turma: cad.turma || '-',
+        turno: cad.turno || '-',
+        disciplina: cad.disciplina || 'EDM',
+        email: match.email || '-',
+        timestamp: match.timestamp || '-'
+      });
+    } else {
+      faltantes.push({
+        tipo: 'falta',
+        cadastrado: cad,
+        presenca: null,
+        nome: cad.nome,
+        escola: normalizeSchoolName(cad.escola),
+        ano: cad.ano || '-',
+        turma: cad.turma || '-',
+        turno: cad.turno || '-',
+        disciplina: cad.disciplina || 'EDM',
+        email: '-',
+        timestamp: '-'
+      });
+    }
+  });
+
+  // Presenças extras (não encontradas no cadastro inicial)
+  const extras = [];
+  presencas.forEach(p => {
+    const pNorm = normalizeName(p.professor);
+    const pEmail = (p.email || '').trim().toLowerCase();
+    if (!matchedPresencasKeys.has(pNorm) && (!pEmail || !matchedPresencasEmails.has(pEmail))) {
+      extras.push({
+        tipo: 'extra',
+        cadastrado: null,
+        presenca: p,
+        nome: p.professor,
+        escola: normalizeSchoolName(p.escola),
+        ano: '-',
+        turma: '-',
+        turno: '-',
+        disciplina: 'EDM',
+        email: p.email || '-',
+        timestamp: p.timestamp || '-'
+      });
+    }
+  });
+
+  const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+  const schoolStats = {};
+  ALL_SCHOOLS.forEach(s => {
+    schoolStats[s] = { totalCad: 0, presentes: 0, faltas: 0, extras: 0, taxa: 0 };
+  });
+
+  cadastrados.forEach(c => {
+    const s = normalizeSchoolName(c.escola);
+    if (schoolStats[s]) schoolStats[s].totalCad++;
+  });
+
+  presentes.forEach(p => {
+    const s = normalizeSchoolName(p.escola);
+    if (schoolStats[s]) schoolStats[s].presentes++;
+  });
+
+  faltantes.forEach(f => {
+    const s = normalizeSchoolName(f.escola);
+    if (schoolStats[s]) schoolStats[s].faltas++;
+  });
+
+  extras.forEach(e => {
+    const s = normalizeSchoolName(e.escola);
+    if (schoolStats[s]) schoolStats[s].extras++;
+  });
+
+  ALL_SCHOOLS.forEach(s => {
+    const st = schoolStats[s];
+    st.taxa = st.totalCad > 0 ? Math.round((st.presentes / st.totalCad) * 100) : (st.presentes > 0 ? 100 : 0);
+  });
+
+  const totalCadastrados = cadastrados.length;
+  const totalPresentes = presentes.length;
+  const totalFaltas = faltantes.length;
+  const taxaGeral = totalCadastrados > 0 ? Math.round((totalPresentes / totalCadastrados) * 100) : 0;
+
+  return {
+    cadastrados,
+    presencas,
+    presentes,
+    faltantes,
+    extras,
+    totalCadastrados,
+    totalPresentes,
+    totalFaltas,
+    taxaGeral,
+    schoolStats,
+    ALL_SCHOOLS
+  };
+}
+
+// Renderiza a interface da aba Cruzamento & Auditoria de Faltas
+function renderAuditoriaUI() {
+  const data = computeAuditoriaData();
+  const { totalCadastrados, totalPresentes, totalFaltas, taxaGeral, schoolStats, ALL_SCHOOLS, presentes, faltantes, extras } = data;
+
+  // Atualiza KPIs
+  if (elements.kpiAuditoriaCadastrados) elements.kpiAuditoriaCadastrados.textContent = totalCadastrados;
+  if (elements.kpiAuditoriaPresentes) elements.kpiAuditoriaPresentes.textContent = totalPresentes;
+  if (elements.kpiAuditoriaPresentesSub) elements.kpiAuditoriaPresentesSub.textContent = `${taxaGeral}% de presença`;
+  if (elements.kpiAuditoriaFaltas) elements.kpiAuditoriaFaltas.textContent = totalFaltas;
+  if (elements.kpiAuditoriaFaltasSub) elements.kpiAuditoriaFaltasSub.textContent = `${totalFaltas} docente${totalFaltas !== 1 ? 's' : ''} ausente${totalFaltas !== 1 ? 's' : ''}`;
+  if (elements.kpiAuditoriaTaxa) elements.kpiAuditoriaTaxa.textContent = `${taxaGeral}%`;
+  if (elements.kpiAuditoriaExtrasSub) elements.kpiAuditoriaExtrasSub.textContent = `+${extras.length} extra${extras.length !== 1 ? 's' : ''} participante${extras.length !== 1 ? 's' : ''}`;
+
+  if (elements.badgeFaltasDestaque) {
+    elements.badgeFaltasDestaque.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${totalFaltas} Falta${totalFaltas !== 1 ? 's' : ''}`;
+  }
+
+  // Renderiza Grid de Escolas com Taxa e Progresso
+  if (elements.auditoriaSchoolsContainer) {
+    const selectedSchool = elements.auditoriaFiltroEscolaSelect ? elements.auditoriaFiltroEscolaSelect.value : '';
+    let cardsHtml = '';
+
+    ALL_SCHOOLS.forEach(school => {
+      const st = schoolStats[school] || { totalCad: 0, presentes: 0, faltas: 0, extras: 0, taxa: 0 };
+      const isActive = selectedSchool === school;
+      
+      let rateClass = 'rate-100';
+      if (st.taxa < 80) rateClass = 'rate-alert';
+      else if (st.taxa < 90) rateClass = 'rate-warn';
+      else if (st.taxa < 100) rateClass = 'rate-good';
+
+      let barColor = 'var(--success)';
+      if (st.taxa < 80) barColor = 'var(--danger)';
+      else if (st.taxa < 90) barColor = '#f59e0b';
+      else if (st.taxa < 100) barColor = 'var(--primary)';
+
+      cardsHtml += `
+        <div class="auditoria-school-card ${isActive ? 'active' : ''}" data-school="${escapeHtml(school)}">
+          <div class="auditoria-school-header">
+            <span class="auditoria-school-name" title="${escapeHtml(school)}">${escapeHtml(school)}</span>
+            <span class="auditoria-school-rate ${rateClass}">${st.taxa}%</span>
+          </div>
+          <div class="auditoria-school-bar-wrap">
+            <div class="auditoria-school-bar-fill" style="width: ${st.taxa}%; background: ${barColor};"></div>
+          </div>
+          <div class="auditoria-school-counts">
+            <span>✅ ${st.presentes}/${st.totalCad}</span>
+            <span class="${st.faltas > 0 ? 'text-danger font-bold' : ''}">❌ ${st.faltas} falta${st.faltas !== 1 ? 's' : ''}</span>
+          </div>
+        </div>
+      `;
+    });
+
+    elements.auditoriaSchoolsContainer.innerHTML = cardsHtml;
+
+    elements.auditoriaSchoolsContainer.querySelectorAll('.auditoria-school-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const sch = card.getAttribute('data-school');
+        if (elements.auditoriaFiltroEscolaSelect) {
+          elements.auditoriaFiltroEscolaSelect.value = (elements.auditoriaFiltroEscolaSelect.value === sch) ? '' : sch;
+        }
+        renderAuditoriaUI();
+      });
+    });
+  }
+
+  // Filtragem da Lista de Auditoria
+  const filterSchool = elements.auditoriaFiltroEscolaSelect ? elements.auditoriaFiltroEscolaSelect.value : '';
+  const filterStatus = elements.auditoriaFiltroStatusSelect ? elements.auditoriaFiltroStatusSelect.value : 'faltas';
+  const filterSearch = (elements.auditoriaFiltroBusca ? elements.auditoriaFiltroBusca.value : '').toLowerCase().trim();
+
+  let combinedList = [];
+  if (filterStatus === 'all') {
+    combinedList = [...faltantes, ...presentes, ...extras];
+  } else if (filterStatus === 'faltas') {
+    combinedList = [...faltantes];
+  } else if (filterStatus === 'presentes') {
+    combinedList = [...presentes];
+  } else if (filterStatus === 'extras') {
+    combinedList = [...extras];
+  }
+
+  if (filterSchool) {
+    combinedList = combinedList.filter(item => item.escola === filterSchool);
+  }
+
+  if (filterSearch) {
+    combinedList = combinedList.filter(item => {
+      const matchNome = (item.nome || '').toLowerCase().includes(filterSearch);
+      const matchEscola = (item.escola || '').toLowerCase().includes(filterSearch);
+      const matchEmail = (item.email || '').toLowerCase().includes(filterSearch);
+      const matchTurma = (item.turma || '').toLowerCase().includes(filterSearch);
+      const matchAno = (item.ano || '').toLowerCase().includes(filterSearch);
+      return matchNome || matchEscola || matchEmail || matchTurma || matchAno;
+    });
+  }
+
+  // Ordenação: Faltas primeiro -> Escola ASC -> Nome ASC
+  combinedList.sort((a, b) => {
+    if (a.tipo === 'falta' && b.tipo !== 'falta') return -1;
+    if (b.tipo === 'falta' && a.tipo !== 'falta') return 1;
+    return (a.escola || '').localeCompare(b.escola || '') || (a.nome || '').localeCompare(b.nome || '');
+  });
+
+  if (elements.totalAuditoriaBadge) {
+    elements.totalAuditoriaBadge.textContent = `${combinedList.length} registro${combinedList.length !== 1 ? 's' : ''} exibido${combinedList.length !== 1 ? 's' : ''}`;
+  }
+
+  // Renderiza Tabela
+  if (elements.auditoriaTabelaContainer) {
+    if (combinedList.length === 0) {
+      elements.auditoriaTabelaContainer.innerHTML = `
+        <div class="empty-state">
+          <i class="fa-solid fa-circle-check text-success" style="font-size: 2.5rem; margin-bottom: 0.75rem;"></i>
+          <p><strong>Nenhum registro encontrado para estes filtros.</strong></p>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">Altere a escola ou selecione outro status de exibição.</span>
+        </div>
+      `;
+      return;
+    }
+
+    let tableHtml = `
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Professor(a)</th>
+            <th>Unidade Escolar</th>
+            <th>Turma / Turno</th>
+            <th>Confirmação / E-mail</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    combinedList.forEach(item => {
+      let statusBadge = '';
+      let rowClass = '';
+
+      if (item.tipo === 'falta') {
+        statusBadge = `<span class="badge-status-falta"><i class="fa-solid fa-user-xmark"></i> Falta</span>`;
+        rowClass = 'table-row-falta';
+      } else if (item.tipo === 'presente') {
+        statusBadge = `<span class="badge-status-presente"><i class="fa-solid fa-user-check"></i> Presente</span>`;
+        rowClass = 'table-row-presente';
+      } else {
+        statusBadge = `<span class="badge-status-extra"><i class="fa-solid fa-user-plus"></i> Extra</span>`;
+        rowClass = 'table-row-extra';
+      }
+
+      const metaTurma = (item.ano !== '-' || item.turma !== '-') ? `${item.ano} ${item.turma} • ${item.turno}` : '-';
+
+      tableHtml += `
+        <tr class="${rowClass}">
+          <td>${statusBadge}</td>
+          <td>
+            <strong>${escapeHtml(item.nome)}</strong>
+            ${item.tipo === 'falta' ? `<div class="docente-meta-pill"><i class="fa-solid fa-clock-rotate-left"></i> Não assinou a lista</div>` : ''}
+          </td>
+          <td><span class="badge badge-outline">${escapeHtml(item.escola)}</span></td>
+          <td><span style="font-size: 0.85rem;">${escapeHtml(metaTurma)}</span></td>
+          <td>
+            ${item.timestamp !== '-' ? `<div><i class="fa-regular fa-clock text-muted"></i> <strong>${escapeHtml(item.timestamp)}</strong></div>` : '<span class="text-muted">--:--</span>'}
+            ${item.email !== '-' ? `<div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(item.email)}</div>` : ''}
+          </td>
+        </tr>
+      `;
+    });
+
+    tableHtml += `</tbody></table>`;
+    elements.auditoriaTabelaContainer.innerHTML = tableHtml;
+  }
+}
+
+// Exporta o Relatório Oficial de Faltas em PDF
+function exportarRelatorioFaltasPDF() {
+  const data = computeAuditoriaData();
+  const { faltantes, totalCadastrados, totalPresentes, totalFaltas, taxaGeral, ALL_SCHOOLS, schoolStats } = data;
+
+  if (faltantes.length === 0) {
+    showToast("Parabéns! Não há nenhuma falta registrada.", "success");
+    return;
+  }
+
+  const docEl = document.getElementById('relatorioFaltasDocumento');
+  if (!docEl) return;
+
+  const now = new Date();
+  const emissaoStr = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  const filterSchool = elements.auditoriaFiltroEscolaSelect ? elements.auditoriaFiltroEscolaSelect.value : '';
+  const listFaltas = filterSchool ? faltantes.filter(f => f.escola === filterSchool) : faltantes;
+
+  document.getElementById('repFaltasDataEmissao').textContent = emissaoStr;
+  document.getElementById('repFaltasEscopo').textContent = filterSchool || 'Todas as 7 Escolas';
+  document.getElementById('repFaltasTotalBadge').textContent = `${listFaltas.length} Faltantes`;
+  document.getElementById('repFaltasTotalCad').textContent = filterSchool ? (schoolStats[filterSchool]?.totalCad || 0) : totalCadastrados;
+  document.getElementById('repFaltasTotalPres').textContent = filterSchool ? (schoolStats[filterSchool]?.presentes || 0) : totalPresentes;
+  document.getElementById('repFaltasTotalFaltas').textContent = listFaltas.length;
+  document.getElementById('repFaltasTaxa').textContent = `${filterSchool ? (schoolStats[filterSchool]?.taxa || 0) : taxaGeral}%`;
+
+  let tableHtml = `
+    <table class="report-formal-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;">Nº</th>
+          <th>Escola</th>
+          <th>Professor(a) Ausente</th>
+          <th>Ano / Turma / Turno</th>
+          <th>Situação</th>
+          <th>Justificativa / Motivo</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  listFaltas.forEach((f, idx) => {
+    tableHtml += `
+      <tr>
+        <td style="text-align: center;">${idx + 1}</td>
+        <td><strong>${escapeHtml(f.escola)}</strong></td>
+        <td>${escapeHtml(f.nome)}</td>
+        <td>${escapeHtml(f.ano)} ${escapeHtml(f.turma)} (${escapeHtml(f.turno)})</td>
+        <td style="color: #b91c1c; font-weight: bold;">AUSENTE</td>
+        <td style="border-bottom: 1px dashed #cbd5e1; min-width: 140px;"></td>
+      </tr>
+    `;
+  });
+
+  tableHtml += `</tbody></table>`;
+  document.getElementById('repFaltasTabelaContainer').innerHTML = tableHtml;
+
+  docEl.style.display = 'block';
+
+  showToast("Gerando Relatório Oficial de Faltas em PDF...", "info");
+
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `Relatorio_Faltas_Docentes_EDM_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+  };
+
+  if (window.html2pdf) {
+    window.html2pdf().set(opt).from(docEl).save().then(() => {
+      docEl.style.display = 'none';
+      showToast("Relatório de Faltas baixado com sucesso!", "success");
+    }).catch(err => {
+      console.error(err);
+      docEl.style.display = 'none';
+      window.print();
+    });
+  } else {
+    window.print();
+    docEl.style.display = 'none';
+  }
+}
+
+// Copia o resumo formatado de faltas para o WhatsApp da Gestão
+function copiarFaltasWhatsApp() {
+  const data = computeAuditoriaData();
+  const { faltantes, totalCadastrados, totalPresentes, totalFaltas, taxaGeral, schoolStats, ALL_SCHOOLS } = data;
+
+  const now = new Date();
+  const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  const filterSchool = elements.auditoriaFiltroEscolaSelect ? elements.auditoriaFiltroEscolaSelect.value : '';
+  const listFaltas = filterSchool ? faltantes.filter(f => f.escola === filterSchool) : faltantes;
+
+  let text = `🚨 *RELATÓRIO DE AUSÊNCIAS E FALTAS DOCENTES*\n`;
+  text += `💻 *Formação:* EDM — Educação Digital e Midiática\n`;
+  text += `📅 *Encontro Formativo:* 07 de outubro de 2026\n`;
+  text += `🏢 *Escopo:* ${filterSchool || "Consolidado Geral (Todas as 7 Escolas)"}\n`;
+  text += `📊 *Frequência Geral:* ${taxaGeral}% de presença (${totalPresentes} presentes de ${totalCadastrados} cadastrados)\n`;
+  text += `❌ *Total de Faltas:* ${listFaltas.length} docentes ausentes\n`;
+  text += `⏱️ *Emissão:* ${emissaoStr}\n\n`;
+
+  if (!filterSchool) {
+    text += `🏫 *PANORAMA DE AUSÊNCIAS POR ESCOLA:*\n`;
+    ALL_SCHOOLS.forEach(s => {
+      const st = schoolStats[s];
+      if (st.faltas > 0) {
+        text += `• *${s}:* ${st.faltas} falta${st.faltas > 1 ? 's' : ''} (${st.presentes}/${st.totalCad} presentes - ${st.taxa}%)\n`;
+      } else {
+        text += `• *${s}:* 100% Presença (0 faltas) ✅\n`;
+      }
+    });
+    text += `\n`;
+  }
+
+  text += `📝 *RELAÇÃO NOMINAL DOS FALTANTES:*\n`;
+  if (listFaltas.length === 0) {
+    text += `Nenhuma falta registrada nesta escola. 100% presente! 🎉\n`;
+  } else {
+    const porEscola = {};
+    listFaltas.forEach(f => {
+      if (!porEscola[f.escola]) porEscola[f.escola] = [];
+      porEscola[f.escola].push(f);
+    });
+
+    for (const esc in porEscola) {
+      text += `\n🏫 *${esc}:*\n`;
+      porEscola[esc].forEach((f, i) => {
+        text += `   ${i + 1}. *${f.nome}* — ${f.ano} ${f.turma} (${f.turno})\n`;
+      });
+    }
+  }
+
+  text += `\n_Auditoria realizada pelo cruzamento entre o Cadastro Oficial EDM e a Lista de Presença Digital._`;
+
+  copyTextToClipboard(text).then(() => {
+    showToast("Resumo de Faltas copiado para o WhatsApp!", "success");
+  }).catch(() => {
+    showToast("Não foi possível copiar automaticamente.", "error");
+  });
+}
+
+// Exporta Tabela Completa de Auditoria em CSV
+function exportarAuditoriaCSV() {
+  const data = computeAuditoriaData();
+  const { presentes, faltantes, extras } = data;
+
+  const allItems = [...faltantes, ...presentes, ...extras];
+  allItems.sort((a, b) => (a.escola || '').localeCompare(b.escola || '') || (a.nome || '').localeCompare(b.nome || ''));
+
+  let csv = "\uFEFFNº;Status;Escola;Professor;Ano;Turma;Turno;Disciplina;Email;CarimboPresenca\n";
+  allItems.forEach((item, idx) => {
+    let stText = item.tipo === 'falta' ? 'FALTA' : (item.tipo === 'presente' ? 'PRESENTE' : 'EXTRA');
+    csv += `"${idx + 1}";"${stText}";"${(item.escola || '').replace(/"/g, '""')}";"${(item.nome || '').replace(/"/g, '""')}";"${(item.ano || '').replace(/"/g, '""')}";"${(item.turma || '').replace(/"/g, '""')}";"${(item.turno || '').replace(/"/g, '""')}";"${(item.disciplina || '').replace(/"/g, '""')}";"${(item.email || '').replace(/"/g, '""')}";"${(item.timestamp || '').replace(/"/g, '""')}"\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `auditoria_faltas_presenca_edm_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    if (a.parentNode) document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+  showToast("Planilha CSV de Auditoria baixada com sucesso!", "success");
+}
+
+// Expõe globalmente
+window.exportarRelatorioFaltasPDF = exportarRelatorioFaltasPDF;
+window.copiarFaltasWhatsApp = copiarFaltasWhatsApp;
+window.exportarAuditoriaCSV = exportarAuditoriaCSV;
+
 function clearHistory() {
   if (confirm("Tem certeza que deseja apagar os registros locais deste dispositivo? Essa ação não afeta a planilha do Google Forms.")) {
     appState.history = appState.history.filter(h => h.isRemote);
     localStorage.removeItem('presenca_history_records');
     renderHistoryTable();
+    renderAuditoriaUI();
     showToast("Histórico local limpo.", "info");
   }
 }
@@ -1854,6 +2564,11 @@ function clearHistory() {
 // Event Listeners
 // ==========================================================================
 function setupEventListeners() {
+  // Atualiza datalist de auto-sugestão de professores quando muda a escola
+  if (elements.selectEscola) {
+    elements.selectEscola.addEventListener('change', updateTeacherDatalist);
+  }
+
   // Conversão automática para maiúsculas ao digitar o nome do professor
   if (elements.inputProfessor) {
     elements.inputProfessor.addEventListener('input', (e) => {
@@ -1906,6 +2621,35 @@ function setupEventListeners() {
       appState.config.sheetUrl = testUrl;
       syncRealTime(true);
     });
+  }
+
+  // Botão Testar Conexão com Firestore EDM
+  if (elements.btnTestarEDM) {
+    elements.btnTestarEDM.addEventListener('click', () => {
+      const testUrl = elements.cfgFirestoreUrl ? elements.cfgFirestoreUrl.value.trim() : '';
+      if (testUrl) {
+        appState.config.firestoreUrl = testUrl;
+      }
+      syncCadastradosEDM(true);
+    });
+  }
+
+  // Sincronizar Base EDM na aba de Auditoria
+  if (elements.btnSyncEDMNow) {
+    elements.btnSyncEDMNow.addEventListener('click', () => {
+      syncCadastradosEDM(true);
+    });
+  }
+
+  // Filtros da Aba Cruzamento & Auditoria de Faltas
+  if (elements.auditoriaFiltroEscolaSelect) {
+    elements.auditoriaFiltroEscolaSelect.addEventListener('change', renderAuditoriaUI);
+  }
+  if (elements.auditoriaFiltroStatusSelect) {
+    elements.auditoriaFiltroStatusSelect.addEventListener('change', renderAuditoriaUI);
+  }
+  if (elements.auditoriaFiltroBusca) {
+    elements.auditoriaFiltroBusca.addEventListener('input', renderAuditoriaUI);
   }
 
   // Clique na engrenagem: pede senha admin123 ou abre painel se já autenticado
