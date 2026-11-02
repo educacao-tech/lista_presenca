@@ -11,9 +11,11 @@ const DEFAULT_CONFIG = {
   entryEscola: "entry.285930433",
   entryProfessor: "entry.278265355",
   sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv",
+  appsScriptUrl: "https://script.google.com/macros/s/AKfycby9lsXXrEUX_49aTYfcjQhgHD1xmB7DFODzXgk0691auDIBOTDEzScBPnu9PUUcgni9/exec",
   firestoreUrl: "https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/professores?pageSize=300",
   googleClientId: "",
-  isFormOpen: true
+  isFormOpen: true,
+  collectEmailInForms: false
 };
 
 const appState = {
@@ -121,21 +123,25 @@ const elements = {
   totalAuditoriaBadge: document.getElementById('totalAuditoriaBadge'),
   badgeFaltasDestaque: document.getElementById('badgeFaltasDestaque'),
   auditoriaFiltroEscolaSelect: document.getElementById('auditoriaFiltroEscolaSelect'),
+  auditoriaFiltroDataSelect: document.getElementById('auditoriaFiltroDataSelect'),
   auditoriaFiltroStatusSelect: document.getElementById('auditoriaFiltroStatusSelect'),
   auditoriaFiltroBusca: document.getElementById('auditoriaFiltroBusca'),
   btnGerarPDFFaltas: document.getElementById('btnGerarPDFFaltas'),
   btnCopiarFaltasWhatsApp: document.getElementById('btnCopiarFaltasWhatsApp'),
   btnExportarAuditoriaCSV: document.getElementById('btnExportarAuditoriaCSV'),
   auditoriaTabelaContainer: document.getElementById('auditoriaTabelaContainer'),
+  repFaltasEncontroData: document.getElementById('repFaltasEncontroData'),
 
   // Aba Relatório para Gestão
   relatorioEscolaSelect: document.getElementById('relatorioEscolaSelect'),
+  relatorioDataSelect: document.getElementById('relatorioDataSelect'),
   btnGerarPDF: document.getElementById('btnGerarPDF'),
   btnImprimirRelatorio: document.getElementById('btnImprimirRelatorio'),
   btnCopiarWhatsApp: document.getElementById('btnCopiarWhatsApp'),
   btnExportarRelatorioCSV: document.getElementById('btnExportarRelatorioCSV'),
   repDataEmissao: document.getElementById('repDataEmissao'),
   repEscolaNome: document.getElementById('repEscolaNome'),
+  repEncontroData: document.getElementById('repEncontroData'),
   repTotalPresentes: document.getElementById('repTotalPresentes'),
   repUnidadesCount: document.getElementById('repUnidadesCount'),
   repPrimeiroRegistro: document.getElementById('repPrimeiroRegistro'),
@@ -172,6 +178,7 @@ const elements = {
   cfgEntryEscola: document.getElementById('cfgEntryEscola'),
   cfgEntryProfessor: document.getElementById('cfgEntryProfessor'),
   cfgSheetUrl: document.getElementById('cfgSheetUrl'),
+  cfgAppsScriptUrl: document.getElementById('cfgAppsScriptUrl'),
   cfgFirestoreUrl: document.getElementById('cfgFirestoreUrl'),
   btnSalvarConfig: document.getElementById('btnSalvarConfig'),
   btnRestaurarPadrao: document.getElementById('btnRestaurarPadrao'),
@@ -205,6 +212,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   loadConfig();
   loadHistory();
+  updateRelatorioDateSelect();
+  updateAuditoriaDateSelect();
   loadCachedCadastrados();
   startClock();
   checkStoredAdminSession();
@@ -299,6 +308,7 @@ function loadConfig() {
   if (elements.cfgEntryEscola) elements.cfgEntryEscola.value = appState.config.entryEscola || DEFAULT_CONFIG.entryEscola;
   if (elements.cfgEntryProfessor) elements.cfgEntryProfessor.value = appState.config.entryProfessor || DEFAULT_CONFIG.entryProfessor;
   if (elements.cfgSheetUrl) elements.cfgSheetUrl.value = appState.config.sheetUrl || '';
+  if (elements.cfgAppsScriptUrl) elements.cfgAppsScriptUrl.value = appState.config.appsScriptUrl || DEFAULT_CONFIG.appsScriptUrl;
   if (elements.cfgFirestoreUrl) elements.cfgFirestoreUrl.value = appState.config.firestoreUrl || DEFAULT_CONFIG.firestoreUrl;
   if (elements.cfgGoogleClientId) elements.cfgGoogleClientId.value = appState.config.googleClientId || '';
 
@@ -338,6 +348,7 @@ function saveConfig() {
     entryEscola: (elements.cfgEntryEscola ? elements.cfgEntryEscola.value.trim() : '') || DEFAULT_CONFIG.entryEscola,
     entryProfessor: (elements.cfgEntryProfessor ? elements.cfgEntryProfessor.value.trim() : '') || DEFAULT_CONFIG.entryProfessor,
     sheetUrl: (elements.cfgSheetUrl ? elements.cfgSheetUrl.value.trim() : ''),
+    appsScriptUrl: (elements.cfgAppsScriptUrl ? elements.cfgAppsScriptUrl.value.trim() : '') || DEFAULT_CONFIG.appsScriptUrl,
     firestoreUrl: (elements.cfgFirestoreUrl ? elements.cfgFirestoreUrl.value.trim() : '') || DEFAULT_CONFIG.firestoreUrl,
     googleClientId: (elements.cfgGoogleClientId ? elements.cfgGoogleClientId.value.trim() : ''),
     isFormOpen: isFormOpen
@@ -396,6 +407,121 @@ function saveToHistory(record) {
     appState.history.unshift(record);
     if (appState.history.length > 500) appState.history.pop();
     localStorage.setItem('presenca_history_records', JSON.stringify(appState.history));
+  }
+}
+
+// ==========================================================================
+// Utilitários de Data dos Encontros Formativos
+// ==========================================================================
+function normalizeDateBR(dateStr) {
+  if (!dateStr || typeof dateStr !== 'string') return '';
+  const parts = dateStr.trim().split('/');
+  if (parts.length === 3) {
+    const d = parts[0].padStart(2, '0');
+    const m = parts[1].padStart(2, '0');
+    const y = parts[2];
+    return `${d}/${m}/${y}`;
+  }
+  return dateStr.trim();
+}
+
+function parseDateBR(dateStr) {
+  if (!dateStr) return 0;
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const y = parseInt(parts[2], 10);
+    return new Date(y, m, d).getTime();
+  }
+  return 0;
+}
+
+function extractDateFromTimestamp(timestamp, dateField) {
+  if (dateField && typeof dateField === 'string' && dateField.trim()) {
+    const m = dateField.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
+    if (m) return normalizeDateBR(m[1]);
+  }
+  if (!timestamp || typeof timestamp !== 'string') return '';
+  // Formato BR: DD/MM/AAAA
+  const mBR = timestamp.match(/(\d{1,2}\/\d{1,2}\/\d{4})/);
+  if (mBR) return normalizeDateBR(mBR[1]);
+  // Formato ISO: AAAA-MM-DD
+  const mISO = timestamp.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (mISO) {
+    const d = mISO[3].padStart(2, '0');
+    const m = mISO[2].padStart(2, '0');
+    const y = mISO[1];
+    return `${d}/${m}/${y}`;
+  }
+  // Formato com traço: DD-MM-AAAA
+  const mHyphen = timestamp.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+  if (mHyphen) return normalizeDateBR(`${mHyphen[1]}/${mHyphen[2]}/${mHyphen[3]}`);
+  return '';
+}
+
+function formatDateDisplayPT(dateStr) {
+  if (!dateStr) return 'Data Não Definida';
+  const parts = dateStr.split('/');
+  if (parts.length === 3) {
+    const d = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const y = parseInt(parts[2], 10);
+    const dateObj = new Date(y, m, d, 12, 0, 0);
+    if (!isNaN(dateObj.getTime())) {
+      const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+      return `${String(d).padStart(2, '0')} de ${meses[m]} de ${y} (${diasSemana[dateObj.getDay()]})`;
+    }
+  }
+  return dateStr;
+}
+
+function getUniqueMeetingDates(records = null) {
+  const history = records || appState.history || [];
+  const datesSet = new Set();
+  history.forEach(item => {
+    const d = extractDateFromTimestamp(item.timestamp, item.date);
+    if (d) datesSet.add(d);
+  });
+  return Array.from(datesSet).sort((a, b) => parseDateBR(a) - parseDateBR(b));
+}
+
+function updateRelatorioDateSelect() {
+  const select = elements.relatorioDataSelect || document.getElementById('relatorioDataSelect');
+  if (!select) return;
+
+  const currentVal = select.value;
+  const dates = getUniqueMeetingDates();
+
+  let html = `<option value="">📅 Todos os Encontros (Separar por Dia)</option>`;
+  dates.forEach(d => {
+    const label = formatDateDisplayPT(d);
+    html += `<option value="${escapeHtml(d)}">${escapeHtml(label)}</option>`;
+  });
+
+  select.innerHTML = html;
+  if (currentVal && dates.includes(currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function updateAuditoriaDateSelect() {
+  const select = elements.auditoriaFiltroDataSelect || document.getElementById('auditoriaFiltroDataSelect');
+  if (!select) return;
+
+  const currentVal = select.value;
+  const dates = getUniqueMeetingDates();
+
+  let html = `<option value="">📅 Todos os Encontros</option>`;
+  dates.forEach(d => {
+    const label = formatDateDisplayPT(d);
+    html += `<option value="${escapeHtml(d)}">${escapeHtml(label)}</option>`;
+  });
+
+  select.innerHTML = html;
+  if (currentVal && dates.includes(currentVal)) {
+    select.value = currentVal;
   }
 }
 
@@ -544,9 +670,26 @@ function extractRecordsFromRows(rows) {
     if (!row || row.length <= 1) continue;
 
     const timestampRaw = row[timeIdx] || '';
-    const email = (emailIdx !== -1 && row[emailIdx]) ? row[emailIdx].trim().toLowerCase() : '';
-    const escola = (row[escolaIdx] || '').trim();
-    const professor = (row[profIdx] || '').trim();
+    let email = (emailIdx !== -1 && row[emailIdx]) ? row[emailIdx].trim().toLowerCase() : '';
+    let escola = (row[escolaIdx] || '').trim();
+    let professor = (row[profIdx] || '').trim();
+
+    // Detecção inteligente caso as colunas na planilha estejam em ordem diferente
+    const knownSchools = [
+      "ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", 
+      "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"
+    ];
+    const values = [email, escola, professor].filter(Boolean);
+    const emailCandidate = values.find(v => v.includes('@'));
+    const schoolCandidate = values.find(v => {
+      const vNorm = normalizeName(v);
+      return knownSchools.some(ks => normalizeName(ks) === vNorm || vNorm.includes(normalizeName(ks)));
+    });
+    const profCandidate = values.find(v => v !== emailCandidate && v !== schoolCandidate);
+
+    if (emailCandidate) email = emailCandidate.toLowerCase();
+    if (schoolCandidate) escola = schoolCandidate;
+    if (profCandidate) professor = profCandidate;
 
     if (!professor && !escola && !email) continue;
 
@@ -675,7 +818,15 @@ async function syncRealTime(showFeedback = false) {
     }
 
     renderHistoryTable();
+    updateRelatorioDateSelect();
+    updateAuditoriaDateSelect();
     renderAuditoriaUI();
+    const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
+    if (activeTab === 'tabRelatorios') {
+      const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+      const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+      renderManagementReport(selectedSchool, selectedDate);
+    }
 
     if (showFeedback) {
       showToast(`Sincronizado! ${merged.length} presenças atualizadas.`, "success");
@@ -702,7 +853,15 @@ async function syncRealTime(showFeedback = false) {
     }
 
     renderHistoryTable();
+    updateRelatorioDateSelect();
+    updateAuditoriaDateSelect();
     renderAuditoriaUI();
+    const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
+    if (activeTab === 'tabRelatorios') {
+      const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+      const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+      renderManagementReport(selectedSchool, selectedDate);
+    }
 
     if (showFeedback) {
       showToast("Verifique se a planilha foi publicada como CSV na Web (Arquivo > Compartilhar > Publicar na Web).", "warning");
@@ -777,19 +936,47 @@ async function handleSubmit(e) {
   setLoading(true);
 
   try {
-    // Envio direto para o Google Forms
+    // 1. Gravação DIRETA e instantânea na Planilha Google via Apps Script Web App
+    const appsScriptUrl = appState.config.appsScriptUrl || DEFAULT_CONFIG.appsScriptUrl;
+    if (appsScriptUrl) {
+      try {
+        await fetch(appsScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            escola: escola,
+            professor: professor,
+            email: email,
+            timestamp: timestamp
+          })
+        });
+      } catch (appsErr) {
+        console.warn("Apps Script envio aviso:", appsErr);
+      }
+    }
+
+    // 2. Envio complementar para o Google Forms
     const formData = new URLSearchParams();
-    formData.append('emailAddress', email);
     formData.append(appState.config.entryEscola, escola);
     formData.append(appState.config.entryProfessor, professor);
 
-    await fetch(appState.config.formUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString()
-    });
+    if (appState.config.collectEmailInForms && email) {
+      formData.append('emailAddress', email);
+    }
 
+    try {
+      await fetch(appState.config.formUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+      });
+    } catch (fetchErr) {
+      console.warn("Fetch no-cors aviso:", fetchErr);
+    }
+
+    // Submissão complementar via iframe (garante compatibilidade total com Google Forms)
     submitViaHiddenIframe(escola, professor, email);
     saveToHistory(record);
     showReceipt(record);
@@ -819,8 +1006,8 @@ function submitViaHiddenIframe(escola, professor, email) {
     form.target = 'hidden_iframe';
     form.style.display = 'none';
 
-    // Campo E-mail
-    if (email) {
+    // Campo E-mail (somente se habilitado no Google Forms)
+    if (appState.config.collectEmailInForms && email) {
       const inputEmail = document.createElement('input');
       inputEmail.type = 'hidden';
       inputEmail.name = 'emailAddress';
@@ -1049,10 +1236,10 @@ function openGoogleQuickAuthModal() {
 /**
  * Seleciona um perfil rápido da lista
  */
-window.selectQuickProfile = function(nome, email) {
+function selectQuickProfile(nome, email) {
   closeModal(elements.modalGoogleQuickAuth);
   setGoogleAuthenticatedUser({ name: nome, email: email }, true);
-};
+}
 
 /**
  * Submissão do formulário de identificação rápida
@@ -1314,11 +1501,14 @@ function switchAdminTab(targetTabId) {
   });
 
   if (targetTabId === 'tabRelatorios') {
+    updateRelatorioDateSelect();
     const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
-    renderManagementReport(selectedSchool);
+    const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+    renderManagementReport(selectedSchool, selectedDate);
   } else if (targetTabId === 'tabHistorico') {
     renderHistoryTable();
   } else if (targetTabId === 'tabAuditoriaFaltas') {
+    updateAuditoriaDateSelect();
     renderAuditoriaUI();
   }
 }
@@ -1547,23 +1737,51 @@ window.copyEmailToClipboard = function(email, btn) {
 // ==========================================================================
 // Módulo de Relatório Executivo para a Gestão Escolar
 // ==========================================================================
-function renderManagementReport(schoolFilter = '') {
+function renderManagementReport(schoolFilter = '', dateFilter = '') {
   loadHistory();
   const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
 
-  const filtered = appState.history.filter(item => {
-    if (!schoolFilter) return true;
-    return (item.escola || '').trim().toUpperCase() === schoolFilter.trim().toUpperCase();
+  const effectiveSchool = schoolFilter !== undefined && schoolFilter !== null ? schoolFilter : (elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '');
+  const effectiveDate = dateFilter !== undefined && dateFilter !== null ? dateFilter : (elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '');
+
+  // 1. Filtra registros por escola
+  const schoolRecords = appState.history.filter(item => {
+    if (!effectiveSchool) return true;
+    return (item.escola || '').trim().toUpperCase() === effectiveSchool.trim().toUpperCase();
   });
+
+  // 2. Extrai datas de encontro disponíveis
+  const availableDates = getUniqueMeetingDates(schoolRecords);
+
+  // 3. Filtra registros finais se uma data específica foi selecionada
+  let filtered = schoolRecords;
+  if (effectiveDate) {
+    filtered = schoolRecords.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === effectiveDate);
+  }
 
   const now = new Date();
   const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   // Metadados do Relatório
   if (elements.repDataEmissao) elements.repDataEmissao.textContent = emissaoStr;
-  if (elements.repEscolaNome) elements.repEscolaNome.textContent = schoolFilter || "Todas as Unidades Escolares";
+  if (elements.repEscolaNome) elements.repEscolaNome.textContent = effectiveSchool || "Todas as Unidades Escolares";
   if (elements.repTotalPresentes) elements.repTotalPresentes.textContent = filtered.length;
-  if (elements.repFooterTimestamp) elements.repFooterTimestamp.textContent = `Documento emitido em ${emissaoStr} | Total: ${filtered.length} participantes.`;
+  if (elements.repFooterTimestamp) {
+    elements.repFooterTimestamp.textContent = `Documento emitido em ${emissaoStr} | Total: ${filtered.length} participantes homologados.`;
+  }
+
+  // Rótulo dinâmico do Encontro Formativo no cabeçalho
+  if (elements.repEncontroData) {
+    if (effectiveDate) {
+      elements.repEncontroData.textContent = formatDateDisplayPT(effectiveDate);
+    } else if (availableDates.length > 1) {
+      elements.repEncontroData.textContent = `Encontros Formativos (${availableDates.length} dias de encontro)`;
+    } else if (availableDates.length === 1) {
+      elements.repEncontroData.textContent = formatDateDisplayPT(availableDates[0]);
+    } else {
+      elements.repEncontroData.textContent = 'Data Não Registrada';
+    }
+  }
 
   // Contagem por escola
   const schoolCounts = {};
@@ -1592,9 +1810,9 @@ function renderManagementReport(schoolFilter = '') {
     if (elements.repUltimoRegistro) elements.repUltimoRegistro.textContent = '--:--';
   }
 
-  // Quadro de Escolas no Relatório
+  // Quadro Geral de Escolas no Relatório (quando consolidado)
   if (elements.repQuadroEscolas) {
-    if (!schoolFilter) {
+    if (!effectiveSchool && filtered.length > 0) {
       let gridHtml = `<div class="rep-schools-grid">`;
       ALL_SCHOOLS.forEach(school => {
         const count = schoolCounts[school] || 0;
@@ -1614,58 +1832,158 @@ function renderManagementReport(schoolFilter = '') {
     }
   }
 
-  // Tabela Nominal Formal
+  // Tabela Nominal / Grupos Separados por Dia do Encontro
   if (elements.repTabelaContainer) {
     if (filtered.length === 0) {
       elements.repTabelaContainer.innerHTML = `
-        <div style="text-align:center; padding: 2rem; color: #64748b; background: #f8fafc; border-radius: 6px;">
-          <p>Nenhuma presença registrada para esta unidade escolar até o momento.</p>
+        <div style="text-align:center; padding: 2.5rem 1.5rem; color: #64748b; background: #f8fafc; border-radius: 6px; border: 1px dashed #cbd5e1;">
+          <i class="fa-regular fa-folder-open" style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
+          <p style="margin: 0; font-weight: 600;">Nenhuma presença registrada para os filtros selecionados até o momento.</p>
         </div>
       `;
       return;
     }
 
-    // Ordena alfabeticamente para o relatório formal da gestão
-    const sortedForReport = [...filtered].sort((a, b) => 
-      (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
-    );
+    // Se uma data específica foi selecionada, OU se há apenas 1 dia de encontro:
+    if (effectiveDate || availableDates.length <= 1) {
+      const sortedForReport = [...filtered].sort((a, b) => 
+        (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+      );
 
-    let tableHtml = `
-      <table class="report-formal-table">
-        <thead>
+      let tableHtml = `
+        <table class="report-formal-table">
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: center;">Nº</th>
+              <th>Nome do Docente</th>
+              <th>E-mail</th>
+              <th>Unidade Escolar</th>
+              <th style="width: 140px;">Data / Horário</th>
+              <th style="width: 100px; text-align: center;">Situação</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      sortedForReport.forEach((item, idx) => {
+        tableHtml += `
           <tr>
-            <th style="width: 40px; text-align: center;">Nº</th>
-            <th>Nome do Docente</th>
-            <th>E-mail</th>
-            <th>Unidade Escolar</th>
-            <th style="width: 130px;">Data / Horário</th>
-            <th style="width: 100px; text-align: center;">Situação</th>
+            <td style="text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
+            <td style="font-weight: 700; color: #0f172a;">${escapeHtml(item.professor)}</td>
+            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.email || '-')}</td>
+            <td><span style="font-weight: 600;">${escapeHtml(item.escola)}</span></td>
+            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.timestamp)}</td>
+            <td style="text-align: center;">
+              <span class="badge badge-success" style="font-size: 0.72rem;">Confirmado</span>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-    `;
+        `;
+      });
 
-    sortedForReport.forEach((item, idx) => {
       tableHtml += `
-        <tr>
-          <td style="text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
-          <td style="font-weight: 700; color: #0f172a;">${escapeHtml(item.professor)}</td>
-          <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.email || '-')}</td>
-          <td><span style="font-weight: 600;">${escapeHtml(item.escola)}</span></td>
-          <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.timestamp)}</td>
-          <td style="text-align: center;">
-            <span class="badge badge-success" style="font-size: 0.72rem;">Confirmado</span>
-          </td>
-        </tr>
+          </tbody>
+        </table>
+      `;
+
+      elements.repTabelaContainer.innerHTML = tableHtml;
+      return;
+    }
+
+    // Múltiplos Encontros: Separação por Dia do Encontro
+    let multiGroupHtml = '';
+
+    availableDates.forEach((mDate) => {
+      const dayRecords = schoolRecords.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === mDate);
+      if (dayRecords.length === 0) return;
+
+      const sortedDayRecords = [...dayRecords].sort((a, b) => 
+        (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+      );
+
+      const firstReg = dayRecords[dayRecords.length - 1];
+      const lastReg = dayRecords[0];
+      const firstTimeMatch = (firstReg.timestamp || '').match(/([0-9]{2}:[0-9]{2})/);
+      const lastTimeMatch = (lastReg.timestamp || '').match(/([0-9]{2}:[0-9]{2})/);
+      const dayFirstTime = firstTimeMatch ? firstTimeMatch[1] : '--:--';
+      const dayLastTime = lastTimeMatch ? lastTimeMatch[1] : '--:--';
+
+      // Mini-resumo por escola neste dia específico
+      const daySchoolCounts = {};
+      ALL_SCHOOLS.forEach(s => daySchoolCounts[s] = 0);
+      dayRecords.forEach(r => {
+        const sName = (r.escola || '').trim().toUpperCase();
+        if (daySchoolCounts[sName] !== undefined) daySchoolCounts[sName]++;
+        else if (sName) daySchoolCounts[sName] = (daySchoolCounts[sName] || 0) + 1;
+      });
+
+      let miniSchoolsHtml = '';
+      if (!effectiveSchool) {
+        miniSchoolsHtml = `<div class="report-meeting-schools-mini">`;
+        ALL_SCHOOLS.forEach(s => {
+          if (daySchoolCounts[s] > 0) {
+            miniSchoolsHtml += `
+              <span class="rep-mini-school-pill">
+                <span>${escapeHtml(s)}:</span>
+                <strong>${daySchoolCounts[s]}</strong>
+              </span>
+            `;
+          }
+        });
+        miniSchoolsHtml += `</div>`;
+      }
+
+      multiGroupHtml += `
+        <div class="report-meeting-group">
+          <div class="report-meeting-header">
+            <div class="report-meeting-title">
+              <i class="fa-solid fa-calendar-day"></i>
+              <span>Encontro Formativo: <strong>${escapeHtml(formatDateDisplayPT(mDate))}</strong></span>
+            </div>
+            <div class="report-meeting-badges">
+              <span class="badge badge-primary"><i class="fa-solid fa-users"></i> ${dayRecords.length} presente${dayRecords.length > 1 ? 's' : ''}</span>
+              <span class="badge badge-outline"><i class="fa-regular fa-clock"></i> ${dayFirstTime} às ${dayLastTime}</span>
+            </div>
+          </div>
+
+          ${miniSchoolsHtml}
+
+          <table class="report-formal-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">Nº</th>
+                <th>Nome do Docente</th>
+                <th>E-mail</th>
+                <th>Unidade Escolar</th>
+                <th style="width: 140px;">Data / Horário</th>
+                <th style="width: 100px; text-align: center;">Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      sortedDayRecords.forEach((item, idx) => {
+        multiGroupHtml += `
+          <tr>
+            <td style="text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
+            <td style="font-weight: 700; color: #0f172a;">${escapeHtml(item.professor)}</td>
+            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.email || '-')}</td>
+            <td><span style="font-weight: 600;">${escapeHtml(item.escola)}</span></td>
+            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.timestamp)}</td>
+            <td style="text-align: center;">
+              <span class="badge badge-success" style="font-size: 0.72rem;">Confirmado</span>
+            </td>
+          </tr>
+        `;
+      });
+
+      multiGroupHtml += `
+            </tbody>
+          </table>
+        </div>
       `;
     });
 
-    tableHtml += `
-        </tbody>
-      </table>
-    `;
-
-    elements.repTabelaContainer.innerHTML = tableHtml;
+    elements.repTabelaContainer.innerHTML = multiGroupHtml;
   }
 }
 
@@ -1699,8 +2017,10 @@ function copyTextToClipboard(text) {
 async function exportReportPDF() {
   try {
     const schoolSelect = document.getElementById('relatorioEscolaSelect');
+    const dateSelect = document.getElementById('relatorioDataSelect');
     const selectedSchool = schoolSelect ? schoolSelect.value : '';
-    renderManagementReport(selectedSchool);
+    const selectedDate = dateSelect ? dateSelect.value : '';
+    renderManagementReport(selectedSchool, selectedDate);
 
     const reportElement = document.getElementById('relatorioDocumento');
     if (!reportElement) {
@@ -1711,8 +2031,9 @@ async function exportReportPDF() {
     showToast("Gerando arquivo PDF para a gestão...", "info");
 
     const schoolLabel = selectedSchool ? selectedSchool.replace(/[^a-zA-Z0-9]/g, '_') : 'todas_escolas';
+    const dateLabel = selectedDate ? selectedDate.replace(/[^a-zA-Z0-9]/g, '_') : 'todos_encontros';
     const dateStr = new Date().toISOString().slice(0, 10);
-    const fileName = `Relatorio_Gestao_${schoolLabel}_${dateStr}.pdf`;
+    const fileName = `Relatorio_Gestao_${schoolLabel}_${dateLabel}_${dateStr}.pdf`;
 
     if (window.html2pdf) {
       // Cria um container visível e desvinculado dos modais para renderização perfeita
@@ -1772,25 +2093,36 @@ async function exportReportPDF() {
 // Dispara a Impressão / Salvar em PDF pelo navegador
 function printManagementReport() {
   const schoolSelect = document.getElementById('relatorioEscolaSelect');
+  const dateSelect = document.getElementById('relatorioDataSelect');
   const selectedSchool = schoolSelect ? schoolSelect.value : '';
-  renderManagementReport(selectedSchool);
+  const selectedDate = dateSelect ? dateSelect.value : '';
+  renderManagementReport(selectedSchool, selectedDate);
   setTimeout(() => {
     window.print();
   }, 50);
 }
 
-// Copia o Resumo Formatado com Emojis para o WhatsApp da Gestão
+// Copia o Resumo Formatado com Emojis para o WhatsApp da Gestão (Separado por Dia)
 function copyWhatsAppSummary() {
   loadHistory();
   const schoolSelect = document.getElementById('relatorioEscolaSelect');
+  const dateSelect = document.getElementById('relatorioDataSelect');
   const selectedSchool = schoolSelect ? schoolSelect.value : '';
-  const filtered = appState.history.filter(item => {
+  const selectedDate = dateSelect ? dateSelect.value : '';
+
+  let filtered = appState.history.filter(item => {
     if (!selectedSchool) return true;
     return (item.escola || '').trim().toUpperCase() === selectedSchool.trim().toUpperCase();
   });
 
+  const availableDates = getUniqueMeetingDates(filtered);
+
+  if (selectedDate) {
+    filtered = filtered.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === selectedDate);
+  }
+
   if (filtered.length === 0) {
-    showToast("Não há registros para compartilhar nesta escola.", "warning");
+    showToast("Não há registros para compartilhar para os filtros selecionados.", "warning");
     return;
   }
 
@@ -1798,41 +2130,84 @@ function copyWhatsAppSummary() {
   const now = new Date();
   const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  let text = `📋 *RELATÓRIO DE FREQUÊNCIA - ENCONTRO FORMATIVO*\n`;
+  let text = `📋 *RELATÓRIO DE FREQUÊNCIA - ENCONTROS FORMATIVOS*\n`;
   text += `💻 *Disciplina:* EDM — Educação Digital e Midiática\n`;
-  text += `📅 *Data:* 07 de outubro de 2026\n`;
-  text += `🏢 *Escola:* ${selectedSchool || "Consolidado (Todas as Escolas)"}\n`;
-  text += `👥 *Total de Presentes:* ${filtered.length} docentes\n`;
-  text += `⏱️ *Emissão:* ${emissaoStr}\n\n`;
 
-  if (!selectedSchool) {
-    text += `🏫 *RESUMO POR UNIDADE ESCOLAR:*\n`;
-    const schoolCounts = {};
-    ALL_SCHOOLS.forEach(s => schoolCounts[s] = 0);
-    filtered.forEach(r => {
-      const sName = (r.escola || '').trim().toUpperCase();
-      if (schoolCounts[sName] !== undefined) schoolCounts[sName]++;
-      else if (sName) schoolCounts[sName] = (schoolCounts[sName] || 0) + 1;
-    });
-
-    ALL_SCHOOLS.forEach(s => {
-      if (schoolCounts[s] > 0) {
-        text += `• *${s}:* ${schoolCounts[s]} presente${schoolCounts[s] > 1 ? 's' : ''}\n`;
-      }
-    });
-    text += `\n`;
+  if (selectedDate) {
+    text += `📅 *Dia do Encontro:* ${formatDateDisplayPT(selectedDate)}\n`;
+  } else if (availableDates.length > 1) {
+    text += `📅 *Encontros Formativos:* Separados por Dia (${availableDates.length} dias de encontro)\n`;
+  } else if (availableDates.length === 1) {
+    text += `📅 *Dia do Encontro:* ${formatDateDisplayPT(availableDates[0])}\n`;
   }
 
-  text += `📝 *RELAÇÃO NOMINAL:*\n`;
-  const sorted = [...filtered].sort((a, b) => 
-    (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
-  );
+  text += `🏢 *Escola:* ${selectedSchool || "Consolidado (Todas as 7 Escolas)"}\n`;
+  text += `👥 *Total de Presentes:* ${filtered.length} docente${filtered.length > 1 ? 's' : ''}\n`;
+  text += `⏱️ *Emissão:* ${emissaoStr}\n\n`;
 
-  sorted.forEach((item, i) => {
-    text += `${i + 1}. ${item.professor} - ${item.escola} (${item.timestamp})\n`;
-  });
+  if (selectedDate || availableDates.length <= 1) {
+    if (!selectedSchool) {
+      text += `🏫 *RESUMO POR UNIDADE ESCOLAR:*\n`;
+      const schoolCounts = {};
+      ALL_SCHOOLS.forEach(s => schoolCounts[s] = 0);
+      filtered.forEach(r => {
+        const sName = (r.escola || '').trim().toUpperCase();
+        if (schoolCounts[sName] !== undefined) schoolCounts[sName]++;
+        else if (sName) schoolCounts[sName] = (schoolCounts[sName] || 0) + 1;
+      });
 
-  text += `\n_Lista oficial sincronizada com Google Forms._`;
+      ALL_SCHOOLS.forEach(s => {
+        if (schoolCounts[s] > 0) {
+          text += `• *${s}:* ${schoolCounts[s]} presente${schoolCounts[s] > 1 ? 's' : ''}\n`;
+        }
+      });
+      text += `\n`;
+    }
+
+    text += `📝 *RELAÇÃO NOMINAL:*\n`;
+    const sorted = [...filtered].sort((a, b) => 
+      (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+    );
+
+    sorted.forEach((item, i) => {
+      text += `${i + 1}. ${item.professor} - ${item.escola} (${item.timestamp})\n`;
+    });
+  } else {
+    // Múltiplos encontros separados por dia
+    availableDates.forEach((mDate, idx) => {
+      const dayRecords = filtered.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === mDate);
+      if (dayRecords.length === 0) return;
+
+      text += `════════════════════════════════\n`;
+      text += `📅 *ENCONTRO FORMATIVO (${idx + 1}/${availableDates.length}):* ${formatDateDisplayPT(mDate)}\n`;
+      text += `👥 *Presentes neste dia:* ${dayRecords.length} docente${dayRecords.length > 1 ? 's' : ''}\n`;
+
+      if (!selectedSchool) {
+        const daySchoolCounts = {};
+        ALL_SCHOOLS.forEach(s => daySchoolCounts[s] = 0);
+        dayRecords.forEach(r => {
+          const sName = (r.escola || '').trim().toUpperCase();
+          if (daySchoolCounts[sName] !== undefined) daySchoolCounts[sName]++;
+          else if (sName) daySchoolCounts[sName] = (daySchoolCounts[sName] || 0) + 1;
+        });
+        const activeSchools = ALL_SCHOOLS.filter(s => daySchoolCounts[s] > 0);
+        if (activeSchools.length > 0) {
+          text += `🏫 *Escolas:* ` + activeSchools.map(s => `${s} (${daySchoolCounts[s]})`).join(' | ') + `\n`;
+        }
+      }
+
+      text += `\n📝 *Relação Nominal:*\n`;
+      const daySorted = [...dayRecords].sort((a, b) => 
+        (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
+      );
+      daySorted.forEach((item, i) => {
+        text += `${i + 1}. ${item.professor} - ${item.escola} (${item.timestamp})\n`;
+      });
+      text += `\n`;
+    });
+  }
+
+  text += `\n_Lista oficial sincronizada com Google Forms & Planilhas._`;
 
   copyTextToClipboard(text).then(() => {
     showToast("Resumo formatado copiado! Cole no WhatsApp da gestão.", "success");
@@ -1841,28 +2216,36 @@ function copyWhatsAppSummary() {
   });
 }
 
-// Exporta CSV do Relatório
+// Exporta CSV do Relatório com coluna do Dia do Encontro
 function exportReportCSV() {
   loadHistory();
   const schoolSelect = document.getElementById('relatorioEscolaSelect');
+  const dateSelect = document.getElementById('relatorioDataSelect');
   const selectedSchool = schoolSelect ? schoolSelect.value : '';
-  const filtered = appState.history.filter(item => {
+  const selectedDate = dateSelect ? dateSelect.value : '';
+
+  let filtered = appState.history.filter(item => {
     if (!selectedSchool) return true;
     return (item.escola || '').trim().toUpperCase() === selectedSchool.trim().toUpperCase();
   });
 
+  if (selectedDate) {
+    filtered = filtered.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === selectedDate);
+  }
+
   if (filtered.length === 0) {
-    showToast("Não há registros para exportar nesta escola.", "warning");
+    showToast("Não há registros para exportar com os filtros selecionados.", "warning");
     return;
   }
 
-  let csv = "\uFEFFNº;Disciplina;Professor;Email;Escola;DataHoraCompleta;Situacao\n";
+  let csv = "\uFEFFNº;Disciplina;DiaDoEncontro;Professor;Email;Escola;DataHoraCompleta;Situacao\n";
   const sorted = [...filtered].sort((a, b) => 
     (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || '')
   );
 
   sorted.forEach((h, idx) => {
-    csv += `"${idx + 1}";"EDM - Educação Digital e Midiática";"${(h.professor || '').replace(/"/g, '""')}";"${(h.email || '').replace(/"/g, '""')}";"${(h.escola || '').replace(/"/g, '""')}";"${(h.timestamp || '').replace(/"/g, '""')}";"Confirmado"\n`;
+    const mDate = extractDateFromTimestamp(h.timestamp, h.date) || '-';
+    csv += `"${idx + 1}";"EDM - Educação Digital e Midiática";"${mDate}";"${(h.professor || '').replace(/"/g, '""')}";"${(h.email || '').replace(/"/g, '""')}";"${(h.escola || '').replace(/"/g, '""')}";"${(h.timestamp || '').replace(/"/g, '""')}";"Confirmado"\n`;
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1870,7 +2253,8 @@ function exportReportCSV() {
   const a = document.createElement('a');
   a.href = url;
   const fileNameSuffix = selectedSchool ? selectedSchool.replace(/[^a-zA-Z0-9]/g, '_') : 'todas_escolas';
-  a.download = `relatorio_frequencia_${fileNameSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
+  const dateSuffix = selectedDate ? selectedDate.replace(/[^a-zA-Z0-9]/g, '_') : 'todos_encontros';
+  a.download = `relatorio_frequencia_${fileNameSuffix}_${dateSuffix}_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {
@@ -2015,9 +2399,12 @@ function updateTeacherDatalist() {
 }
 
 // Executa o cruzamento completo dos dados (Presentes vs Faltantes vs Extras)
-function computeAuditoriaData() {
+function computeAuditoriaData(dateFilter = '') {
   const cadastrados = appState.cadastrados || [];
-  const presencas = appState.history || [];
+  let presencas = appState.history || [];
+  if (dateFilter) {
+    presencas = presencas.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === dateFilter);
+  }
 
   const presencasMap = new Map();
   const presencasByEmail = new Map();
@@ -2199,8 +2586,18 @@ function computeAuditoriaData() {
 
 // Renderiza a interface da aba Cruzamento & Auditoria de Faltas
 function renderAuditoriaUI() {
-  const data = computeAuditoriaData();
+  const selectedDate = elements.auditoriaFiltroDataSelect ? elements.auditoriaFiltroDataSelect.value : '';
+  const data = computeAuditoriaData(selectedDate);
   const { totalCadastrados, totalPresentes, totalFaltas, taxaGeral, schoolStats, ALL_SCHOOLS, presentes, faltantes, extras } = data;
+
+  if (elements.repFaltasEncontroData) {
+    if (selectedDate) {
+      elements.repFaltasEncontroData.textContent = formatDateDisplayPT(selectedDate);
+    } else {
+      const dates = getUniqueMeetingDates();
+      elements.repFaltasEncontroData.textContent = dates.length > 0 ? `Todos os Encontros (${dates.length} dias)` : '07 de outubro de 2026';
+    }
+  }
 
   // Atualiza KPIs
   if (elements.kpiAuditoriaCadastrados) elements.kpiAuditoriaCadastrados.textContent = totalCadastrados;
@@ -2374,7 +2771,8 @@ function renderAuditoriaUI() {
 
 // Exporta o Relatório Oficial de Faltas em PDF
 function exportarRelatorioFaltasPDF() {
-  const data = computeAuditoriaData();
+  const selectedDate = elements.auditoriaFiltroDataSelect ? elements.auditoriaFiltroDataSelect.value : '';
+  const data = computeAuditoriaData(selectedDate);
   const { faltantes, totalCadastrados, totalPresentes, totalFaltas, taxaGeral, ALL_SCHOOLS, schoolStats } = data;
 
   if (faltantes.length === 0) {
@@ -2398,6 +2796,16 @@ function exportarRelatorioFaltasPDF() {
   document.getElementById('repFaltasTotalPres').textContent = filterSchool ? (schoolStats[filterSchool]?.presentes || 0) : totalPresentes;
   document.getElementById('repFaltasTotalFaltas').textContent = listFaltas.length;
   document.getElementById('repFaltasTaxa').textContent = `${filterSchool ? (schoolStats[filterSchool]?.taxa || 0) : taxaGeral}%`;
+
+  const repFaltasEncontroEl = document.getElementById('repFaltasEncontroData');
+  if (repFaltasEncontroEl) {
+    if (selectedDate) {
+      repFaltasEncontroEl.textContent = formatDateDisplayPT(selectedDate);
+    } else {
+      const dates = getUniqueMeetingDates();
+      repFaltasEncontroEl.textContent = dates.length > 0 ? `Todos os Encontros (${dates.length} dias)` : '07 de outubro de 2026';
+    }
+  }
 
   let tableHtml = `
     <table class="report-formal-table">
@@ -2434,9 +2842,10 @@ function exportarRelatorioFaltasPDF() {
 
   showToast("Gerando Relatório Oficial de Faltas em PDF...", "info");
 
+  const dateSuffix = selectedDate ? selectedDate.replace(/[^a-zA-Z0-9]/g, '_') : 'todos_encontros';
   const opt = {
     margin: [10, 10, 10, 10],
-    filename: `Relatorio_Faltas_Docentes_EDM_${new Date().toISOString().slice(0, 10)}.pdf`,
+    filename: `Relatorio_Faltas_Docentes_EDM_${dateSuffix}_${new Date().toISOString().slice(0, 10)}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, letterRendering: true },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
@@ -2460,7 +2869,8 @@ function exportarRelatorioFaltasPDF() {
 
 // Copia o resumo formatado de faltas para o WhatsApp da Gestão
 function copiarFaltasWhatsApp() {
-  const data = computeAuditoriaData();
+  const selectedDate = elements.auditoriaFiltroDataSelect ? elements.auditoriaFiltroDataSelect.value : '';
+  const data = computeAuditoriaData(selectedDate);
   const { faltantes, totalCadastrados, totalPresentes, totalFaltas, taxaGeral, schoolStats, ALL_SCHOOLS } = data;
 
   const now = new Date();
@@ -2471,7 +2881,7 @@ function copiarFaltasWhatsApp() {
 
   let text = `🚨 *RELATÓRIO DE AUSÊNCIAS E FALTAS DOCENTES*\n`;
   text += `💻 *Formação:* EDM — Educação Digital e Midiática\n`;
-  text += `📅 *Encontro Formativo:* 07 de outubro de 2026\n`;
+  text += `📅 *Encontro Formativo:* ${selectedDate ? formatDateDisplayPT(selectedDate) : 'Todos os Encontros Formativos'}\n`;
   text += `🏢 *Escopo:* ${filterSchool || "Consolidado Geral (Todas as 7 Escolas)"}\n`;
   text += `📊 *Frequência Geral:* ${taxaGeral}% de presença (${totalPresentes} presentes de ${totalCadastrados} cadastrados)\n`;
   text += `❌ *Total de Faltas:* ${listFaltas.length} docentes ausentes\n`;
@@ -2519,7 +2929,8 @@ function copiarFaltasWhatsApp() {
 
 // Exporta Tabela Completa de Auditoria em CSV
 function exportarAuditoriaCSV() {
-  const data = computeAuditoriaData();
+  const selectedDate = elements.auditoriaFiltroDataSelect ? elements.auditoriaFiltroDataSelect.value : '';
+  const data = computeAuditoriaData(selectedDate);
   const { presentes, faltantes, extras } = data;
 
   const allItems = [...faltantes, ...presentes, ...extras];
@@ -2535,7 +2946,8 @@ function exportarAuditoriaCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `auditoria_faltas_presenca_edm_${new Date().toISOString().slice(0, 10)}.csv`;
+  const dateSuffix = selectedDate ? selectedDate.replace(/[^a-zA-Z0-9]/g, '_') : 'todos_encontros';
+  a.download = `auditoria_faltas_presenca_edm_${dateSuffix}_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {
@@ -2555,7 +2967,15 @@ function clearHistory() {
     appState.history = appState.history.filter(h => h.isRemote);
     localStorage.removeItem('presenca_history_records');
     renderHistoryTable();
+    updateRelatorioDateSelect();
+    updateAuditoriaDateSelect();
     renderAuditoriaUI();
+    const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
+    if (activeTab === 'tabRelatorios') {
+      const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+      const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+      renderManagementReport(selectedSchool, selectedDate);
+    }
     showToast("Histórico local limpo.", "info");
   }
 }
@@ -2644,6 +3064,9 @@ function setupEventListeners() {
   // Filtros da Aba Cruzamento & Auditoria de Faltas
   if (elements.auditoriaFiltroEscolaSelect) {
     elements.auditoriaFiltroEscolaSelect.addEventListener('change', renderAuditoriaUI);
+  }
+  if (elements.auditoriaFiltroDataSelect) {
+    elements.auditoriaFiltroDataSelect.addEventListener('change', renderAuditoriaUI);
   }
   if (elements.auditoriaFiltroStatusSelect) {
     elements.auditoriaFiltroStatusSelect.addEventListener('change', renderAuditoriaUI);
@@ -2739,8 +3162,17 @@ function setupEventListeners() {
 
   // Ações da Aba Relatórios para Gestão
   if (elements.relatorioEscolaSelect) {
-    elements.relatorioEscolaSelect.addEventListener('change', (e) => {
-      renderManagementReport(e.target.value);
+    elements.relatorioEscolaSelect.addEventListener('change', () => {
+      const selectedSchool = elements.relatorioEscolaSelect.value;
+      const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+      renderManagementReport(selectedSchool, selectedDate);
+    });
+  }
+  if (elements.relatorioDataSelect) {
+    elements.relatorioDataSelect.addEventListener('change', () => {
+      const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+      const selectedDate = elements.relatorioDataSelect.value;
+      renderManagementReport(selectedSchool, selectedDate);
     });
   }
   if (elements.btnGerarPDF) {

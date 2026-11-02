@@ -1894,6 +1894,85 @@ select {
   color: #0f172a;
 }
 
+/* Grupos de Encontro Formativo Separados por Dia */
+.report-meeting-group {
+  margin-bottom: 2.25rem;
+  background: #ffffff;
+  border-radius: var(--border-radius-sm);
+}
+
+.report-meeting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #4338ca;
+  padding: 0.85rem 1.15rem;
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1rem;
+}
+
+.report-meeting-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.report-meeting-title i {
+  color: #4338ca;
+  font-size: 1.1rem;
+}
+
+.report-meeting-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.report-meeting-schools-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.65rem 0.85rem;
+  background: #fdfdfd;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+}
+
+.rep-mini-school-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0.25rem 0.55rem;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  color: #334155;
+}
+
+.rep-mini-school-pill strong {
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.report-meeting-divider {
+  border: none;
+  border-top: 1px dashed #cbd5e1;
+  margin: 2rem 0;
+}
+
 /* Tabela Formal do Relatório */
 .report-table-section {
   margin-bottom: 2rem;
@@ -2436,6 +2515,35 @@ select {
   .report-formal-table td {
     border-bottom: 1px solid #cbd5e1 !important;
     padding: 0.5rem 0.6rem !important;
+  }
+
+  .report-meeting-group {
+    page-break-inside: auto;
+    break-inside: auto;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .report-meeting-header {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-left: 4px solid #0f172a !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .report-meeting-title, .report-meeting-title strong {
+    color: #0f172a !important;
+  }
+
+  .report-meeting-schools-mini {
+    background: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .report-signatures {

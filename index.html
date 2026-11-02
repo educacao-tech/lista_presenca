@@ -569,6 +569,13 @@
                 </select>
               </div>
 
+              <!-- Filtro por Dia do Encontro -->
+              <div class="filter-select-wrapper">
+                <select id="auditoriaFiltroDataSelect" class="input-field input-field-sm select-filter">
+                  <option value="">📅 Todos os Encontros</option>
+                </select>
+              </div>
+
               <!-- Filtro por Status -->
               <div class="filter-select-wrapper">
                 <select id="auditoriaFiltroStatusSelect" class="input-field input-field-sm select-filter">
@@ -611,7 +618,7 @@
                   <h3>RELATÓRIO OFICIAL DE AUSÊNCIAS E FALTAS DOCENTES</h3>
                   <div class="report-event-info">
                     <p><strong>Disciplina:</strong> EDM — Educação Digital e Midiática</p>
-                    <p><strong>Encontro Formativo:</strong> 07 de outubro de 2026</p>
+                    <p><strong>Encontro Formativo:</strong> <span id="repFaltasEncontroData">07 de outubro de 2026</span></p>
                   </div>
                 </div>
               </div>
@@ -689,6 +696,13 @@
               </select>
             </div>
 
+            <div class="report-filter-group">
+              <label for="relatorioDataSelect"><i class="fa-solid fa-calendar-day"></i> Dia do Encontro:</label>
+              <select id="relatorioDataSelect" class="input-field input-field-sm">
+                <option value="">📅 Todos os Encontros (Separar por Dia)</option>
+              </select>
+            </div>
+
             <div class="report-action-buttons">
               <button type="button" id="btnGerarPDF" onclick="exportReportPDF()" class="btn btn-primary" title="Gerar e baixar o relatório oficial em formato PDF">
                 <i class="fa-solid fa-file-pdf"></i> <span>Gerar Relatório em PDF</span>
@@ -716,7 +730,7 @@
                   <h3>RELATÓRIO OFICIAL DE FREQUÊNCIA E PARTICIPAÇÃO</h3>
                   <div class="report-event-info">
                     <p><strong>Disciplina:</strong> EDM — Educação Digital e Midiática</p>
-                    <p><strong>Encontro Formativo:</strong> 07 de outubro de 2026</p>
+                    <p><strong>Encontro Formativo:</strong> <span id="repEncontroData">07 de outubro de 2026</span></p>
                   </div>
                 </div>
               </div>
@@ -850,6 +864,31 @@
                 <button type="button" id="btnTestarSincronizacao" class="btn btn-sm btn-outline">
                   <i class="fa-solid fa-satellite-dish"></i> Testar Conexão da Planilha
                 </button>
+              </div>
+            </div>
+
+            <!-- Seção Google Apps Script (Gravação Direta na Planilha) -->
+            <div class="config-section-card" style="border-left: 4px solid #10b981;">
+              <div class="config-section-header">
+                <i class="fa-solid fa-bolt text-success"></i>
+                <div>
+                  <h4>Gravação Direta na Planilha (Google Apps Script Web App)</h4>
+                  <p>Grava as presenças instantaneamente na planilha sem bloqueios de segurança do Google.</p>
+                </div>
+              </div>
+
+              <div class="input-group">
+                <label for="cfgAppsScriptUrl">
+                  <i class="fa-solid fa-cloud-arrow-up"></i> URL do Web App (Apps Script /exec):
+                </label>
+                <input 
+                  type="url" 
+                  id="cfgAppsScriptUrl" 
+                  class="input-field" 
+                  value="https://script.google.com/macros/s/AKfycby9lsXXrEUX_49aTYfcjQhgHD1xmB7DFODzXgk0691auDIBOTDEzScBPnu9PUUcgni9/exec"
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                >
+                <span class="field-hint">Endpoint do Web App publicado com acesso "Qualquer pessoa" (Anyone).</span>
               </div>
             </div>
 

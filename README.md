@@ -31,10 +31,11 @@ A lista suspensa contém as 7 escolas cadastradas:
 - **Sincronização em Tempo Real (Google Planilhas):** Carrega automaticamente todas as presenças registradas em qualquer dispositivo.
 - **Comprovante & Recibo:** Exibe tela de confirmação com e-mail, escola, nome, data e hora após o envio.
 - **Área Administrativa & Dashboard Completo:** Acesso protegido por senha (`admin123`) com KPIs em tempo real, contagem de presenças por escola e busca combinada.
-- **Relatório Executivo para a Gestão Escolar:**
-  - 🖨️ **Impressão / PDF:** Layout timbrado com cabeçalho institucional, relação nominal e linhas para assinatura da direção/coordenação.
-  - 📲 **WhatsApp da Gestão:** Cópia de texto formatado com resumo por escola e lista nominal com um clique.
-  - 📊 **Exportação CSV:** Download de relatório consolidado ou filtrado por unidade escolar.
+- **Relatório Executivo para a Gestão Escolar (Separado por Dia do Encontro):**
+  - 📅 **Agrupamento & Filtro por Encontro:** Separação visual e cronológica de cada dia formativo com total de presenças, horários e relação nominal por dia ou filtro individual.
+  - 🖨️ **Impressão / PDF:** Layout timbrado com cabeçalho institucional dinâmico, grupos por encontro e linhas para assinatura da direção/coordenação.
+  - 📲 **WhatsApp da Gestão:** Cópia de texto formatado dividido e delimitado por dia do encontro e resumo por escola com um clique.
+  - 📊 **Exportação CSV:** Download de relatório com coluna `DiaDoEncontro` consolidado ou filtrado por unidade escolar e data.
 - **Configurações Flexíveis:** Ajuste de links e IDs do Google Forms e da Planilha Google diretamente no painel.
 
 ---
