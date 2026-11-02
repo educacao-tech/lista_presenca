@@ -130,6 +130,7 @@ const elements = {
   // Aba Histórico & KPIs
   filtroHistorico: document.getElementById('filtroHistorico'),
   filtroEscolaSelect: document.getElementById('filtroEscolaSelect'),
+  filtroDataSelect: document.getElementById('filtroDataSelect'),
   ordemHistoricoSelect: document.getElementById('ordemHistoricoSelect'),
   totalPresencasBadge: document.getElementById('totalPresencasBadge'),
   btnNovaPresencaAdmin: document.getElementById('btnNovaPresencaAdmin'),
@@ -573,6 +574,31 @@ function updateAuditoriaDateSelect() {
   const dates = getUniqueMeetingDates();
 
   let html = `<option value="">📅 Todos os Encontros</option>`;
+  dates.forEach(d => {
+    const label = formatDateDisplayPT(d);
+    html += `<option value="${escapeHtml(d)}">${escapeHtml(label)}</option>`;
+  });
+
+  select.innerHTML = html;
+  if (currentVal && dates.includes(currentVal)) {
+    select.value = currentVal;
+  }
+}
+
+function updateHistoricoDateSelect() {
+  const select = elements.filtroDataSelect || document.getElementById('filtroDataSelect');
+  if (!select) return;
+
+  const currentVal = select.value;
+  const dates = getUniqueMeetingDates();
+
+  // Se as opções existentes já são idênticas, não recria o DOM
+  const existingValues = Array.from(select.options).map(o => o.value).filter(Boolean);
+  if (existingValues.length === dates.length && dates.every((d, i) => d === existingValues[i])) {
+    return;
+  }
+
+  let html = `<option value="">📅 Todas as Datas</option>`;
   dates.forEach(d => {
     const label = formatDateDisplayPT(d);
     html += `<option value="${escapeHtml(d)}">${escapeHtml(label)}</option>`;
@@ -1884,65 +1910,72 @@ window.switchMainView = switchMainView;
 // Autenticação Administrativa (Senha: admin123)
 // ==========================================================================
 function openAuthModal() {
-  if (elements.adminPasswordInput) {
-    elements.adminPasswordInput.value = '';
-    elements.adminPasswordInput.type = 'password';
-  }
-  if (elements.passwordToggleIcon) {
-    elements.passwordToggleIcon.className = 'fa-regular fa-eye';
-  }
-  if (elements.authErrorMessage) {
-    elements.authErrorMessage.classList.add('hidden');
-  }
-  openModal(elements.modalAdminAuth);
-  setTimeout(() => {
-    if (elements.adminPasswordInput) elements.adminPasswordInput.focus();
-  }, 100);
+  openModal(elements.modalAdminAuth || 'modalAdminAuth');
+  try {
+    const passInput = elements.adminPasswordInput || document.getElementById('adminPasswordInput');
+    if (passInput) {
+      passInput.value = '';
+      passInput.type = 'password';
+      setTimeout(() => passInput.focus(), 100);
+    }
+    const icon = elements.passwordToggleIcon || document.getElementById('passwordToggleIcon');
+    if (icon) icon.className = 'fa-regular fa-eye';
+    const err = elements.authErrorMessage || document.getElementById('authErrorMessage');
+    if (err) err.classList.add('hidden');
+  } catch (e) {}
 }
 
 function handleAuthSubmit(e) {
   e.preventDefault();
-  const inputPass = elements.adminPasswordInput.value;
+  const inputPass = elements.adminPasswordInput ? elements.adminPasswordInput.value : (document.getElementById('adminPasswordInput')?.value || '');
 
   if (inputPass === ADMIN_PASSWORD) {
     setAdminState(true);
-    closeModal(elements.modalAdminAuth);
+    closeModal(elements.modalAdminAuth || 'modalAdminAuth');
     showToast("Acesso administrativo liberado!", "success");
     openAdminPanel();
   } else {
-    if (elements.authErrorMessage) {
-      elements.authErrorMessage.classList.remove('hidden');
-    }
-    if (elements.adminPasswordInput) {
-      elements.adminPasswordInput.focus();
-      elements.adminPasswordInput.select();
+    const err = elements.authErrorMessage || document.getElementById('authErrorMessage');
+    if (err) err.classList.remove('hidden');
+    const passInput = elements.adminPasswordInput || document.getElementById('adminPasswordInput');
+    if (passInput) {
+      passInput.focus();
+      passInput.select();
     }
   }
 }
 
 function togglePasswordVisibility() {
-  if (!elements.adminPasswordInput) return;
-  const isPass = elements.adminPasswordInput.type === 'password';
-  elements.adminPasswordInput.type = isPass ? 'text' : 'password';
-  if (elements.passwordToggleIcon) {
-    elements.passwordToggleIcon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  const passInput = elements.adminPasswordInput || document.getElementById('adminPasswordInput');
+  if (!passInput) return;
+  const isPass = passInput.type === 'password';
+  passInput.type = isPass ? 'text' : 'password';
+  const icon = elements.passwordToggleIcon || document.getElementById('passwordToggleIcon');
+  if (icon) {
+    icon.className = isPass ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
   }
 }
 
 function handleAdminLogout() {
   setAdminState(false);
   stopSyncTimer();
-  closeModal(elements.modalAdminPanel);
-  closeModal(elements.modalAdminAuth);
-  closeModal(elements.modalDuplicado);
+  closeModal(elements.modalAdminPanel || 'modalAdminPanel');
+  closeModal(elements.modalAdminAuth || 'modalAdminAuth');
+  closeModal(elements.modalDuplicado || 'modalDuplicado');
   showToast("Você saiu da área administrativa.", "info");
 }
 
 function toggleAdminPanelDirect() {
-  if (appState.isAdmin) {
-    openAdminPanel();
-  } else {
-    openAuthModal();
+  try {
+    if (appState.isAdmin || sessionStorage.getItem('presenca_admin_auth') === 'true') {
+      appState.isAdmin = true;
+      openAdminPanel();
+    } else {
+      openAuthModal();
+    }
+  } catch (err) {
+    console.error("Erro ao abrir painel admin:", err);
+    openModal('modalAdminPanel');
   }
 }
 
@@ -1956,12 +1989,34 @@ window.handleAdminLogout = handleAdminLogout;
 // ==========================================================================
 function openAdminPanel() {
   loadConfig();
-  renderHistoryTable();
-  openModal(elements.modalAdminPanel);
 
-  // Executa sincronização em tempo real e inicia ciclo a cada 15 segundos
-  syncRealTime(false);
-  startSyncTimer();
+  // 1. Abre o modal PRIMEIRO para garantir visibilidade imediata
+  openModal(elements.modalAdminPanel || 'modalAdminPanel');
+
+  // 2. Restaura preferência de KPIs colapsados se salvo
+  try {
+    if (localStorage.getItem('admin_kpis_collapsed') === 'true') {
+      const tab = document.getElementById('tabHistorico');
+      const label = document.getElementById('toggleKPIsLabel');
+      if (tab) tab.classList.add('kpis-collapsed');
+      if (label) label.textContent = 'Mostrar Métricas';
+    }
+  } catch (e) {}
+
+  // 3. Renderiza tabela com proteção contra erros
+  try {
+    renderHistoryTable();
+  } catch (err) {
+    console.error("Erro ao renderizar tabela no painel:", err);
+  }
+
+  // 4. Executa sincronização em tempo real e inicia ciclo de atualização
+  try {
+    syncRealTime(false);
+    startSyncTimer();
+  } catch (err) {
+    console.warn("Erro ao iniciar sincronização:", err);
+  }
 }
 
 function startSyncTimer() {
@@ -2089,16 +2144,29 @@ function updateKPIsAndSchools(records) {
 // Renderiza a Tabela do Histórico Geral com visual moderno
 function renderHistoryTable() {
   loadHistory();
+  updateHistoricoDateSelect();
   const container = elements.historicoContainer;
   const textFilter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
   const schoolFilter = (elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value.trim().toUpperCase() : '');
+  const dateFilter = (elements.filtroDataSelect ? elements.filtroDataSelect.value.trim() : '');
   const sortOrder = (elements.ordemHistoricoSelect ? elements.ordemHistoricoSelect.value : 'recent');
 
-  // Atualiza KPIs com todos os registros
-  updateKPIsAndSchools(appState.history);
+  // Atualiza KPIs com registros da data selecionada (ou todos se nenhuma data estiver selecionada)
+  const recordsForKPIs = dateFilter
+    ? appState.history.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === dateFilter)
+    : appState.history;
+  updateKPIsAndSchools(recordsForKPIs);
 
   // Filtra registros
   let filtered = appState.history.filter(item => {
+    // Filtro por Data do Encontro
+    if (dateFilter) {
+      const itemDate = extractDateFromTimestamp(item.timestamp, item.date);
+      if (itemDate !== dateFilter) {
+        return false;
+      }
+    }
+
     // Filtro por Escola
     if (schoolFilter && (item.escola || '').trim().toUpperCase() !== schoolFilter) {
       return false;
@@ -2152,13 +2220,13 @@ function renderHistoryTable() {
   table.innerHTML = `
     <thead>
       <tr>
-        <th style="width: 45px; text-align: center;">#</th>
-        <th>Professor(a)</th>
-        <th>E-mail</th>
-        <th>Unidade Escolar</th>
-        <th>Data / Horário</th>
-        <th style="width: 95px; text-align: center;">Origem</th>
-        <th style="width: 90px; text-align: center;">Ações</th>
+        <th style="width: 36px; min-width: 36px; text-align: center;">#</th>
+        <th style="min-width: 170px;">Professor(a)</th>
+        <th style="min-width: 170px;">E-mail</th>
+        <th style="min-width: 130px;">Unidade Escolar</th>
+        <th style="width: 135px; min-width: 135px;">Data / Horário</th>
+        <th style="width: 75px; min-width: 75px; text-align: center;">Origem</th>
+        <th style="width: 75px; min-width: 75px; text-align: center;">Ações</th>
       </tr>
     </thead>
     <tbody>
@@ -2178,7 +2246,7 @@ function renderHistoryTable() {
             </td>
             <td>
               <div class="email-cell-wrapper">
-                <span class="email-text">${escapeHtml(h.email || '-')}</span>
+                <span class="email-text" title="${escapeHtml(h.email || '')}">${escapeHtml(h.email || '-')}</span>
                 ${h.email ? `
                   <button type="button" class="btn-copy-email" onclick="copyEmailToClipboard('${escapeHtml(h.email)}', this)" title="Copiar e-mail">
                     <i class="fa-regular fa-copy"></i>
@@ -2191,13 +2259,13 @@ function renderHistoryTable() {
                 <i class="fa-solid fa-school"></i> ${escapeHtml(h.escola)}
               </span>
             </td>
-            <td style="color:#475569; font-size:0.83rem; white-space:nowrap;">
+            <td style="color:#475569; font-size:0.8rem; white-space:nowrap;">
               <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(h.timestamp)}
             </td>
             <td style="text-align:center;">
               ${h.isRemote 
-                ? `<span class="badge badge-success" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
-                : `<span class="badge" style="background:#f8fafc; color:#64748b;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
+                ? `<span class="badge badge-success" style="font-size:0.7rem; padding: 2px 6px;" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
+                : `<span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding: 2px 6px;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
               }
             </td>
             <td style="text-align:center; white-space:nowrap;">
@@ -2230,6 +2298,38 @@ window.copyEmailToClipboard = function(email, btn) {
   }).catch(() => {
     showToast("Não foi possível copiar o e-mail.", "error");
   });
+};
+
+// Alterna Tela Cheia no Painel Administrativo
+window.toggleAdminFullscreen = function() {
+  const modalDialog = document.querySelector('#modalAdminPanel .modal-dialog');
+  const btn = document.getElementById('btnAdminFullscreen');
+  if (modalDialog) {
+    modalDialog.classList.toggle('modal-fullscreen');
+    const isFull = modalDialog.classList.contains('modal-fullscreen');
+    if (btn) {
+      btn.innerHTML = isFull 
+        ? `<i class="fa-solid fa-compress"></i> <span>Restaurar</span>`
+        : `<i class="fa-solid fa-expand"></i> <span>Tela Cheia</span>`;
+      btn.title = isFull ? 'Restaurar tamanho padrão' : 'Alternar Tela Cheia para ver todos os registros';
+    }
+  }
+};
+
+// Alterna Exibição dos KPIs para maximizar a área da tabela
+window.toggleKPIsVisibility = function() {
+  const tab = document.getElementById('tabHistorico');
+  const label = document.getElementById('toggleKPIsLabel');
+  if (tab) {
+    tab.classList.toggle('kpis-collapsed');
+    const isCollapsed = tab.classList.contains('kpis-collapsed');
+    if (label) {
+      label.textContent = isCollapsed ? 'Mostrar Métricas' : 'Ocultar Métricas';
+    }
+    try {
+      localStorage.setItem('admin_kpis_collapsed', isCollapsed ? 'true' : 'false');
+    } catch (e) {}
+  }
 };
 
 // ==========================================================================
@@ -2937,29 +3037,52 @@ window.printManagementReport = printManagementReport;
 window.copyWhatsAppSummary = copyWhatsAppSummary;
 window.exportReportCSV = exportReportCSV;
 
-// Exporta todo o Histórico Geral de Presenças em formato CSV
+// Exporta o Histórico Geral de Presenças em formato CSV (respeitando filtros ativos)
 function exportCSV() {
   loadHistory();
-  if (appState.history.length === 0) {
-    showToast("Não há registros para exportar.", "info");
+  const dateFilter = (elements.filtroDataSelect ? elements.filtroDataSelect.value.trim() : '');
+  const schoolFilter = (elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value.trim().toUpperCase() : '');
+  const textFilter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
+
+  let list = appState.history;
+  if (dateFilter) {
+    list = list.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === dateFilter);
+  }
+  if (schoolFilter) {
+    list = list.filter(item => (item.escola || '').trim().toUpperCase() === schoolFilter);
+  }
+  if (textFilter) {
+    list = list.filter(item => {
+      const matchName = item.professor && item.professor.toLowerCase().includes(textFilter);
+      const matchEmail = item.email && item.email.toLowerCase().includes(textFilter);
+      const matchSchool = item.escola && item.escola.toLowerCase().includes(textFilter);
+      return matchName || matchEmail || matchSchool;
+    });
+  }
+
+  if (list.length === 0) {
+    showToast("Não há registros para exportar com os filtros selecionados.", "info");
     return;
   }
+
   let csv = "\uFEFFNº;Professor;Email;Escola;DataHoraCompleta;Origem\n";
-  appState.history.forEach((h, idx) => {
-    csv += `"${idx + 1}";"${h.professor}";"${h.email || ''}";"${h.escola}";"${h.timestamp || ''}";"${h.isRemote ? 'Nuvem' : 'Local'}"\n`;
+  list.forEach((h, idx) => {
+    csv += `"${idx + 1}";"${(h.professor || '').replace(/"/g, '""')}";"${(h.email || '').replace(/"/g, '""')}";"${(h.escola || '').replace(/"/g, '""')}";"${(h.timestamp || '').replace(/"/g, '""')}";"${h.isRemote ? 'Nuvem' : 'Local'}"\n`;
   });
+
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `historico_presencas_${new Date().toISOString().slice(0, 10)}.csv`;
+  const dateSuffix = dateFilter ? `_${dateFilter.replace(/[^a-zA-Z0-9]/g, '-')}` : '';
+  a.download = `historico_presencas${dateSuffix}_${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => {
     if (a.parentNode) document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, 100);
-  showToast("Histórico CSV baixado com sucesso!", "success");
+  showToast(`Histórico CSV exportado (${list.length} registros)!`, "success");
 }
 
 window.exportCSV = exportCSV;
@@ -3878,6 +4001,9 @@ function setupEventListeners() {
   if (elements.filtroHistorico) {
     elements.filtroHistorico.addEventListener('input', renderHistoryTable);
   }
+  if (elements.filtroDataSelect) {
+    elements.filtroDataSelect.addEventListener('change', renderHistoryTable);
+  }
   if (elements.filtroEscolaSelect) {
     elements.filtroEscolaSelect.addEventListener('change', renderHistoryTable);
   }
@@ -3985,6 +4111,16 @@ function openModal(modal) {
     modal.style.display = 'flex';
     modal.style.opacity = '1';
     modal.style.pointerEvents = 'auto';
+    modal.style.visibility = 'visible';
+    modal.removeAttribute('hidden');
+
+    const dialog = modal.querySelector('.modal-dialog');
+    if (dialog) {
+      dialog.style.transform = 'translateY(0) scale(1)';
+      dialog.style.opacity = '1';
+    }
+  } else {
+    console.warn("openModal: elemento modal não encontrado:", modal);
   }
 }
 
@@ -3995,6 +4131,7 @@ function closeModal(modal) {
     modal.style.display = 'none';
     modal.style.opacity = '0';
     modal.style.pointerEvents = 'none';
+    modal.style.visibility = 'hidden';
   }
 }
 
