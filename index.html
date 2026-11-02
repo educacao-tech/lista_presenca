@@ -47,10 +47,10 @@
         <button type="button" id="btnThemeToggle" class="btn-icon btn-theme-toggle" title="Alternar Tema Claro/Escuro" aria-label="Alternar Tema Claro/Escuro" onclick="toggleTheme()">
           <i class="fa-solid fa-moon" id="themeIcon"></i>
         </button>
-        <button type="button" id="btnAdminGear" class="btn-icon btn-gear" title="Área Administrativa" aria-label="Área Administrativa">
+        <button type="button" id="btnAdminGear" class="btn-icon btn-gear" onclick="toggleAdminPanelDirect()" title="Área Administrativa" aria-label="Área Administrativa">
           <i class="fa-solid fa-gear"></i>
         </button>
-        <button type="button" id="btnAdminLogout" class="btn btn-sm btn-outline text-danger hidden" title="Sair do modo administrador">
+        <button type="button" id="btnAdminLogout" class="btn btn-sm btn-outline text-danger hidden" onclick="handleAdminLogout()" title="Sair do modo administrador">
           <i class="fa-solid fa-right-from-bracket"></i>
           <span>Sair</span>
         </button>
@@ -61,6 +61,18 @@
   <!-- Conteúdo Principal -->
   <main class="main-content">
     <div class="form-wrapper">
+
+      <!-- Alternador de Visão Principal: Registrar Presença vs Portal do Docente -->
+      <nav class="main-nav-tabs" aria-label="Navegação do Docente">
+        <button type="button" class="main-nav-tab-btn active" id="btnNavPresenca">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <span>Registrar Presença</span>
+        </button>
+        <button type="button" class="main-nav-tab-btn" id="btnNavPortalDocente">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Minhas Presenças & Atestado</span>
+        </button>
+      </nav>
 
       <!-- Card Principal de Preenchimento -->
       <div class="attendance-card card" id="formCard">
@@ -252,9 +264,133 @@
         </div>
 
         <div class="success-actions">
+          <button type="button" id="btnIrParaPortalDocente" class="btn btn-primary">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Ver Meu Histórico & Atestado</span>
+          </button>
           <button type="button" id="btnNovoRegistro" class="btn btn-outline">
             <i class="fa-solid fa-arrow-rotate-left"></i> Realizar Outro Registro
           </button>
+        </div>
+      </div>
+
+      <!-- Card do Portal do Docente (Minhas Presenças & Atestado de Horas) -->
+      <div class="attendance-card card hidden" id="portalDocenteCard">
+        <div class="card-hero">
+          <div class="hero-tag-row">
+            <div class="hero-tag"><i class="fa-solid fa-graduation-cap"></i> Portal do Docente EDM</div>
+          </div>
+          <h2>Minhas Presenças & Atestado de Horas</h2>
+          <p>Consulte sua frequência nos encontros formativos e emita sua declaração oficial de participação.</p>
+        </div>
+
+        <!-- Barra de Busca por E-mail ou Nome -->
+        <div class="portal-search-box">
+          <div class="input-group">
+            <label for="portalEmailInput">
+              <i class="fa-solid fa-magnifying-glass"></i> Digite seu e-mail ou nome cadastrado:
+            </label>
+            <div class="portal-search-bar">
+              <div class="input-with-icon" style="flex: 1;">
+                <input 
+                  type="text" 
+                  id="portalEmailInput" 
+                  class="input-field" 
+                  placeholder="exemplo@gmail.com ou nome do docente..."
+                  autocomplete="email"
+                >
+                <i class="fa-regular fa-envelope input-icon"></i>
+              </div>
+              <button type="button" id="btnBuscarPresencasDocente" class="btn btn-primary" onclick="executarBuscaPortalDocente()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>Consultar</span>
+              </button>
+            </div>
+            <span class="field-hint"><i class="fa-solid fa-circle-info"></i> Digite o mesmo e-mail utilizado na confirmação de presença da formação.</span>
+          </div>
+        </div>
+
+        <!-- Estado Inicial / Instruções -->
+        <div id="portalEmptyState" class="portal-empty-state">
+          <div class="portal-empty-icon"><i class="fa-solid fa-user-graduate"></i></div>
+          <h4>Consulte seu Histórico de Formação</h4>
+          <p>Informe seu e-mail acima para visualizar suas presenças computadas em cada encontro e emitir sua declaração de carga horária em PDF.</p>
+        </div>
+
+        <!-- Estado Não Encontrado -->
+        <div id="portalNotFoundState" class="portal-not-found-state hidden">
+          <div class="portal-notfound-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <h4>Nenhum registro localizado</h4>
+          <p id="portalNotFoundMsg">Não foram encontradas presenças registradas para os dados informados.</p>
+          <span class="portal-notfound-hint">Verifique se digitou o e-mail exatamente como informado no momento do registro.</span>
+        </div>
+
+        <!-- Resultados do Docente -->
+        <div id="portalResultContainer" class="portal-result-container hidden">
+          <!-- Cabeçalho do Perfil -->
+          <div class="portal-docente-header">
+            <div class="portal-avatar-circle" id="portalAvatarBadge">PR</div>
+            <div class="portal-docente-info">
+              <div class="portal-name-row">
+                <h3 id="portalNomeDocente">Nome do Professor</h3>
+                <span class="badge badge-success badge-sm" id="portalStatusBadge"><i class="fa-solid fa-certificate"></i> Apto para Atestado</span>
+              </div>
+              <p id="portalEmailDocente" class="portal-docente-email">email@exemplo.com</p>
+              <div class="portal-badges-row">
+                <span class="badge badge-primary badge-sm" id="portalEscolaDocente"><i class="fa-solid fa-school"></i> Escola</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grade de Indicadores (KPIs) -->
+          <div class="portal-kpi-grid">
+            <div class="portal-kpi-card">
+              <span class="portal-kpi-label">Encontros Formativos</span>
+              <strong class="portal-kpi-val" id="portalKpiTotalEncontros">0</strong>
+              <span class="portal-kpi-sub">Total realizados</span>
+            </div>
+            <div class="portal-kpi-card">
+              <span class="portal-kpi-label">Presenças Confirmadas</span>
+              <strong class="portal-kpi-val text-success" id="portalKpiPresencas">0</strong>
+              <span class="portal-kpi-sub">Comparecimentos</span>
+            </div>
+            <div class="portal-kpi-card">
+              <span class="portal-kpi-label">Frequência Geral</span>
+              <strong class="portal-kpi-val text-primary" id="portalKpiTaxa">0%</strong>
+              <span class="portal-kpi-sub">Aproveitamento</span>
+            </div>
+            <div class="portal-kpi-card">
+              <span class="portal-kpi-label">Carga Horária Total</span>
+              <strong class="portal-kpi-val text-purple" id="portalKpiCargaHoraria">0h</strong>
+              <span class="portal-kpi-sub">Horas certificadas</span>
+            </div>
+          </div>
+
+          <!-- Linha do Tempo de Encontros -->
+          <div class="portal-timeline-section">
+            <h4><i class="fa-solid fa-calendar-check"></i> Histórico por Encontro Formativo</h4>
+            <div id="portalTimelineList" class="portal-timeline-list">
+              <!-- Itens preenchidos via JS -->
+            </div>
+          </div>
+
+          <!-- Ações Oficiais: Emissão e Impressão do Atestado -->
+          <div class="portal-actions-card">
+            <div class="portal-actions-text">
+              <h4><i class="fa-solid fa-award text-success"></i> Declaração Oficial de Participação</h4>
+              <p>Documento timbrado com autenticidade eletrônica e carga horária para evolução funcional docente.</p>
+            </div>
+            <div class="portal-action-btns">
+              <button type="button" id="btnEmitirAtestadoDocente" class="btn btn-success" onclick="emitirAtestadoDocente()">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>Baixar Declaração em PDF</span>
+              </button>
+              <button type="button" id="btnImprimirAtestadoDocente" class="btn btn-outline" onclick="imprimirAtestadoDocente()">
+                <i class="fa-solid fa-print"></i>
+                <span>Imprimir</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -466,6 +602,9 @@
                 </select>
               </div>
 
+              <button type="button" id="btnNovaPresencaAdmin" class="btn btn-sm btn-primary" title="Lançar presença manualmente como Administrador">
+                <i class="fa-solid fa-user-plus"></i> <span>Nova Presença</span>
+              </button>
               <button type="button" id="btnExportarCSV" class="btn btn-sm btn-outline" title="Baixar registros em formato CSV">
                 <i class="fa-solid fa-file-csv"></i> <span>Exportar CSV</span>
               </button>
@@ -1016,7 +1155,7 @@
 
           <p class="duplicate-note">
             <i class="fa-solid fa-circle-info"></i>
-            <span>Por regra do sistema, é permitido <strong>apenas um registro por professor</strong>.</span>
+            <span>Por regra do sistema, é permitido <strong>apenas um registro por professor em cada dia de encontro</strong>.</span>
           </p>
         </div>
       </div>
@@ -1087,6 +1226,164 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Edição de Presença pelo Administrador -->
+  <div id="modalEditarRegistro" class="modal-backdrop">
+    <div class="modal-dialog modal-md">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-pen-to-square text-primary"></i>
+          <h3 id="modalEditarTitulo">Editar Registro de Presença</h3>
+        </div>
+        <button type="button" class="btn-close" id="btnCloseEditarRegistro" onclick="closeModal('modalEditarRegistro')">&times;</button>
+      </div>
+      <form id="formEditarRegistro">
+        <input type="hidden" id="editRecordId" value="">
+        <div class="modal-body">
+          <div class="input-group">
+            <label for="editNomeProfessor" class="required">
+              <i class="fa-solid fa-user-pen"></i> Nome Completo do Professor(a)
+            </label>
+            <input type="text" id="editNomeProfessor" class="input-field" required placeholder="Nome completo sem abreviações">
+          </div>
+
+          <div class="input-group">
+            <label for="editEmailProfessor" class="required">
+              <i class="fa-solid fa-envelope"></i> E-mail Institucional ou Pessoal
+            </label>
+            <input type="email" id="editEmailProfessor" class="input-field" required placeholder="email@exemplo.com">
+          </div>
+
+          <div class="input-group">
+            <label for="editSelectEscola" class="required">
+              <i class="fa-solid fa-school-flag"></i> Unidade Escolar
+            </label>
+            <div class="select-wrapper">
+              <select id="editSelectEscola" class="input-field select-field" required>
+                <option value="ALZIRA ACRA">ALZIRA ACRA</option>
+                <option value="ANNA BONAGURA">ANNA BONAGURA</option>
+                <option value="BRAGA MORATO">BRAGA MORATO</option>
+                <option value="CAIC">CAIC</option>
+                <option value="CÉLIA BUENO">CÉLIA BUENO</option>
+                <option value="ESTHER VIANNA">ESTHER VIANNA</option>
+                <option value="PADRE BENITO">PADRE BENITO</option>
+              </select>
+              <i class="fa-solid fa-chevron-down select-arrow"></i>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="input-group" style="flex: 1; min-width: 140px;">
+              <label for="editDataEncontro" class="required">
+                <i class="fa-solid fa-calendar-day"></i> Data do Encontro
+              </label>
+              <input type="text" id="editDataEncontro" class="input-field" required placeholder="DD/MM/AAAA" maxlength="10">
+              <span class="field-hint">Ex: 02/11/2026</span>
+            </div>
+            <div class="input-group" style="flex: 1; min-width: 140px;">
+              <label for="editHoraEncontro" class="required">
+                <i class="fa-solid fa-clock"></i> Horário
+              </label>
+              <input type="text" id="editHoraEncontro" class="input-field" required placeholder="HH:MM:SS ou HH:MM" maxlength="12">
+              <span class="field-hint">Ex: 17:23:31</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <button type="button" id="btnExcluirDentroDoModal" class="btn btn-outline text-danger" title="Excluir este registro permanentemente">
+            <i class="fa-solid fa-trash-can"></i> <span>Excluir Presença</span>
+          </button>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" id="btnCancelarEdicao" onclick="closeModal('modalEditarRegistro')" class="btn btn-secondary">Cancelar</button>
+            <button type="submit" id="btnSalvarEdicao" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk"></i> <span>Salvar Alterações</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Container Oficial para Emissão do Atestado / Declaração em PDF e Impressão -->
+  <div id="atestadoDocumentWrapper" class="atestado-export-wrapper">
+    <div id="atestadoDocumentCard" class="atestado-doc-card">
+      <!-- Cabeçalho Timbrado Oficial -->
+      <div class="atestado-header">
+        <div class="atestado-seal">
+          <i class="fa-solid fa-landmark"></i>
+        </div>
+        <div class="atestado-header-text">
+          <h5>PREFEITURA MUNICIPAL DA ESTÂNCIA CLIMÁTICA DE BATATAIS</h5>
+          <h6>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h6>
+          <p>Programa de Formação Continuada em Educação Digital e Midiática — EDM 2026</p>
+        </div>
+      </div>
+
+      <div class="atestado-divider"></div>
+
+      <!-- Título do Documento -->
+      <div class="atestado-title-box">
+        <h3>DECLARAÇÃO OFICIAL DE PARTICIPAÇÃO E FREQUÊNCIA</h3>
+        <span class="atestado-subtitle">Comprovação de Assiduidade e Carga Horária Docente</span>
+      </div>
+
+      <!-- Corpo do Texto Oficial -->
+      <div class="atestado-body">
+        <p class="atestado-p">
+          Declaramos para os devidos fins de comprovação funcional, pontuação e evolução na carreira do magistério público municipal que o(a) docente <strong id="certDocenteNome" class="cert-highlight">-</strong>, portador(a) do endereço eletrônico <strong id="certDocenteEmail">-</strong>, com lotação na unidade escolar <strong id="certDocenteEscola">-</strong>, participou dos encontros presenciais do <strong>Programa de Formação Continuada em Educação Digital e Midiática (EDM)</strong>, promovido no decorrer do ano letivo de 2026.
+        </p>
+        <p class="atestado-p">
+          O(A) docente obteve uma taxa de presença de <strong id="certDocenteTaxa" class="cert-highlight">0%</strong>, perfazendo uma carga horária formativa total certificada de <strong id="certDocenteCarga" class="cert-highlight">0 horas</strong>, conforme os encontros e registros cronológicos detalhados no quadro abaixo:
+        </p>
+
+        <!-- Tabela Oficial de Encontros -->
+        <table class="atestado-table">
+          <thead>
+            <tr>
+              <th>Nº</th>
+              <th>Encontro Formativo</th>
+              <th>Data de Realização</th>
+              <th>Horário Computado</th>
+              <th>Carga Horária</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody id="certTbodyEncontros">
+            <!-- Linhas dinâmicas -->
+          </tbody>
+        </table>
+
+        <!-- Nota Legal -->
+        <div class="atestado-legal-note">
+          <p>
+            * Documento eletrônico emitido conforme os registros oficiais de frequência presencial computados pela Secretaria Municipal de Educação. Válido para comprovação de participação e evolução funcional docente.
+          </p>
+        </div>
+      </div>
+
+      <!-- Rodapé com Data, Autenticidade e Assinaturas -->
+      <div class="atestado-footer">
+        <div class="atestado-emission-info">
+          <p>Batatais - SP, <span id="certDataEmissao">-- de ------------ de 2026</span>.</p>
+          <p class="cert-auth-code">Autenticidade Eletrônica: <span id="certCodigoAutenticidade">EDM-CERT-000000</span></p>
+        </div>
+
+        <div class="atestado-signatures">
+          <div class="sig-box">
+            <div class="sig-line"></div>
+            <strong>Coordenação Pedagógica EDM</strong>
+            <span>Secretaria Municipal de Educação</span>
+          </div>
+          <div class="sig-box">
+            <div class="sig-line"></div>
+            <strong id="certSigDocenteNome">Docente Participante</strong>
+            <span>Assinatura do(a) Professor(a)</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

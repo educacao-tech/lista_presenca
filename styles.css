@@ -936,8 +936,10 @@ select {
 }
 
 .modal-dialog.modal-xl {
-  max-width: 1100px;
-  width: 95vw;
+  max-width: 96vw;
+  width: 96vw;
+  max-height: 94vh;
+  height: 92vh;
 }
 
 .modal-backdrop.active .modal-dialog {
@@ -1076,8 +1078,12 @@ select {
 }
 
 .admin-modal-body {
-  padding: 1.5rem;
-  min-height: 380px;
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 .admin-tab-content {
@@ -1085,7 +1091,10 @@ select {
 }
 
 .admin-tab-content.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   animation: fadeIn 0.25s ease;
 }
 
@@ -1326,34 +1335,41 @@ select {
 
 .historico-table-wrapper {
   overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid var(--card-border);
   border-radius: var(--border-radius-md);
   background: #ffffff;
-  max-height: 340px;
+  flex: 1;
+  min-height: 450px;
+  max-height: calc(90vh - 250px);
 }
 
 .historico-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: 0.83rem;
 }
 
 .historico-table th {
   background: #f8fafc;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.75rem;
   font-weight: 700;
   text-align: left;
-  border-bottom: 1px solid var(--card-border);
+  border-bottom: 2px solid #e2e8f0;
   color: #475569;
   position: sticky;
   top: 0;
   z-index: 2;
+  white-space: nowrap;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
 }
 
 .historico-table td {
-  padding: 0.75rem 1rem;
+  padding: 0.45rem 0.75rem;
   border-bottom: 1px solid #f1f5f9;
   color: var(--text-main);
+  vertical-align: middle;
 }
 
 .historico-table tr:hover td {
@@ -2722,3 +2738,535 @@ select {
 
 
 
+
+
+/* ==========================================================================
+   Navegação Principal do Docente: Registrar Presença vs Portal
+   ========================================================================== */
+.main-nav-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-card);
+  padding: 0.4rem;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.25rem;
+  width: 100%;
+}
+
+.main-nav-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md, 8px);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.main-nav-tab-btn:hover {
+  color: var(--primary);
+  background: var(--primary-light);
+}
+
+.main-nav-tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+/* ==========================================================================
+   Portal do Docente: Presenças & Certificação
+   ========================================================================== */
+.portal-search-box {
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.portal-search-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.4rem;
+}
+
+.portal-empty-state, .portal-not-found-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: var(--bg-surface, #f8fafc);
+  border-radius: var(--radius-lg, 12px);
+  border: 1px dashed var(--border-color);
+  margin-bottom: 1rem;
+}
+
+.portal-empty-icon, .portal-notfound-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+}
+
+.portal-empty-icon {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.portal-notfound-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.portal-empty-state h4, .portal-not-found-state h4 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.4rem;
+}
+
+.portal-empty-state p, .portal-not-found-state p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.portal-notfound-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 0.75rem;
+}
+
+/* Cabeçalho do Perfil do Docente */
+.portal-docente-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(2, 132, 199, 0.08));
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.portal-avatar-circle {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #0284c7);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
+}
+
+.portal-docente-info {
+  flex: 1;
+}
+
+.portal-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.portal-name-row h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.portal-docente-email {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0.2rem 0 0.5rem;
+}
+
+.portal-badges-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* KPIs do Docente */
+.portal-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.portal-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 8px);
+  padding: 1rem 0.8rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.portal-kpi-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.portal-kpi-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.1;
+}
+
+.portal-kpi-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Timeline dos Encontros */
+.portal-timeline-section {
+  margin-bottom: 1.5rem;
+}
+
+.portal-timeline-section h4 {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.portal-timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.portal-meeting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1.1rem;
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-md, 8px);
+  gap: 1rem;
+}
+
+.portal-meeting-item.presente {
+  border-left-color: #10b981;
+}
+
+.portal-meeting-item.ausente {
+  border-left-color: #ef4444;
+  opacity: 0.85;
+}
+
+.portal-meeting-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.portal-meeting-date {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.portal-meeting-detail {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.portal-meeting-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Ações de Atestado */
+.portal-actions-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.08));
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-lg, 12px);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.portal-actions-text h4 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.portal-actions-text p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.portal-action-btns {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* ==========================================================================
+   Declaração / Atestado Oficial Timbrado (Exportação PDF e Impressão)
+   ========================================================================== */
+.atestado-export-wrapper {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 210mm;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.atestado-doc-card {
+  padding: 22mm 20mm;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.atestado-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.atestado-seal {
+  font-size: 2.8rem;
+  color: #1e3a8a;
+}
+
+.atestado-header-text h5 {
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0;
+  color: #1e293b;
+}
+
+.atestado-header-text h6 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin: 3px 0;
+  color: #2563eb;
+}
+
+.atestado-header-text p {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.atestado-divider {
+  height: 2px;
+  background: linear-gradient(90deg, #1e3a8a, #0284c7, #cbd5e1);
+  margin-bottom: 1.5rem;
+}
+
+.atestado-title-box {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.atestado-title-box h3 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.atestado-subtitle {
+  font-size: 0.88rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.atestado-body {
+  line-height: 1.75;
+  color: #334155;
+  font-size: 0.95rem;
+}
+
+.atestado-p {
+  margin-bottom: 1.25rem;
+  text-align: justify;
+}
+
+.cert-highlight {
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.atestado-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.88rem;
+}
+
+.atestado-table th {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 700;
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 2px solid #cbd5e1;
+  border-top: 1px solid #e2e8f0;
+}
+
+.atestado-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.atestado-legal-note {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 1.5rem;
+  font-style: italic;
+}
+
+.atestado-footer {
+  margin-top: 2.5rem;
+}
+
+.atestado-emission-info {
+  margin-bottom: 2.5rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.cert-auth-code {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-family: monospace;
+  margin-top: 0.25rem;
+}
+
+.atestado-signatures {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 3.5rem;
+}
+
+.sig-box {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sig-line {
+  width: 80%;
+  height: 1px;
+  background: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+.sig-box strong {
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.sig-box span {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Regras de Impressão Direta do Atestado */
+@media print {
+  body.printing-atestado * {
+    visibility: hidden;
+  }
+  body.printing-atestado #atestadoDocumentWrapper,
+  body.printing-atestado #atestadoDocumentWrapper * {
+    visibility: visible;
+  }
+  body.printing-atestado #atestadoDocumentWrapper {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+}
+
+
+/* ==========================================================================
+   Botões de Ação na Tabela do Modo Administrador
+   ========================================================================== */
+.btn-table-action {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0 2px;
+  color: var(--text-main);
+}
+
+.btn-table-action:hover {
+  background: var(--bg-surface, #f8fafc);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.btn-table-action:active {
+  transform: translateY(0);
+}

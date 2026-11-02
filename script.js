@@ -47,6 +47,45 @@ const elements = {
   displayTime: document.getElementById('displayTime'),
   btnSubmit: document.getElementById('btnSubmit'),
   
+  // Navegação Principal do Docente
+  btnNavPresenca: document.getElementById('btnNavPresenca'),
+  btnNavPortalDocente: document.getElementById('btnNavPortalDocente'),
+  btnIrParaPortalDocente: document.getElementById('btnIrParaPortalDocente'),
+
+  // Portal do Docente (Minhas Presenças & Atestado)
+  portalDocenteCard: document.getElementById('portalDocenteCard'),
+  portalEmailInput: document.getElementById('portalEmailInput'),
+  btnBuscarPresencasDocente: document.getElementById('btnBuscarPresencasDocente'),
+  portalEmptyState: document.getElementById('portalEmptyState'),
+  portalNotFoundState: document.getElementById('portalNotFoundState'),
+  portalNotFoundMsg: document.getElementById('portalNotFoundMsg'),
+  portalResultContainer: document.getElementById('portalResultContainer'),
+  portalAvatarBadge: document.getElementById('portalAvatarBadge'),
+  portalNomeDocente: document.getElementById('portalNomeDocente'),
+  portalStatusBadge: document.getElementById('portalStatusBadge'),
+  portalEmailDocente: document.getElementById('portalEmailDocente'),
+  portalEscolaDocente: document.getElementById('portalEscolaDocente'),
+  portalKpiTotalEncontros: document.getElementById('portalKpiTotalEncontros'),
+  portalKpiPresencas: document.getElementById('portalKpiPresencas'),
+  portalKpiTaxa: document.getElementById('portalKpiTaxa'),
+  portalKpiCargaHoraria: document.getElementById('portalKpiCargaHoraria'),
+  portalTimelineList: document.getElementById('portalTimelineList'),
+  btnEmitirAtestadoDocente: document.getElementById('btnEmitirAtestadoDocente'),
+  btnImprimirAtestadoDocente: document.getElementById('btnImprimirAtestadoDocente'),
+
+  // Documento Timbrado de Atestado / Declaração
+  atestadoDocumentWrapper: document.getElementById('atestadoDocumentWrapper'),
+  atestadoDocumentCard: document.getElementById('atestadoDocumentCard'),
+  certDocenteNome: document.getElementById('certDocenteNome'),
+  certDocenteEmail: document.getElementById('certDocenteEmail'),
+  certDocenteEscola: document.getElementById('certDocenteEscola'),
+  certDocenteTaxa: document.getElementById('certDocenteTaxa'),
+  certDocenteCarga: document.getElementById('certDocenteCarga'),
+  certTbodyEncontros: document.getElementById('certTbodyEncontros'),
+  certDataEmissao: document.getElementById('certDataEmissao'),
+  certCodigoAutenticidade: document.getElementById('certCodigoAutenticidade'),
+  certSigDocenteNome: document.getElementById('certSigDocenteNome'),
+
   // Card de Comprovante Individual
   successCard: document.getElementById('successCard'),
   receiptEmail: document.getElementById('receiptEmail'),
@@ -93,10 +132,26 @@ const elements = {
   filtroEscolaSelect: document.getElementById('filtroEscolaSelect'),
   ordemHistoricoSelect: document.getElementById('ordemHistoricoSelect'),
   totalPresencasBadge: document.getElementById('totalPresencasBadge'),
+  btnNovaPresencaAdmin: document.getElementById('btnNovaPresencaAdmin'),
   btnExportarCSV: document.getElementById('btnExportarCSV'),
   btnLimparHistorico: document.getElementById('btnLimparHistorico'),
   historicoContainer: document.getElementById('historicoContainer'),
   schoolBadgesContainer: document.getElementById('schoolBadgesContainer'),
+
+  // Modal Edição / Criação de Presença no Modo Admin
+  modalEditarRegistro: document.getElementById('modalEditarRegistro'),
+  btnCloseEditarRegistro: document.getElementById('btnCloseEditarRegistro'),
+  btnCancelarEdicao: document.getElementById('btnCancelarEdicao'),
+  formEditarRegistro: document.getElementById('formEditarRegistro'),
+  modalEditarTitulo: document.getElementById('modalEditarTitulo'),
+  editRecordId: document.getElementById('editRecordId'),
+  editNomeProfessor: document.getElementById('editNomeProfessor'),
+  editEmailProfessor: document.getElementById('editEmailProfessor'),
+  editSelectEscola: document.getElementById('editSelectEscola'),
+  editDataEncontro: document.getElementById('editDataEncontro'),
+  editHoraEncontro: document.getElementById('editHoraEncontro'),
+  btnExcluirDentroDoModal: document.getElementById('btnExcluirDentroDoModal'),
+  btnSalvarEdicao: document.getElementById('btnSalvarEdicao'),
   kpiTotalPresencas: document.getElementById('kpiTotalPresencas'),
   kpiTotalSub: document.getElementById('kpiTotalSub'),
   kpiEscolasAtivas: document.getElementById('kpiEscolasAtivas'),
@@ -393,13 +448,17 @@ function saveToHistory(record) {
   loadHistory();
   const recEmail = (record.email || '').trim().toLowerCase();
   const recProf = normalizeName(record.professor);
+  const recDate = record.date || extractDateFromTimestamp(record.timestamp);
 
-  // Evita duplicatas na lista por e-mail ou nome
+  // Evita duplicatas na lista por e-mail ou nome no mesmo dia
   const exists = appState.history.some(h => {
+    const hDate = h.date || extractDateFromTimestamp(h.timestamp);
+    if (recDate && hDate && recDate !== hDate) return false;
+
     const hEmail = (h.email || '').trim().toLowerCase();
     const hProf = normalizeName(h.professor);
     if (recEmail && hEmail && recEmail === hEmail) return true;
-    if (recProf && hProf && recProf === hProf && (h.date === record.date || h.timestamp === record.timestamp)) return true;
+    if (recProf && hProf && recProf === hProf) return true;
     return false;
   });
 
@@ -536,21 +595,39 @@ function normalizeName(name) {
     .replace(/\s+/g, ' ');
 }
 
-// Verifica se já realizou registro (por E-mail como chave prioritária ou por Nome)
-function findDuplicateRecord(target) {
+// Verifica se já realizou registro no mesmo dia (por E-mail como chave prioritária ou por Nome)
+function findDuplicateRecord(target, explicitDate = '') {
   loadHistory();
   const targetEmail = typeof target === 'object' ? (target.email || '').trim().toLowerCase() : '';
   const targetProf = typeof target === 'object' ? normalizeName(target.professor) : normalizeName(target);
 
+  // Determina a data de referência para comparação (apenas no mesmo dia do encontro)
+  let refDate = '';
+  if (explicitDate) {
+    refDate = normalizeDateBR(explicitDate);
+  } else if (typeof target === 'object' && target) {
+    if (target.date) refDate = normalizeDateBR(target.date);
+    else if (target.timestamp) refDate = extractDateFromTimestamp(target.timestamp);
+  }
+  if (!refDate) {
+    refDate = normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+  }
+
   return appState.history.find(record => {
+    // REGRA: Só é duplicado se for no MESMO DIA do encontro formativo
+    const recDate = extractDateFromTimestamp(record.timestamp, record.date);
+    if (recDate && refDate && recDate !== refDate) {
+      return false; // Dias diferentes -> Permite novo registro para o novo encontro!
+    }
+
     const recEmail = (record.email || '').trim().toLowerCase();
     const recProf = normalizeName(record.professor);
 
-    // 1. Chave prioritária: E-mail idêntico
+    // 1. Chave prioritária: E-mail idêntico no mesmo dia
     if (targetEmail && recEmail && targetEmail === recEmail) {
       return true;
     }
-    // 2. Chave secundária: Nome Completo idêntico
+    // 2. Chave secundária: Nome Completo idêntico no mesmo dia
     if (targetProf && recProf && targetProf === recProf) {
       return true;
     }
@@ -643,6 +720,45 @@ function parseCSV(text) {
   return lines;
 }
 
+// ==========================================================================
+// Persistência de Edições e Exclusões Administrativas (Nuvem / Local)
+// ==========================================================================
+function getDeletedSignatures() {
+  try {
+    const raw = localStorage.getItem('presenca_deleted_signatures');
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function saveDeletedSignature(sig) {
+  if (!sig) return;
+  const set = getDeletedSignatures();
+  set.add(sig);
+  try {
+    localStorage.setItem('presenca_deleted_signatures', JSON.stringify(Array.from(set)));
+  } catch (e) {}
+}
+
+function getEditedRecords() {
+  try {
+    const raw = localStorage.getItem('presenca_edited_records');
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveEditedRecord(id, rec) {
+  if (!id || !rec) return;
+  const obj = getEditedRecords();
+  obj[id] = rec;
+  try {
+    localStorage.setItem('presenca_edited_records', JSON.stringify(obj));
+  } catch (e) {}
+}
+
 /**
  * Extrai registros das linhas da planilha do Google Forms
  */
@@ -693,18 +809,58 @@ function extractRecordsFromRows(rows) {
 
     if (!professor && !escola && !email) continue;
 
+    const mDate = extractDateFromTimestamp(timestampRaw);
     records.push({
-      id: `remote_${i}_${email || normalizeName(professor)}`,
+      id: `remote_${i}_${email || normalizeName(professor)}_${mDate ? mDate.replace(/\//g, '') : ''}`,
       email: email,
       professor: professor.toUpperCase(),
       escola: escola.toUpperCase(),
       timestamp: timestampRaw,
+      date: mDate,
       isRemote: true
     });
   }
 
   // Ordena os mais recentes primeiro
-  return records.reverse();
+  const reversed = records.reverse();
+
+  // DEDUPLICAÇÃO ESTRITA: Apenas 1 registro por docente em cada dia de encontro
+  const uniqueRecords = [];
+  const seenKeys = new Set();
+  const deletedSigs = getDeletedSignatures();
+  const editedMap = getEditedRecords();
+
+  reversed.forEach(rec => {
+    const profNorm = normalizeName(rec.professor);
+    const emailNorm = (rec.email || '').trim().toLowerCase();
+    const dateVal = rec.date || extractDateFromTimestamp(rec.timestamp);
+
+    // 1. Ignora se foi excluído pelo Administrador
+    const sig1 = `${emailNorm}_${dateVal}`;
+    const sig2 = `${profNorm}_${dateVal}`;
+    const sigTime = `${emailNorm || profNorm}_${rec.timestamp}`;
+    if (deletedSigs.has(sig1) || deletedSigs.has(sig2) || deletedSigs.has(sigTime) || deletedSigs.has(rec.id)) {
+      return;
+    }
+
+    // 2. Aplica edições salvas pelo Administrador
+    if (editedMap[rec.id]) {
+      Object.assign(rec, editedMap[rec.id]);
+    }
+
+    const emailKey = emailNorm && dateVal ? `${emailNorm}_${dateVal}` : '';
+    const profKey = profNorm && dateVal ? `${profNorm}_${dateVal}` : '';
+
+    if (emailKey && seenKeys.has(emailKey)) return;
+    if (profKey && seenKeys.has(profKey)) return;
+
+    if (emailKey) seenKeys.add(emailKey);
+    if (profKey) seenKeys.add(profKey);
+
+    uniqueRecords.push(rec);
+  });
+
+  return uniqueRecords;
 }
 
 /**
@@ -774,15 +930,21 @@ async function syncRealTime(showFeedback = false) {
     loadHistory();
     const localRecords = appState.history.filter(h => !h.isRemote);
 
-    // Mescla registros remotos com locais evitando duplicatas
+    // Mescla registros remotos com locais evitando duplicatas no mesmo dia
     const merged = [...remoteRecords];
     localRecords.forEach(loc => {
       const locEmail = (loc.email || '').trim().toLowerCase();
       const locProf = normalizeName(loc.professor);
+      const locDate = extractDateFromTimestamp(loc.timestamp, loc.date);
 
       const isAlreadyInRemote = merged.some(rem => {
         const remEmail = (rem.email || '').trim().toLowerCase();
         const remProf = normalizeName(rem.professor);
+        const remDate = extractDateFromTimestamp(rem.timestamp, rem.date);
+
+        // Se forem de dias diferentes do encontro, NÃO são duplicados
+        if (locDate && remDate && locDate !== remDate) return false;
+
         if (locEmail && remEmail && locEmail === remEmail) return true;
         if (locProf && remProf && locProf === remProf) return true;
         return false;
@@ -793,7 +955,27 @@ async function syncRealTime(showFeedback = false) {
       }
     });
 
-    appState.history = merged;
+    // Garante unicidade absoluta: máximo 1 presença por professor em cada dia de encontro
+    const finalMerged = [];
+    const seenMergeKeys = new Set();
+    merged.forEach(item => {
+      const pNorm = normalizeName(item.professor);
+      const eNorm = (item.email || '').trim().toLowerCase();
+      const dNorm = item.date || extractDateFromTimestamp(item.timestamp);
+
+      const k1 = eNorm && dNorm ? `${eNorm}_${dNorm}` : '';
+      const k2 = pNorm && dNorm ? `${pNorm}_${dNorm}` : '';
+
+      if (k1 && seenMergeKeys.has(k1)) return;
+      if (k2 && seenMergeKeys.has(k2)) return;
+
+      if (k1) seenMergeKeys.add(k1);
+      if (k2) seenMergeKeys.add(k2);
+
+      finalMerged.push(item);
+    });
+
+    appState.history = finalMerged;
     localStorage.setItem('presenca_history_records', JSON.stringify(appState.history));
     
     appState.lastSyncTime = new Date();
@@ -905,8 +1087,12 @@ async function handleSubmit(e) {
     return;
   }
 
-  // REGRA: CHAVE ÚNICA (E-mail prioritário ou Nome Completo)
-  const existingRecord = findDuplicateRecord({ email, professor });
+  const now = new Date();
+  const todayBR = normalizeDateBR(now.toLocaleDateString('pt-BR'));
+  const timestamp = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+  // REGRA: CHAVE ÚNICA (E-mail prioritário ou Nome Completo) APENAS NO MESMO DIA DO ENCONTRO
+  const existingRecord = findDuplicateRecord({ email, professor, date: todayBR });
   if (existingRecord) {
     currentDuplicateRecord = existingRecord;
     if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = existingRecord.professor;
@@ -915,12 +1101,9 @@ async function handleSubmit(e) {
     if (elements.dupTimestamp) elements.dupTimestamp.textContent = existingRecord.timestamp;
     
     openModal(elements.modalDuplicado);
-    showToast("Atenção: Presença já registrada para este e-mail/professor!", "warning");
+    showToast(`Atenção: Presença já registrada para este docente no encontro de hoje (${todayBR})!`, "warning");
     return;
   }
-
-  const now = new Date();
-  const timestamp = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
   const record = {
     id: Date.now(),
@@ -928,8 +1111,7 @@ async function handleSubmit(e) {
     escola: escola,
     professor: professor,
     timestamp: timestamp,
-    date: now.toLocaleDateString('pt-BR'),
-    time: now.toLocaleTimeString('pt-BR'),
+    date: todayBR,
     isRemote: false
   };
 
@@ -980,7 +1162,7 @@ async function handleSubmit(e) {
     submitViaHiddenIframe(escola, professor, email);
     saveToHistory(record);
     showReceipt(record);
-    showToast("Presença confirmada e enviada!", "success");
+    showToast("Presença confirmada e gravada! Comprovante enviado por e-mail.", "success");
 
     // Sincroniza em segundo plano se tiver a planilha
     if (appState.config.sheetUrl) {
@@ -1333,8 +1515,9 @@ function setGoogleAuthenticatedUser(profile, showFeedback = true) {
   if (showFeedback) {
     showToast(`Identificado como ${profile.name || email}!`, "success");
 
-    // Verifica imediatamente se já existe presença registrada para esse e-mail
-    const dup = findDuplicateRecord({ email, professor: nome });
+    // Verifica imediatamente se já existe presença registrada para esse e-mail no encontro de hoje
+    const todayBR = normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+    const dup = findDuplicateRecord({ email, professor: nome, date: todayBR });
     if (dup) {
       currentDuplicateRecord = dup;
       if (elements.dupNomeProfessor) elements.dupNomeProfessor.textContent = dup.professor;
@@ -1342,7 +1525,7 @@ function setGoogleAuthenticatedUser(profile, showFeedback = true) {
       if (elements.dupEscola) elements.dupEscola.textContent = dup.escola;
       if (elements.dupTimestamp) elements.dupTimestamp.textContent = dup.timestamp;
       openModal(elements.modalDuplicado);
-      showToast("Atenção: Presença já registrada para esta conta!", "warning");
+      showToast(`Atenção: Presença já registrada para esta conta no encontro de hoje (${todayBR})!`, "warning");
     } else {
       if (elements.selectEscola && !elements.selectEscola.value) {
         elements.selectEscola.focus();
@@ -1406,6 +1589,298 @@ function resetForNewEntry() {
 }
 
 // ==========================================================================
+// Portal do Docente (Minhas Presenças, Histórico & Atestado de Horas)
+// ==========================================================================
+let currentPortalDocenteData = null;
+
+function switchMainView(viewName) {
+  if (viewName === 'portal') {
+    if (elements.btnNavPresenca) elements.btnNavPresenca.classList.remove('active');
+    if (elements.btnNavPortalDocente) elements.btnNavPortalDocente.classList.add('active');
+    if (elements.formCard) elements.formCard.classList.add('hidden');
+    if (elements.successCard) elements.successCard.classList.add('hidden');
+    if (elements.portalDocenteCard) elements.portalDocenteCard.classList.remove('hidden');
+
+    // Auto-preenche o campo de e-mail se houver perfil conectado ou histórico recente
+    if (elements.portalEmailInput && !elements.portalEmailInput.value) {
+      const savedEmail = (appState.googleUser && appState.googleUser.email) || 
+                         (elements.receiptEmail && elements.receiptEmail.textContent !== '-' ? elements.receiptEmail.textContent : '') ||
+                         (elements.inputEmail ? elements.inputEmail.value : '') || '';
+      if (savedEmail) {
+        elements.portalEmailInput.value = savedEmail.trim().toLowerCase();
+        executarBuscaPortalDocente(savedEmail);
+      }
+    }
+  } else {
+    // viewName === 'presenca'
+    if (elements.btnNavPresenca) elements.btnNavPresenca.classList.add('active');
+    if (elements.btnNavPortalDocente) elements.btnNavPortalDocente.classList.remove('active');
+    if (elements.portalDocenteCard) elements.portalDocenteCard.classList.add('hidden');
+
+    if (elements.successCard && !elements.successCard.classList.contains('hidden')) {
+      // Deixa successCard visível se o professor acabou de enviar
+    } else {
+      if (elements.formCard) elements.formCard.classList.remove('hidden');
+    }
+  }
+}
+
+function hashString(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+}
+
+function executarBuscaPortalDocente(forcedQuery = '') {
+  loadHistory();
+  const query = (forcedQuery || (elements.portalEmailInput ? elements.portalEmailInput.value : '')).trim();
+
+  if (!query) {
+    showToast("Por favor, digite seu e-mail ou nome completo para consultar.", "warning");
+    if (elements.portalEmailInput) elements.portalEmailInput.focus();
+    return;
+  }
+
+  const queryNorm = normalizeName(query);
+  const isEmailQuery = query.includes('@');
+
+  // Encontra todos os encontros formativos únicos registrados no sistema
+  const allMeetingDates = getUniqueMeetingDates(appState.history);
+  const effectiveDates = allMeetingDates.length > 0 ? allMeetingDates : [normalizeDateBR(new Date().toLocaleDateString('pt-BR'))];
+
+  // Busca registros do professor (remotos e locais)
+  const teacherRecords = appState.history.filter(record => {
+    const recEmail = (record.email || '').trim().toLowerCase();
+    const recProf = normalizeName(record.professor);
+
+    if (isEmailQuery) {
+      return recEmail === query.toLowerCase();
+    }
+    return recProf === queryNorm || recProf.includes(queryNorm) || queryNorm.includes(recProf);
+  });
+
+  // Tenta cruzar com o cadastro oficial (Firestore)
+  let cadastroOficial = null;
+  if (appState.cadastrados && appState.cadastrados.length > 0) {
+    cadastroOficial = appState.cadastrados.find(cad => {
+      const cadNorm = normalizeName(cad.nome);
+      return cadNorm === queryNorm || (teacherRecords.length > 0 && normalizeName(teacherRecords[0].professor) === cadNorm);
+    });
+  }
+
+  if (teacherRecords.length === 0) {
+    if (elements.portalEmptyState) elements.portalEmptyState.classList.add('hidden');
+    if (elements.portalResultContainer) elements.portalResultContainer.classList.add('hidden');
+    if (elements.portalNotFoundState) {
+      elements.portalNotFoundState.classList.remove('hidden');
+      if (elements.portalNotFoundMsg) {
+        elements.portalNotFoundMsg.textContent = `Não localizamos presenças computadas para "${query}".`;
+      }
+    }
+    currentPortalDocenteData = null;
+    return;
+  }
+
+  // Identifica nome, e-mail e unidade escolar
+  const primaryRecord = teacherRecords[0];
+  const nomeFinal = primaryRecord.professor || (cadastroOficial ? cadastroOficial.nome : query.toUpperCase());
+  const emailFinal = primaryRecord.email || query.toLowerCase();
+  const escolaFinal = primaryRecord.escola || (cadastroOficial ? cadastroOficial.escola : 'Não informada');
+
+  // Mapeia presenças por data única
+  const presencasPorDia = new Map();
+  teacherRecords.forEach(rec => {
+    const d = extractDateFromTimestamp(rec.timestamp, rec.date);
+    if (d && !presencasPorDia.has(d)) {
+      presencasPorDia.set(d, rec);
+    }
+  });
+
+  const totalEncontros = effectiveDates.length;
+  const presencasConfirmadas = presencasPorDia.size;
+  const taxaPresenca = Math.min(100, Math.round((presencasConfirmadas / totalEncontros) * 100));
+  const cargaHorariaPorEncontro = 4; // 4 horas por encontro presencial
+  const cargaHorariaTotal = presencasConfirmadas * cargaHorariaPorEncontro;
+
+  currentPortalDocenteData = {
+    nome: nomeFinal,
+    email: emailFinal,
+    escola: escolaFinal,
+    totalEncontros: totalEncontros,
+    presencasCount: presencasConfirmadas,
+    taxa: taxaPresenca,
+    cargaHoraria: cargaHorariaTotal,
+    dates: effectiveDates,
+    presencasPorDia: presencasPorDia,
+    rawRecords: teacherRecords
+  };
+
+  renderPortalDocenteUI(currentPortalDocenteData);
+}
+
+function renderPortalDocenteUI(data) {
+  if (!data) return;
+
+  if (elements.portalEmptyState) elements.portalEmptyState.classList.add('hidden');
+  if (elements.portalNotFoundState) elements.portalNotFoundState.classList.add('hidden');
+  if (elements.portalResultContainer) elements.portalResultContainer.classList.remove('hidden');
+
+  if (elements.portalAvatarBadge) {
+    elements.portalAvatarBadge.textContent = getInitials(data.nome);
+  }
+  if (elements.portalNomeDocente) elements.portalNomeDocente.textContent = data.nome;
+  if (elements.portalEmailDocente) elements.portalEmailDocente.textContent = data.email;
+  if (elements.portalEscolaDocente) {
+    elements.portalEscolaDocente.innerHTML = `<i class="fa-solid fa-school"></i> ${data.escola}`;
+  }
+
+  if (elements.portalKpiTotalEncontros) elements.portalKpiTotalEncontros.textContent = data.totalEncontros;
+  if (elements.portalKpiPresencas) elements.portalKpiPresencas.textContent = data.presencasCount;
+  if (elements.portalKpiTaxa) elements.portalKpiTaxa.textContent = `${data.taxa}%`;
+  if (elements.portalKpiCargaHoraria) elements.portalKpiCargaHoraria.textContent = `${data.cargaHoraria}h`;
+
+  // Renderiza a lista de encontros
+  if (elements.portalTimelineList) {
+    elements.portalTimelineList.innerHTML = '';
+
+    data.dates.forEach((mDate, idx) => {
+      const presenca = data.presencasPorDia.get(mDate);
+      const isPresente = !!presenca;
+
+      const item = document.createElement('div');
+      item.className = `portal-meeting-item ${isPresente ? 'presente' : 'ausente'}`;
+      
+      item.innerHTML = `
+        <div class="portal-meeting-left">
+          <div class="portal-meeting-date">
+            <i class="fa-regular fa-calendar-check text-primary"></i>
+            <span>${idx + 1}º Encontro Formativo • ${formatDateDisplayPT(mDate)}</span>
+          </div>
+          <div class="portal-meeting-detail">
+            ${isPresente 
+              ? `<i class="fa-solid fa-check text-success"></i> Registrado em ${presenca.timestamp} • Unidade: <strong>${presenca.escola}</strong> • Carga: <strong>4 horas</strong>` 
+              : `<i class="fa-solid fa-xmark text-danger"></i> Ausência registrada neste encontro formativo`}
+          </div>
+        </div>
+        <div class="portal-meeting-right">
+          ${isPresente 
+            ? `<span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Presente</span>` 
+            : `<span class="badge badge-danger"><i class="fa-solid fa-circle-xmark"></i> Ausente</span>`}
+        </div>
+      `;
+      elements.portalTimelineList.appendChild(item);
+    });
+  }
+
+  // Prepara o documento timbrado do atestado
+  prepararAtestadoDocumento(data);
+}
+
+function prepararAtestadoDocumento(data) {
+  if (!data) return;
+
+  if (elements.certDocenteNome) elements.certDocenteNome.textContent = data.nome;
+  if (elements.certDocenteEmail) elements.certDocenteEmail.textContent = data.email;
+  if (elements.certDocenteEscola) elements.certDocenteEscola.textContent = data.escola;
+  if (elements.certDocenteTaxa) elements.certDocenteTaxa.textContent = `${data.taxa}%`;
+  if (elements.certDocenteCarga) elements.certDocenteCarga.textContent = `${data.cargaHoraria} horas`;
+  if (elements.certSigDocenteNome) elements.certSigDocenteNome.textContent = data.nome;
+
+  const now = new Date();
+  const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const dataExtenso = `${now.getDate()} de ${meses[now.getMonth()]} de ${now.getFullYear()}`;
+  if (elements.certDataEmissao) elements.certDataEmissao.textContent = dataExtenso;
+
+  const authCode = `EDM-CERT-${hashString(data.email + data.nome + data.presencasCount)}`;
+  if (elements.certCodigoAutenticidade) elements.certCodigoAutenticidade.textContent = authCode;
+
+  // Preenche a tabela do atestado
+  if (elements.certTbodyEncontros) {
+    elements.certTbodyEncontros.innerHTML = '';
+    data.dates.forEach((mDate, idx) => {
+      const presenca = data.presencasPorDia.get(mDate);
+      const isPresente = !!presenca;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: bold; width: 40px; text-align: center;">${idx + 1}</td>
+        <td><strong>${idx + 1}º Encontro Formativo EDM</strong></td>
+        <td>${mDate}</td>
+        <td>${isPresente ? presenca.timestamp : '-'}</td>
+        <td style="font-weight: bold;">${isPresente ? '4 horas' : '0 horas'}</td>
+        <td>
+          <span style="font-weight: bold; color: ${isPresente ? '#15803d' : '#b91c1c'};">
+            ${isPresente ? '✔ Presença Confirmada' : '✖ Não Compareceu'}
+          </span>
+        </td>
+      `;
+      elements.certTbodyEncontros.appendChild(tr);
+    });
+  }
+}
+
+async function emitirAtestadoDocente() {
+  if (!currentPortalDocenteData) {
+    showToast("Consulte seus dados primeiro para gerar a declaração.", "warning");
+    return;
+  }
+
+  if (currentPortalDocenteData.presencasCount === 0) {
+    showToast("Nenhuma presença confirmada para emissão do atestado.", "warning");
+    return;
+  }
+
+  prepararAtestadoDocumento(currentPortalDocenteData);
+
+  const docEl = document.getElementById('atestadoDocumentCard');
+  if (!docEl) return;
+
+  showToast("Gerando Declaração Oficial em PDF...", "info");
+
+  const safeName = currentPortalDocenteData.nome.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  const opt = {
+    margin: [8, 8, 8, 8],
+    filename: `Declaracao_Frequencia_EDM_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  try {
+    if (window.html2pdf) {
+      await window.html2pdf().set(opt).from(docEl).save();
+      showToast("Declaração Oficial baixada com sucesso!", "success");
+    } else {
+      window.print();
+    }
+  } catch (err) {
+    console.error("Erro ao gerar PDF do atestado:", err);
+    window.print();
+  }
+}
+
+function imprimirAtestadoDocente() {
+  if (!currentPortalDocenteData) {
+    showToast("Consulte seus dados primeiro para imprimir o atestado.", "warning");
+    return;
+  }
+  prepararAtestadoDocumento(currentPortalDocenteData);
+  document.body.classList.add('printing-atestado');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('printing-atestado');
+  }, 1000);
+}
+
+window.executarBuscaPortalDocente = executarBuscaPortalDocente;
+window.emitirAtestadoDocente = emitirAtestadoDocente;
+window.imprimirAtestadoDocente = imprimirAtestadoDocente;
+window.switchMainView = switchMainView;
+
+// ==========================================================================
 // Autenticação Administrativa (Senha: admin123)
 // ==========================================================================
 function openAuthModal() {
@@ -1462,6 +1937,19 @@ function handleAdminLogout() {
   closeModal(elements.modalDuplicado);
   showToast("Você saiu da área administrativa.", "info");
 }
+
+function toggleAdminPanelDirect() {
+  if (appState.isAdmin) {
+    openAdminPanel();
+  } else {
+    openAuthModal();
+  }
+}
+
+window.toggleAdminPanelDirect = toggleAdminPanelDirect;
+window.openAuthModal = openAuthModal;
+window.openAdminPanel = openAdminPanel;
+window.handleAdminLogout = handleAdminLogout;
 
 // ==========================================================================
 // Painel Administrativo
@@ -1670,6 +2158,7 @@ function renderHistoryTable() {
         <th>Unidade Escolar</th>
         <th>Data / Horário</th>
         <th style="width: 95px; text-align: center;">Origem</th>
+        <th style="width: 90px; text-align: center;">Ações</th>
       </tr>
     </thead>
     <tbody>
@@ -1683,6 +2172,7 @@ function renderHistoryTable() {
                 <div class="user-avatar-circle">${escapeHtml(initials)}</div>
                 <div class="user-details">
                   <span class="user-name-text">${escapeHtml(h.professor)}</span>
+                  ${h.isEdited ? `<span class="badge badge-sm" style="background:#fef3c7; color:#b45309; font-size:0.65rem; margin-top:2px;"><i class="fa-solid fa-pen"></i> Editado</span>` : ''}
                 </div>
               </div>
             </td>
@@ -1710,6 +2200,14 @@ function renderHistoryTable() {
                 : `<span class="badge" style="background:#f8fafc; color:#64748b;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
               }
             </td>
+            <td style="text-align:center; white-space:nowrap;">
+              <button type="button" class="btn-table-action" onclick="abrirModalEdicaoRegistro('${escapeHtml(h.id)}')" title="Editar Registro">
+                <i class="fa-solid fa-pen-to-square text-primary"></i>
+              </button>
+              <button type="button" class="btn-table-action" onclick="excluirRegistroAdmin('${escapeHtml(h.id)}')" title="Excluir Presença">
+                <i class="fa-solid fa-trash-can text-danger"></i>
+              </button>
+            </td>
           </tr>
         `;
       }).join('')}
@@ -1733,6 +2231,175 @@ window.copyEmailToClipboard = function(email, btn) {
     showToast("Não foi possível copiar o e-mail.", "error");
   });
 };
+
+// ==========================================================================
+// Módulo de Edição e Gestão Administrativa de Presenças
+// ==========================================================================
+function abrirModalEdicaoRegistro(recordId) {
+  loadHistory();
+  if (recordId) {
+    const record = appState.history.find(h => String(h.id) === String(recordId));
+    if (!record) {
+      showToast("Registro não localizado.", "error");
+      return;
+    }
+    if (elements.modalEditarTitulo) elements.modalEditarTitulo.textContent = "Editar Registro de Presença";
+    if (elements.editRecordId) elements.editRecordId.value = record.id;
+    if (elements.editNomeProfessor) elements.editNomeProfessor.value = record.professor || '';
+    if (elements.editEmailProfessor) elements.editEmailProfessor.value = record.email || '';
+    if (elements.editSelectEscola) elements.editSelectEscola.value = record.escola || 'ALZIRA ACRA';
+    
+    const recDate = record.date || extractDateFromTimestamp(record.timestamp) || normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+    if (elements.editDataEncontro) elements.editDataEncontro.value = recDate;
+
+    // Extrai horário
+    let recTime = '';
+    if (record.timestamp) {
+      const match = record.timestamp.match(/(\d{1,2}:\d{2}(?::\d{2})?)/);
+      if (match) recTime = match[1];
+    }
+    if (!recTime) {
+      recTime = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    if (elements.editHoraEncontro) elements.editHoraEncontro.value = recTime;
+
+    if (elements.btnExcluirDentroDoModal) elements.btnExcluirDentroDoModal.classList.remove('hidden');
+  } else {
+    // Modo Nova Presença Manual
+    if (elements.modalEditarTitulo) elements.modalEditarTitulo.textContent = "Lançar Nova Presença Oficial";
+    if (elements.editRecordId) elements.editRecordId.value = '';
+    if (elements.editNomeProfessor) elements.editNomeProfessor.value = '';
+    if (elements.editEmailProfessor) elements.editEmailProfessor.value = '';
+    if (elements.editSelectEscola) elements.editSelectEscola.value = 'ALZIRA ACRA';
+    if (elements.editDataEncontro) elements.editDataEncontro.value = normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+    if (elements.editHoraEncontro) elements.editHoraEncontro.value = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (elements.btnExcluirDentroDoModal) elements.btnExcluirDentroDoModal.classList.add('hidden');
+  }
+
+  openModal(elements.modalEditarRegistro);
+}
+
+function salvarEdicaoRegistro(e) {
+  if (e) e.preventDefault();
+
+  const id = elements.editRecordId ? elements.editRecordId.value : '';
+  const professor = (elements.editNomeProfessor ? elements.editNomeProfessor.value : '').trim().toUpperCase();
+  const email = (elements.editEmailProfessor ? elements.editEmailProfessor.value : '').trim().toLowerCase();
+  const escola = elements.editSelectEscola ? elements.editSelectEscola.value : 'ALZIRA ACRA';
+  const dataRaw = (elements.editDataEncontro ? elements.editDataEncontro.value : '').trim();
+  const horaRaw = (elements.editHoraEncontro ? elements.editHoraEncontro.value : '').trim();
+
+  if (!professor || professor.length < 3) {
+    showToast("Por favor, digite o nome completo do docente.", "warning");
+    if (elements.editNomeProfessor) elements.editNomeProfessor.focus();
+    return;
+  }
+
+  if (!email || !email.includes('@')) {
+    showToast("Por favor, digite um e-mail válido.", "warning");
+    if (elements.editEmailProfessor) elements.editEmailProfessor.focus();
+    return;
+  }
+
+  const dateNorm = normalizeDateBR(dataRaw) || normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+  const timeNorm = horaRaw || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const timestampFinal = `${dateNorm} às ${timeNorm}`;
+
+  loadHistory();
+
+  if (id) {
+    // Atualização de registro existente
+    const idx = appState.history.findIndex(h => String(h.id) === String(id));
+    if (idx !== -1) {
+      const updated = {
+        ...appState.history[idx],
+        professor: professor,
+        email: email,
+        escola: escola,
+        date: dateNorm,
+        timestamp: timestampFinal,
+        isEdited: true
+      };
+      appState.history[idx] = updated;
+      saveEditedRecord(id, updated);
+      showToast("Registro de presença atualizado com sucesso!", "success");
+    }
+  } else {
+    // Inserção de novo registro manual
+    const newRecord = {
+      id: `admin_manual_${Date.now()}`,
+      professor: professor,
+      email: email,
+      escola: escola,
+      date: dateNorm,
+      timestamp: timestampFinal,
+      isRemote: false,
+      isEdited: true
+    };
+    appState.history.unshift(newRecord);
+    saveEditedRecord(newRecord.id, newRecord);
+    showToast("Nova presença lançada com sucesso!", "success");
+  }
+
+  localStorage.setItem('presenca_history_records', JSON.stringify(appState.history));
+  closeModal(elements.modalEditarRegistro);
+
+  renderHistoryTable();
+  updateRelatorioDateSelect();
+  updateAuditoriaDateSelect();
+  renderAuditoriaUI();
+  const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
+  if (activeTab === 'tabRelatorios') {
+    const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+    const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+    renderManagementReport(selectedSchool, selectedDate);
+  }
+}
+
+function excluirRegistroAdmin(recordId) {
+  if (!recordId) return;
+  loadHistory();
+  const record = appState.history.find(h => String(h.id) === String(recordId));
+  if (!record) {
+    showToast("Registro não localizado.", "error");
+    return;
+  }
+
+  const confirmMsg = `Tem certeza que deseja excluir permanentemente a presença de:\n\n• Docente: ${record.professor}\n• Unidade: ${record.escola}\n• Data: ${record.date || record.timestamp}?`;
+  if (!confirm(confirmMsg)) return;
+
+  // Salva assinatura da exclusão para persistir em futuras sincronizações da nuvem
+  const profNorm = normalizeName(record.professor);
+  const emailNorm = (record.email || '').trim().toLowerCase();
+  const dateNorm = record.date || extractDateFromTimestamp(record.timestamp);
+
+  if (emailNorm && dateNorm) saveDeletedSignature(`${emailNorm}_${dateNorm}`);
+  if (profNorm && dateNorm) saveDeletedSignature(`${profNorm}_${dateNorm}`);
+  if (record.timestamp) saveDeletedSignature(`${emailNorm || profNorm}_${record.timestamp}`);
+  if (record.id) saveDeletedSignature(String(record.id));
+
+  // Remove de appState.history
+  appState.history = appState.history.filter(h => String(h.id) !== String(recordId));
+  localStorage.setItem('presenca_history_records', JSON.stringify(appState.history));
+
+  closeModal(elements.modalEditarRegistro);
+  showToast("Presença excluída com sucesso!", "info");
+
+  renderHistoryTable();
+  updateRelatorioDateSelect();
+  updateAuditoriaDateSelect();
+  renderAuditoriaUI();
+  const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
+  if (activeTab === 'tabRelatorios') {
+    const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
+    const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
+    renderManagementReport(selectedSchool, selectedDate);
+  }
+}
+
+window.abrirModalEdicaoRegistro = abrirModalEdicaoRegistro;
+window.excluirRegistroAdmin = excluirRegistroAdmin;
+window.salvarEdicaoRegistro = salvarEdicaoRegistro;
 
 // ==========================================================================
 // Módulo de Relatório Executivo para a Gestão Escolar
@@ -2269,6 +2936,33 @@ window.exportReportPDF = exportReportPDF;
 window.printManagementReport = printManagementReport;
 window.copyWhatsAppSummary = copyWhatsAppSummary;
 window.exportReportCSV = exportReportCSV;
+
+// Exporta todo o Histórico Geral de Presenças em formato CSV
+function exportCSV() {
+  loadHistory();
+  if (appState.history.length === 0) {
+    showToast("Não há registros para exportar.", "info");
+    return;
+  }
+  let csv = "\uFEFFNº;Professor;Email;Escola;DataHoraCompleta;Origem\n";
+  appState.history.forEach((h, idx) => {
+    csv += `"${idx + 1}";"${h.professor}";"${h.email || ''}";"${h.escola}";"${h.timestamp || ''}";"${h.isRemote ? 'Nuvem' : 'Local'}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `historico_presencas_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    if (a.parentNode) document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+  showToast("Histórico CSV baixado com sucesso!", "success");
+}
+
+window.exportCSV = exportCSV;
 
 // ==========================================================================
 // Base Oficial de Professores (EDM Firestore) & Auditoria de Faltas
@@ -3017,6 +3711,43 @@ function setupEventListeners() {
   elements.form.addEventListener('submit', handleSubmit);
   elements.btnNovoRegistro.addEventListener('click', resetForNewEntry);
 
+  // Navegação Principal: Registrar Presença vs Portal do Docente
+  if (elements.btnNavPresenca) {
+    elements.btnNavPresenca.addEventListener('click', () => switchMainView('presenca'));
+  }
+  if (elements.btnNavPortalDocente) {
+    elements.btnNavPortalDocente.addEventListener('click', () => switchMainView('portal'));
+  }
+  if (elements.btnIrParaPortalDocente) {
+    elements.btnIrParaPortalDocente.addEventListener('click', () => {
+      switchMainView('portal');
+      const email = elements.receiptEmail ? elements.receiptEmail.textContent.trim() : '';
+      if (email && email !== '-') {
+        if (elements.portalEmailInput) elements.portalEmailInput.value = email;
+        executarBuscaPortalDocente(email);
+      }
+    });
+  }
+
+  // Ações do Portal do Docente
+  if (elements.portalEmailInput) {
+    elements.portalEmailInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        executarBuscaPortalDocente();
+      }
+    });
+  }
+  if (elements.btnBuscarPresencasDocente) {
+    elements.btnBuscarPresencasDocente.addEventListener('click', () => executarBuscaPortalDocente());
+  }
+  if (elements.btnEmitirAtestadoDocente) {
+    elements.btnEmitirAtestadoDocente.addEventListener('click', emitirAtestadoDocente);
+  }
+  if (elements.btnImprimirAtestadoDocente) {
+    elements.btnImprimirAtestadoDocente.addEventListener('click', imprimirAtestadoDocente);
+  }
+
   // Botões de Sincronização (Header, Barra de Ações, Painel)
   document.querySelectorAll('.btn-sync-trigger').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -3158,6 +3889,19 @@ function setupEventListeners() {
   }
   if (elements.btnLimparHistorico) {
     elements.btnLimparHistorico.addEventListener('click', clearHistory);
+  }
+
+  if (elements.btnNovaPresencaAdmin) {
+    elements.btnNovaPresencaAdmin.addEventListener('click', () => abrirModalEdicaoRegistro(null));
+  }
+  if (elements.formEditarRegistro) {
+    elements.formEditarRegistro.addEventListener('submit', salvarEdicaoRegistro);
+  }
+  if (elements.btnExcluirDentroDoModal) {
+    elements.btnExcluirDentroDoModal.addEventListener('click', () => {
+      const id = elements.editRecordId ? elements.editRecordId.value : '';
+      if (id) excluirRegistroAdmin(id);
+    });
   }
 
   // Ações da Aba Relatórios para Gestão
