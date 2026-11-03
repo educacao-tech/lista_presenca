@@ -284,6 +284,16 @@ body[data-progress-stage="complete"] .orb-secondary {
 .brand-text p {
   font-size: 0.8rem;
   color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.brand-event {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.brand-org {
+  color: var(--text-muted);
 }
 
 /* Main Content */
@@ -344,20 +354,20 @@ body[data-progress-stage="complete"] .orb-secondary {
   box-shadow: 0 0 8px var(--success-glow);
 }
 
-/* Cabeçalho Ultracompacto do Card (Linha Única) */
+/* Cabeçalho do Card (Sem Linha Divisória) */
 .card-hero-compact {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.95rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--card-border);
+  margin-bottom: 0.85rem;
+  padding-bottom: 0;
+  border-bottom: none;
   gap: 0.75rem;
 }
 
 .hero-left {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.65rem;
   min-width: 0;
   flex: 1;
@@ -365,10 +375,15 @@ body[data-progress-stage="complete"] .orb-secondary {
 
 .hero-titles {
   display: flex;
-  align-items: baseline;
-  gap: 0.45rem;
+  flex-direction: column;
+  gap: 0.28rem;
   min-width: 0;
-  flex-wrap: nowrap;
+}
+
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .hero-titles h2 {
@@ -377,25 +392,39 @@ body[data-progress-stage="complete"] .orb-secondary {
   letter-spacing: -0.02em;
   color: var(--text-main);
   line-height: 1.2;
-  white-space: nowrap;
   margin: 0;
 }
 
+.hero-event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 0.22rem 0.6rem;
+  border-radius: 6px;
+  line-height: 1.25;
+  width: fit-content;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(var(--primary-rgb), 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.hero-event-badge i {
+  font-size: 0.85em;
+  color: var(--primary);
+}
+
 .hero-dot-separator {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  opacity: 0.6;
-  user-select: none;
-  flex-shrink: 0;
+  display: none;
 }
 
 .hero-sub-text {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .hero-live-dot {
@@ -407,11 +436,50 @@ body[data-progress-stage="complete"] .orb-secondary {
   display: inline-block;
   animation: pulseLiveDot 2s infinite;
   flex-shrink: 0;
+  margin-top: 5px;
 }
 
 @keyframes pulseLiveDot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* Linha Conjunta: Autenticação Google + Porcentagem de Progresso */
+.google-and-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.google-and-progress-row .google-btn-wrapper,
+.google-and-progress-row .google-connected-card {
+  flex: 1;
+  min-width: 0;
+}
+
+.google-and-progress-row .progress-pill-compact {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1.5px solid rgba(var(--primary-rgb), 0.25);
+  border-radius: var(--border-radius-md);
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.google-and-progress-row .progress-pill-compact.complete {
+  background: var(--success-light);
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.4);
 }
 
 .progress-pill-compact {
@@ -5120,6 +5188,12 @@ select {
     padding: 0.6rem 0.9rem;
   }
   .brand-text p {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.15;
+    margin-top: 2px;
+  }
+  .brand-text .brand-org {
     display: none;
   }
   .main-content {
@@ -5130,18 +5204,21 @@ select {
     padding: 1.35rem 1.1rem;
   }
   .card-hero-compact {
-    margin-bottom: 0.85rem;
-    padding-bottom: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0;
+    border-bottom: none;
   }
-  .hero-titles {
-    flex-wrap: wrap;
-    gap: 0.2rem;
+  @media (max-width: 480px) {
+    .btn-google-badge {
+      display: none;
+    }
   }
   .hero-titles h2 {
     font-size: 1.05rem;
   }
-  .hero-dot-separator {
-    display: none;
+  .hero-event-badge {
+    font-size: 0.72rem;
+    padding: 0.18rem 0.45rem;
   }
   .school-chips-grid {
     grid-template-columns: repeat(2, 1fr);

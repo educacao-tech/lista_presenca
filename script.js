@@ -2216,7 +2216,7 @@ function executarBuscaPortalDocente(forcedQuery = '') {
   const totalEncontros = effectiveDates.length;
   const presencasConfirmadas = presencasPorDia.size;
   const taxaPresenca = Math.min(100, Math.round((presencasConfirmadas / totalEncontros) * 100));
-  const cargaHorariaPorEncontro = 4; // 4 horas por encontro presencial
+  const cargaHorariaPorEncontro = 4; // 4 horas por encontro formativo on-line
   const cargaHorariaTotal = presencasConfirmadas * cargaHorariaPorEncontro;
 
   currentPortalDocenteData = {
@@ -2276,13 +2276,13 @@ function renderPortalDocenteUI(data) {
       item.innerHTML = `
         <div class="portal-meeting-left">
           <div class="portal-meeting-date">
-            <i class="fa-regular fa-calendar-check text-primary"></i>
-            <span>${idx + 1}º Encontro Formativo • ${formatDateDisplayPT(mDate)}</span>
+            <i class="fa-solid fa-video text-primary"></i>
+            <span>${idx + 1}º Encontro Formativo On-line • ${formatDateDisplayPT(mDate)}</span>
           </div>
           <div class="portal-meeting-detail">
             ${isPresente 
-              ? `<i class="fa-solid fa-check text-success"></i> Registrado em ${presenca.timestamp} • Unidade: <strong>${presenca.escola}</strong> • Carga: <strong>4 horas</strong>` 
-              : `<i class="fa-solid fa-xmark text-danger"></i> Ausência registrada neste encontro formativo`}
+              ? `<i class="fa-solid fa-check text-success"></i> Registrado em ${presenca.timestamp} • Unidade: <strong>${presenca.escola}</strong> • Modalidade: <strong>On-line</strong> • Carga: <strong>4 horas</strong>` 
+              : `<i class="fa-solid fa-xmark text-danger"></i> Ausência registrada neste encontro formativo on-line`}
           </div>
         </div>
         <div class="portal-meeting-right">
@@ -2327,7 +2327,7 @@ function prepararAtestadoDocumento(data) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight: bold; width: 40px; text-align: center;">${idx + 1}</td>
-        <td><strong>${idx + 1}º Encontro Formativo EDM</strong></td>
+        <td><strong>${idx + 1}º Encontro Formativo On-line (EDM)</strong></td>
         <td>${mDate}</td>
         <td>${isPresente ? presenca.timestamp : '-'}</td>
         <td style="font-weight: bold;">${isPresente ? '4 horas' : '0 horas'}</td>
@@ -3522,8 +3522,8 @@ function copyWhatsAppSummary() {
   const now = new Date();
   const emissaoStr = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  let text = `📋 *RELATÓRIO DE FREQUÊNCIA - ENCONTROS FORMATIVOS*\n`;
-  text += `💻 *Disciplina:* EDM — Educação Digital e Midiática\n`;
+  let text = `📋 *RELATÓRIO DE FREQUÊNCIA - ENCONTROS FORMATIVOS ON-LINE*\n`;
+  text += `💻 *Programa:* EDM — Educação Digital e Midiática (Modalidade On-line)\n`;
 
   if (selectedDate) {
     text += `📅 *Dia do Encontro:* ${formatDateDisplayPT(selectedDate)}\n`;
@@ -4362,9 +4362,9 @@ function copiarFaltasWhatsApp() {
   const filterSchool = elements.auditoriaFiltroEscolaSelect ? elements.auditoriaFiltroEscolaSelect.value : '';
   const listFaltas = filterSchool ? faltantes.filter(f => f.escola === filterSchool) : faltantes;
 
-  let text = `🚨 *RELATÓRIO DE AUSÊNCIAS E FALTAS DOCENTES*\n`;
-  text += `💻 *Formação:* EDM — Educação Digital e Midiática\n`;
-  text += `📅 *Encontro Formativo:* ${selectedDate ? formatDateDisplayPT(selectedDate) : 'Todos os Encontros Formativos'}\n`;
+  let text = `🚨 *RELATÓRIO DE AUSÊNCIAS - ENCONTRO FORMATIVO ON-LINE*\n`;
+  text += `💻 *Formação:* EDM — Educação Digital e Midiática (Modalidade On-line)\n`;
+  text += `📅 *Encontro Formativo:* ${selectedDate ? formatDateDisplayPT(selectedDate) : 'Todos os Encontros Formativos On-line'}\n`;
   text += `🏢 *Escopo:* ${filterSchool || "Consolidado Geral (Todas as 7 Escolas)"}\n`;
   text += `📊 *Frequência Geral:* ${taxaGeral}% de presença (${totalPresentes} presentes de ${totalCadastrados} cadastrados)\n`;
   text += `❌ *Total de Faltas:* ${listFaltas.length} docentes ausentes\n`;
