@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=3.8">
+  <link rel="stylesheet" href="styles.css?v=3.9">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -134,6 +134,7 @@
             <!-- 1. Campo ESCOLA (entry.285930433) -->
             <div class="input-group">
               <label for="selectEscola" class="required">
+                <span class="label-step-num">1</span>
                 <i class="fa-solid fa-school-flag"></i> Unidade Escolar
               </label>
               <div class="select-wrapper">
@@ -154,6 +155,7 @@
             <!-- 2. Campo NOME COMPLETO (entry.278265355) -->
             <div class="input-group">
               <label for="inputProfessor" class="required">
+                <span class="label-step-num">2</span>
                 <i class="fa-solid fa-user-pen"></i> Nome Completo do Professor(a)
               </label>
               <div class="input-with-icon">
@@ -176,6 +178,7 @@
             <!-- 3. Campo E-MAIL (emailAddress) - Chave Única -->
             <div class="input-group">
               <label for="inputEmail" class="required">
+                <span class="label-step-num">3</span>
                 <i class="fa-solid fa-envelope"></i> E-mail do Professor(a)
               </label>
               <div class="input-with-icon">
@@ -197,12 +200,19 @@
           <!-- Data e Hora do Registro Atual -->
           <div class="summary-box">
             <div class="summary-item">
-              <span class="summary-label"><i class="fa-regular fa-calendar"></i> Data:</span>
-              <strong id="displayDate">--/--/----</strong>
+              <div class="summary-icon-wrap"><i class="fa-solid fa-calendar-day"></i></div>
+              <div class="summary-text-wrap">
+                <span class="summary-label">Data do Encontro</span>
+                <strong id="displayDate">--/--/----</strong>
+              </div>
             </div>
+            <div class="summary-divider-v"></div>
             <div class="summary-item">
-              <span class="summary-label"><i class="fa-regular fa-clock"></i> Horário:</span>
-              <strong id="displayTime">--:--</strong>
+              <div class="summary-icon-wrap clock-pulse"><i class="fa-solid fa-clock"></i></div>
+              <div class="summary-text-wrap">
+                <span class="summary-label">Horário de Assinatura</span>
+                <strong id="displayTime">--:--</strong>
+              </div>
             </div>
           </div>
 
@@ -1403,6 +1413,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=3.6"></script>
+  <script src="script.js?v=3.9"></script>
 </body>
 </html>
