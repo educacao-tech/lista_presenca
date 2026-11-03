@@ -1149,7 +1149,7 @@ async function handleSubmit(e) {
   }
 
   const record = {
-    id: Date.now(),
+    id: `loc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     email: email,
     escola: escola,
     professor: professor,
@@ -2361,10 +2361,13 @@ function switchAdminTab(targetTabId) {
 
 // Retorna iniciais do nome para o avatar
 function getInitials(name) {
-  if (!name) return 'PR';
+  if (!name || typeof name !== 'string') return 'PR';
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  if (parts.length === 0) return 'PR';
+  if (parts.length === 1) return (parts[0].substring(0, 2) || 'PR').toUpperCase();
+  const first = parts[0][0] || '';
+  const last = parts[parts.length - 1][0] || '';
+  return (first + last).toUpperCase() || 'PR';
 }
 
 // Atualiza os Cards de KPIs e as pílulas de contagem por escola
@@ -2518,151 +2521,156 @@ function updateKPIsAndSchools(records) {
 
 // Renderiza a Tabela do Histórico Geral com visual moderno
 function renderHistoryTable() {
-  loadHistory();
-  updateHistoricoDateSelect();
-  const container = elements.historicoContainer;
-  const textFilter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
-  const schoolFilter = (elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value.trim().toUpperCase() : '');
-  const dateFilter = (elements.filtroDataSelect ? elements.filtroDataSelect.value.trim() : '');
-  const sortOrder = (elements.ordemHistoricoSelect ? elements.ordemHistoricoSelect.value : 'recent');
+  try {
+    loadHistory();
+    updateHistoricoDateSelect();
+    const targetContainer = elements.historicoContainer || document.getElementById('historicoContainer');
+    if (!targetContainer) return;
 
-  // Atualiza KPIs com registros da data selecionada (ou todos se nenhuma data estiver selecionada)
-  const recordsForKPIs = dateFilter
-    ? appState.history.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === dateFilter)
-    : appState.history;
-  updateKPIsAndSchools(recordsForKPIs);
+    const textFilter = (elements.filtroHistorico ? elements.filtroHistorico.value.trim().toLowerCase() : '');
+    const schoolFilter = (elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value.trim().toUpperCase() : '');
+    const dateFilter = (elements.filtroDataSelect ? elements.filtroDataSelect.value.trim() : '');
+    const sortOrder = (elements.ordemHistoricoSelect ? elements.ordemHistoricoSelect.value : 'recent');
 
-  // Filtra registros
-  let filtered = appState.history.filter(item => {
-    // Filtro por Data do Encontro
-    if (dateFilter) {
-      const itemDate = extractDateFromTimestamp(item.timestamp, item.date);
-      if (itemDate !== dateFilter) {
+    // Atualiza KPIs com registros da data selecionada (ou todos se nenhuma data estiver selecionada)
+    const recordsForKPIs = dateFilter
+      ? appState.history.filter(item => extractDateFromTimestamp(item.timestamp, item.date) === dateFilter)
+      : appState.history;
+    updateKPIsAndSchools(recordsForKPIs);
+
+    // Filtra registros
+    let filtered = appState.history.filter(item => {
+      // Filtro por Data do Encontro
+      if (dateFilter) {
+        const itemDate = extractDateFromTimestamp(item.timestamp, item.date);
+        if (itemDate !== dateFilter) {
+          return false;
+        }
+      }
+
+      // Filtro por Escola
+      if (schoolFilter && (item.escola || '').trim().toUpperCase() !== schoolFilter) {
         return false;
       }
-    }
 
-    // Filtro por Escola
-    if (schoolFilter && (item.escola || '').trim().toUpperCase() !== schoolFilter) {
-      return false;
-    }
-
-    // Filtro por Texto (Nome, E-mail, Escola, Horário)
-    if (textFilter) {
-      const matchName = item.professor && item.professor.toLowerCase().includes(textFilter);
-      const matchEmail = item.email && item.email.toLowerCase().includes(textFilter);
-      const matchSchool = item.escola && item.escola.toLowerCase().includes(textFilter);
-      const matchTime = item.timestamp && item.timestamp.toLowerCase().includes(textFilter);
-      if (!matchName && !matchEmail && !matchSchool && !matchTime) {
-        return false;
+      // Filtro por Texto (Nome, E-mail, Escola, Horário)
+      if (textFilter) {
+        const matchName = item.professor && item.professor.toLowerCase().includes(textFilter);
+        const matchEmail = item.email && item.email.toLowerCase().includes(textFilter);
+        const matchSchool = item.escola && item.escola.toLowerCase().includes(textFilter);
+        const matchTime = item.timestamp && item.timestamp.toLowerCase().includes(textFilter);
+        if (!matchName && !matchEmail && !matchSchool && !matchTime) {
+          return false;
+        }
       }
+
+      return true;
+    });
+
+    // Ordenação
+    filtered = [...filtered];
+    if (sortOrder === 'oldest') {
+      filtered.reverse();
+    } else if (sortOrder === 'name_asc') {
+      filtered.sort((a, b) => (a.professor || '').localeCompare(b.professor || ''));
+    } else if (sortOrder === 'name_desc') {
+      filtered.sort((a, b) => (b.professor || '').localeCompare(a.professor || ''));
+    } else if (sortOrder === 'school') {
+      filtered.sort((a, b) => (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || ''));
     }
 
-    return true;
-  });
+    if (elements.totalPresencasBadge) {
+      elements.totalPresencasBadge.textContent = `${filtered.length} registro${filtered.length !== 1 ? 's' : ''}`;
+    }
 
-  // Ordenação
-  filtered = [...filtered];
-  if (sortOrder === 'oldest') {
-    filtered.reverse();
-  } else if (sortOrder === 'name_asc') {
-    filtered.sort((a, b) => (a.professor || '').localeCompare(b.professor || ''));
-  } else if (sortOrder === 'name_desc') {
-    filtered.sort((a, b) => (b.professor || '').localeCompare(a.professor || ''));
-  } else if (sortOrder === 'school') {
-    filtered.sort((a, b) => (a.escola || '').localeCompare(b.escola || '') || (a.professor || '').localeCompare(b.professor || ''));
-  }
+    targetContainer.innerHTML = '';
 
-  if (elements.totalPresencasBadge) {
-    elements.totalPresencasBadge.textContent = `${filtered.length} registro${filtered.length !== 1 ? 's' : ''}`;
-  }
+    if (filtered.length === 0) {
+      targetContainer.innerHTML = `
+        <div style="text-align:center; padding: 3rem 1.5rem; color: #64748b;">
+          <i class="fa-solid fa-folder-open" style="font-size: 2.25rem; margin-bottom: 0.75rem; color: #cbd5e1;"></i>
+          <p style="font-weight:600; font-size:1rem;">Nenhum registro encontrado para os filtros selecionados.</p>
+          <p style="font-size:0.85rem; color:#94a3b8; margin-top:0.25rem;">Tente limpar a busca ou selecionar outra escola.</p>
+        </div>
+      `;
+      return;
+    }
 
-  const targetContainer = container || elements.historicoContainer || document.getElementById('historicoContainer');
-  if (!targetContainer) return;
-
-  targetContainer.innerHTML = '';
-
-  if (filtered.length === 0) {
-    targetContainer.innerHTML = `
-      <div style="text-align:center; padding: 3rem 1.5rem; color: #64748b;">
-        <i class="fa-solid fa-folder-open" style="font-size: 2.25rem; margin-bottom: 0.75rem; color: #cbd5e1;"></i>
-        <p style="font-weight:600; font-size:1rem;">Nenhum registro encontrado para os filtros selecionados.</p>
-        <p style="font-size:0.85rem; color:#94a3b8; margin-top:0.25rem;">Tente limpar a busca ou selecionar outra escola.</p>
-      </div>
-    `;
-    return;
-  }
-
-  const table = document.createElement('table');
-  table.className = 'historico-table';
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th style="width: 36px; min-width: 36px; text-align: center;">#</th>
-        <th style="min-width: 170px;">Professor(a)</th>
-        <th style="min-width: 170px;">E-mail</th>
-        <th style="min-width: 130px;">Unidade Escolar</th>
-        <th style="width: 135px; min-width: 135px;">Data / Horário</th>
-        <th style="width: 75px; min-width: 75px; text-align: center;">Origem</th>
-        <th style="width: 75px; min-width: 75px; text-align: center;">Ações</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${filtered.map((h, i) => {
-        const initials = getInitials(h.professor);
-        return `
-          <tr>
-            <td style="font-weight:700; color:#64748b; text-align:center;">${i + 1}</td>
-            <td>
-              <div class="user-cell">
-                <div class="user-avatar-circle">${escapeHtml(initials)}</div>
-                <div class="user-details">
-                  <span class="user-name-text">${escapeHtml(h.professor)}</span>
-                  ${h.isEdited ? `<span class="badge badge-sm" style="background:#fef3c7; color:#b45309; font-size:0.65rem; margin-top:2px;"><i class="fa-solid fa-pen"></i> Editado</span>` : ''}
+    const table = document.createElement('table');
+    table.className = 'historico-table';
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th style="width: 36px; min-width: 36px; text-align: center;">#</th>
+          <th style="min-width: 170px;">Professor(a)</th>
+          <th style="min-width: 170px;">E-mail</th>
+          <th style="min-width: 130px;">Unidade Escolar</th>
+          <th style="width: 135px; min-width: 135px;">Data / Horário</th>
+          <th style="width: 75px; min-width: 75px; text-align: center;">Origem</th>
+          <th style="width: 75px; min-width: 75px; text-align: center;">Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map((h, i) => {
+          const initials = getInitials(h.professor);
+          const safeId = escapeHtml(h.id);
+          const safeEmailOrProf = escapeHtml(h.email || h.professor || '');
+          return `
+            <tr>
+              <td style="font-weight:700; color:#64748b; text-align:center;">${i + 1}</td>
+              <td>
+                <div class="user-cell">
+                  <div class="user-avatar-circle">${escapeHtml(initials)}</div>
+                  <div class="user-details">
+                    <span class="user-name-text">${escapeHtml(h.professor)}</span>
+                    ${h.isEdited ? `<span class="badge badge-sm" style="background:#fef3c7; color:#b45309; font-size:0.65rem; margin-top:2px;"><i class="fa-solid fa-pen"></i> Editado</span>` : ''}
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td>
-              <div class="email-cell-wrapper">
-                <span class="email-text" title="${escapeHtml(h.email || '')}">${escapeHtml(h.email || '-')}</span>
-                ${h.email ? `
-                  <button type="button" class="btn-copy-email" onclick="copyEmailToClipboard('${escapeHtml(h.email)}', this)" title="Copiar e-mail">
-                    <i class="fa-regular fa-copy"></i>
-                  </button>
-                ` : ''}
-              </div>
-            </td>
-            <td>
-              <span class="school-badge-tag">
-                <i class="fa-solid fa-school"></i> ${escapeHtml(h.escola)}
-              </span>
-            </td>
-            <td style="color:#475569; font-size:0.8rem; white-space:nowrap;">
-              <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(h.timestamp)}
-            </td>
-            <td style="text-align:center;">
-              ${h.isRemote 
-                ? `<span class="badge badge-success" style="font-size:0.7rem; padding: 2px 6px;" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
-                : `<span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding: 2px 6px;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
-              }
-            </td>
-            <td style="text-align:center; white-space:nowrap;">
-              <button type="button" class="btn-table-action" onclick="abrirAtestadoDocenteAdmin('${escapeHtml(h.email || h.professor)}')" title="Ver Presenças & Atestado deste Professor">
-                <i class="fa-solid fa-graduation-cap text-success"></i>
-              </button>
-              <button type="button" class="btn-table-action" onclick="abrirModalEdicaoRegistro('${escapeHtml(h.id)}')" title="Editar Registro">
-                <i class="fa-solid fa-pen-to-square text-primary"></i>
-              </button>
-              <button type="button" class="btn-table-action" onclick="excluirRegistroAdmin('${escapeHtml(h.id)}')" title="Excluir Presença">
-                <i class="fa-solid fa-trash-can text-danger"></i>
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('')}
-    </tbody>
-  `;
-  container.appendChild(table);
+              </td>
+              <td>
+                <div class="email-cell-wrapper">
+                  <span class="email-text" title="${escapeHtml(h.email || '')}">${escapeHtml(h.email || '-')}</span>
+                  ${h.email ? `
+                    <button type="button" class="btn-copy-email" onclick="copyEmailToClipboard('${escapeHtml(h.email)}', this)" title="Copiar e-mail">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  ` : ''}
+                </div>
+              </td>
+              <td>
+                <span class="school-badge-tag">
+                  <i class="fa-solid fa-school"></i> ${escapeHtml(h.escola)}
+                </span>
+              </td>
+              <td style="color:#475569; font-size:0.8rem; white-space:nowrap;">
+                <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(h.timestamp)}
+              </td>
+              <td style="text-align:center;">
+                ${h.isRemote 
+                  ? `<span class="badge badge-success" style="font-size:0.7rem; padding: 2px 6px;" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
+                  : `<span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding: 2px 6px;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
+                }
+              </td>
+              <td style="text-align:center; white-space:nowrap;">
+                <button type="button" class="btn-table-action" onclick="abrirAtestadoDocenteAdmin('${safeEmailOrProf}')" title="Ver Presenças & Atestado deste Professor">
+                  <i class="fa-solid fa-graduation-cap text-success"></i>
+                </button>
+                <button type="button" class="btn-table-action" onclick="abrirModalEdicaoRegistro('${safeId}')" title="Editar Registro">
+                  <i class="fa-solid fa-pen-to-square text-primary"></i>
+                </button>
+                <button type="button" class="btn-table-action" onclick="excluirRegistroAdmin('${safeId}')" title="Excluir Presença">
+                  <i class="fa-solid fa-trash-can text-danger"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    `;
+    targetContainer.appendChild(table);
+  } catch (err) {
+    console.error("Erro ao renderizar tabela de histórico:", err);
+  }
 }
 
 // Copia o e-mail para a área de transferência com feedback
@@ -4537,8 +4545,8 @@ function showToast(message, type = 'info') {
 }
 
 function escapeHtml(text) {
-  if (!text) return '';
-  return text
+  if (text === null || text === undefined) return '';
+  return String(text)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
