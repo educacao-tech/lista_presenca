@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=4.7">
+  <link rel="stylesheet" href="styles.css?v=4.8">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
@@ -937,83 +937,110 @@
         <div id="tabRelatorios" class="admin-tab-content">
           
           <!-- Controles do Relatório -->
-          <div class="report-toolbar">
-            <div class="report-filter-group">
-              <label for="relatorioEscolaSelect"><i class="fa-solid fa-filter"></i> Selecionar Unidade Escolar:</label>
-              <select id="relatorioEscolaSelect" class="input-field input-field-sm">
-                <option value="">🏢 Relatório Consolidado (Todas as 7 Escolas)</option>
-                <option value="ALZIRA ACRA">ALZIRA ACRA</option>
-                <option value="ANNA BONAGURA">ANNA BONAGURA</option>
-                <option value="BRAGA MORATO">BRAGA MORATO</option>
-                <option value="CAIC">CAIC</option>
-                <option value="CÉLIA BUENO">CÉLIA BUENO</option>
-                <option value="ESTHER VIANNA">ESTHER VIANNA</option>
-                <option value="PADRE BENITO">PADRE BENITO</option>
-              </select>
-            </div>
+          <!-- Controles do Relatório (Toolbar Executiva Moderna) -->
+          <div class="report-toolbar modern-report-toolbar">
+            <div class="report-toolbar-selectors">
+              <div class="report-select-card">
+                <span class="report-field-label"><i class="fa-solid fa-school"></i> Unidade Escolar</span>
+                <select id="relatorioEscolaSelect" class="report-select-control">
+                  <option value="">🏢 Relatório Consolidado (Todas as 7 Escolas)</option>
+                  <option value="ALZIRA ACRA">ALZIRA ACRA</option>
+                  <option value="ANNA BONAGURA">ANNA BONAGURA</option>
+                  <option value="BRAGA MORATO">BRAGA MORATO</option>
+                  <option value="CAIC">CAIC</option>
+                  <option value="CÉLIA BUENO">CÉLIA BUENO</option>
+                  <option value="ESTHER VIANNA">ESTHER VIANNA</option>
+                  <option value="PADRE BENITO">PADRE BENITO</option>
+                </select>
+              </div>
 
-            <div class="report-filter-group">
-              <label for="relatorioDataSelect"><i class="fa-solid fa-calendar-day"></i> Dia do Encontro:</label>
-              <select id="relatorioDataSelect" class="input-field input-field-sm">
-                <option value="">📅 Todos os Encontros (Separar por Dia)</option>
-              </select>
+              <div class="report-select-card">
+                <span class="report-field-label"><i class="fa-solid fa-calendar-day"></i> Encontro Formativo</span>
+                <select id="relatorioDataSelect" class="report-select-control">
+                  <option value="">📅 Todos os Encontros (Separar por Dia)</option>
+                </select>
+              </div>
             </div>
 
             <div class="report-action-buttons">
-              <button type="button" id="btnGerarPDF" onclick="exportReportPDF()" class="btn btn-primary" title="Gerar e baixar o relatório oficial em formato PDF">
-                <i class="fa-solid fa-file-pdf"></i> <span>Gerar Relatório em PDF</span>
+              <button type="button" id="btnGerarPDF" onclick="exportReportPDF()" class="btn btn-report-primary" title="Gerar e baixar o relatório oficial em formato PDF">
+                <i class="fa-solid fa-file-pdf"></i> <span>Gerar PDF</span>
               </button>
-              <button type="button" id="btnImprimirRelatorio" onclick="printManagementReport()" class="btn btn-outline" title="Imprimir ou salvar via diálogo do navegador">
+              <button type="button" id="btnImprimirRelatorio" onclick="printManagementReport()" class="btn btn-report-secondary" title="Imprimir ou salvar via diálogo do navegador">
                 <i class="fa-solid fa-print"></i> <span>Imprimir</span>
               </button>
               <button type="button" id="btnCopiarWhatsApp" onclick="copyWhatsAppSummary()" class="btn btn-whatsapp" title="Copiar resumo formatado para enviar no WhatsApp da Gestão">
-                <i class="fa-brands fa-whatsapp"></i> <span>Copiar p/ WhatsApp</span>
+                <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span>
               </button>
-              <button type="button" id="btnExportarRelatorioCSV" onclick="exportReportCSV()" class="btn btn-outline" title="Baixar lista filtrada da escola em CSV">
-                <i class="fa-solid fa-file-excel"></i> <span>Baixar CSV</span>
+              <button type="button" id="btnExportarRelatorioCSV" onclick="exportReportCSV()" class="btn btn-report-secondary" title="Baixar lista filtrada da escola em CSV">
+                <i class="fa-solid fa-file-excel"></i> <span>Excel / CSV</span>
               </button>
             </div>
           </div>
 
           <!-- Área do Documento Timbrado Oficial (Visível na tela e perfeito para impressão) -->
           <div id="relatorioDocumento" class="official-report-document">
-            <!-- Cabeçalho Institucional -->
+            <!-- Cabeçalho Institucional Oficial -->
             <div class="report-header">
               <div class="report-brand">
-                <div class="report-emblem"><i class="fa-solid fa-graduation-cap"></i></div>
+                <div class="report-emblem">
+                  <i class="fa-solid fa-graduation-cap"></i>
+                </div>
                 <div class="report-titles">
-                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h2>
-                  <h3>RELATÓRIO OFICIAL DE FREQUÊNCIA E PARTICIPAÇÃO</h3>
-                  <div class="report-event-info">
-                    <p><strong>Disciplina:</strong> EDM — Educação Digital e Midiática</p>
-                    <p><strong>Encontro Formativo:</strong> <span id="repEncontroData">07 de outubro de 2026</span></p>
+                  <span class="report-gov-sub">PREFEITURA MUNICIPAL DE BATATAIS • SECRETARIA MUNICIPAL DE EDUCAÇÃO</span>
+                  <h2>RELATÓRIO OFICIAL DE FREQUÊNCIA E PARTICIPAÇÃO</h2>
+                  <div class="report-event-tags">
+                    <span class="rep-tag tag-discipline"><i class="fa-solid fa-laptop-code"></i> EDM — Educação Digital e Midiática</span>
+                    <span class="rep-tag tag-event"><i class="fa-solid fa-calendar-check"></i> Encontro: <strong id="repEncontroData">07 de outubro de 2026</strong></span>
                   </div>
                 </div>
               </div>
               <div class="report-meta">
-                <div class="report-meta-item"><span>Emissão:</span> <strong id="repDataEmissao">--/--/---- --:--</strong></div>
-                <div class="report-meta-item"><span>Escola:</span> <strong id="repEscolaNome">Todas as Unidades</strong></div>
-                <div class="report-meta-item"><span>Status:</span> <span class="badge badge-success"><i class="fa-solid fa-check-double"></i> Homologado</span></div>
+                <div class="report-meta-card">
+                  <div class="report-meta-row">
+                    <span class="meta-label"><i class="fa-regular fa-clock"></i> Emissão:</span>
+                    <strong id="repDataEmissao">--/--/---- --:--</strong>
+                  </div>
+                  <div class="report-meta-row">
+                    <span class="meta-label"><i class="fa-solid fa-school"></i> Âmbito:</span>
+                    <strong id="repEscolaNome">Todas as Unidades</strong>
+                  </div>
+                  <div class="report-meta-row meta-status-row">
+                    <span class="badge badge-success badge-homologado"><i class="fa-solid fa-circle-check"></i> Homologado</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Resumo Executivo da Gestão -->
+            <!-- Resumo Executivo da Gestão (Cards Modernos com Ícones) -->
             <div class="report-summary-cards">
-              <div class="rep-card">
-                <span class="rep-card-title">Docentes Presentes</span>
-                <strong class="rep-card-num" id="repTotalPresentes">0</strong>
+              <div class="rep-card rep-card-presentes">
+                <div class="rep-card-icon"><i class="fa-solid fa-users"></i></div>
+                <div class="rep-card-body">
+                  <span class="rep-card-title">Docentes Presentes</span>
+                  <strong class="rep-card-num" id="repTotalPresentes">0</strong>
+                </div>
               </div>
-              <div class="rep-card">
-                <span class="rep-card-title">Unidades com Registro</span>
-                <strong class="rep-card-num" id="repUnidadesCount">0</strong>
+              <div class="rep-card rep-card-unidades">
+                <div class="rep-card-icon"><i class="fa-solid fa-school-flag"></i></div>
+                <div class="rep-card-body">
+                  <span class="rep-card-title">Unidades com Registro</span>
+                  <strong class="rep-card-num" id="repUnidadesCount">0</strong>
+                </div>
               </div>
-              <div class="rep-card">
-                <span class="rep-card-title">Primeiro Registro</span>
-                <strong class="rep-card-text" id="repPrimeiroRegistro">--:--</strong>
+              <div class="rep-card rep-card-primeiro">
+                <div class="rep-card-icon"><i class="fa-solid fa-stopwatch"></i></div>
+                <div class="rep-card-body">
+                  <span class="rep-card-title">Primeiro Registro</span>
+                  <strong class="rep-card-text" id="repPrimeiroRegistro">--:--</strong>
+                </div>
               </div>
-              <div class="rep-card">
-                <span class="rep-card-title">Último Registro</span>
-                <strong class="rep-card-text" id="repUltimoRegistro">--:--</strong>
+              <div class="rep-card rep-card-ultimo">
+                <div class="rep-card-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                <div class="rep-card-body">
+                  <span class="rep-card-title">Último Registro</span>
+                  <strong class="rep-card-text" id="repUltimoRegistro">--:--</strong>
+                </div>
               </div>
             </div>
 
@@ -1574,6 +1601,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=4.7"></script>
+  <script src="script.js?v=4.8"></script>
 </body>
 </html>

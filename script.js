@@ -2972,10 +2972,18 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
       let gridHtml = `<div class="rep-schools-grid">`;
       ALL_SCHOOLS.forEach(school => {
         const count = schoolCounts[school] || 0;
+        const hasPresence = count > 0;
+        const label = count === 1 ? 'presente' : 'presentes';
         gridHtml += `
-          <div class="rep-school-card">
-            <span class="rep-school-name" title="${escapeHtml(school)}">${escapeHtml(school)}</span>
-            <strong class="rep-school-total">${count} <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">presentes</span></strong>
+          <div class="rep-school-card ${hasPresence ? 'has-presence' : 'is-empty'}">
+            <div class="rep-school-top">
+              <span class="rep-school-name" title="${escapeHtml(school)}">${escapeHtml(school)}</span>
+              ${hasPresence ? '<span class="rep-school-live-dot" title="Presenças computadas"></span>' : ''}
+            </div>
+            <div class="rep-school-stat-row">
+              <strong class="rep-school-total">${count}</strong>
+              <span class="rep-school-label">${label}</span>
+            </div>
           </div>
         `;
       });
@@ -2992,7 +3000,7 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
   if (elements.repTabelaContainer) {
     if (filtered.length === 0) {
       elements.repTabelaContainer.innerHTML = `
-        <div style="text-align:center; padding: 2.5rem 1.5rem; color: #64748b; background: #f8fafc; border-radius: 6px; border: 1px dashed #cbd5e1;">
+        <div style="text-align:center; padding: 2.5rem 1.5rem; color: #64748b; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1;">
           <i class="fa-regular fa-folder-open" style="font-size: 2rem; color: #94a3b8; margin-bottom: 0.5rem; display: block;"></i>
           <p style="margin: 0; font-weight: 600;">Nenhuma presença registrada para os filtros selecionados até o momento.</p>
         </div>
@@ -3015,22 +3023,38 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
               <th>E-mail</th>
               <th>Unidade Escolar</th>
               <th style="width: 140px;">Data / Horário</th>
-              <th style="width: 100px; text-align: center;">Situação</th>
+              <th style="width: 110px; text-align: center;">Situação</th>
             </tr>
           </thead>
           <tbody>
       `;
 
       sortedForReport.forEach((item, idx) => {
+        const initials = getInitials(item.professor);
         tableHtml += `
           <tr>
             <td style="text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
-            <td style="font-weight: 700; color: #0f172a;">${escapeHtml(item.professor)}</td>
-            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.email || '-')}</td>
-            <td><span style="font-weight: 600;">${escapeHtml(item.escola)}</span></td>
-            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.timestamp)}</td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar-circle user-avatar-sm">${escapeHtml(initials)}</div>
+                <div class="user-details">
+                  <span class="user-name-text">${escapeHtml(item.professor)}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="email-text" style="font-size: 0.8rem;">${escapeHtml(item.email || '-')}</span></td>
+            <td>
+              <span class="school-badge-tag">
+                <i class="fa-solid fa-school"></i> ${escapeHtml(item.escola)}
+              </span>
+            </td>
+            <td style="font-size: 0.8rem; color: #475569; white-space: nowrap;">
+              <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(item.timestamp)}
+            </td>
             <td style="text-align: center;">
-              <span class="badge badge-success" style="font-size: 0.72rem;">Confirmado</span>
+              <span class="badge badge-success" style="font-size: 0.72rem; padding: 3px 8px;">
+                <i class="fa-solid fa-circle-check"></i> Presente
+              </span>
             </td>
           </tr>
         `;
@@ -3118,15 +3142,31 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
       `;
 
       sortedDayRecords.forEach((item, idx) => {
+        const initials = getInitials(item.professor);
         multiGroupHtml += `
           <tr>
             <td style="text-align: center; font-weight: 700; color: #64748b;">${idx + 1}</td>
-            <td style="font-weight: 700; color: #0f172a;">${escapeHtml(item.professor)}</td>
-            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.email || '-')}</td>
-            <td><span style="font-weight: 600;">${escapeHtml(item.escola)}</span></td>
-            <td style="font-size: 0.8rem; color: #475569;">${escapeHtml(item.timestamp)}</td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar-circle user-avatar-sm">${escapeHtml(initials)}</div>
+                <div class="user-details">
+                  <span class="user-name-text">${escapeHtml(item.professor)}</span>
+                </div>
+              </div>
+            </td>
+            <td><span class="email-text" style="font-size: 0.8rem;">${escapeHtml(item.email || '-')}</span></td>
+            <td>
+              <span class="school-badge-tag">
+                <i class="fa-solid fa-school"></i> ${escapeHtml(item.escola)}
+              </span>
+            </td>
+            <td style="font-size: 0.8rem; color: #475569; white-space: nowrap;">
+              <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(item.timestamp)}
+            </td>
             <td style="text-align: center;">
-              <span class="badge badge-success" style="font-size: 0.72rem;">Confirmado</span>
+              <span class="badge badge-success" style="font-size: 0.72rem; padding: 3px 8px;">
+                <i class="fa-solid fa-circle-check"></i> Presente
+              </span>
             </td>
           </tr>
         `;
