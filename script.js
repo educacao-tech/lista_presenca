@@ -1706,7 +1706,7 @@ function setupSchoolChips() {
 }
 
 /**
- * Sincroniza visualmente os chips de escola e o texto informativo com o valor atual do select
+ * Sincroniza visualmente a escola selecionada e o texto informativo
  */
 function syncSchoolChipsFromSelect() {
   const currentVal = elements.selectEscola ? elements.selectEscola.value : '';
@@ -1714,20 +1714,22 @@ function syncSchoolChipsFromSelect() {
   const hintText = elements.schoolSelectedText || document.getElementById('schoolSelectedText');
   const hintIcon = elements.schoolSelectedIcon || document.getElementById('schoolSelectedIcon');
 
-  chips.forEach(chip => {
-    if (currentVal && chip.getAttribute('data-school') === currentVal) {
-      chip.classList.add('active');
-    } else {
-      chip.classList.remove('active');
-    }
-  });
+  if (chips.length > 0) {
+    chips.forEach(chip => {
+      if (currentVal && chip.getAttribute('data-school') === currentVal) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+  }
 
   if (currentVal) {
     if (hintText) hintText.innerHTML = `Escola selecionada: <strong>${escapeHtml(currentVal)}</strong>`;
     if (hintIcon) hintIcon.className = 'fa-solid fa-circle-check text-success';
   } else {
-    if (hintText) hintText.textContent = 'Toque na sua unidade escolar acima para selecionar';
-    if (hintIcon) hintIcon.className = 'fa-solid fa-hand-pointer';
+    if (hintText) hintText.textContent = 'Identificada automaticamente pelo nome ou selecione na lista';
+    if (hintIcon) hintIcon.className = 'fa-solid fa-building-columns';
   }
 }
 

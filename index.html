@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=4.2">
+  <link rel="stylesheet" href="styles.css?v=4.3">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
@@ -177,40 +177,15 @@
               <span class="field-hint" id="profHintDefault"><i class="fa-solid fa-wand-magic-sparkles"></i> Ao digitar seu nome, a sua escola será vinculada automaticamente</span>
             </div>
 
-            <!-- 2. Campo ESCOLA (entry.285930433) - Auto-vinculado ou confirmado com 1 toque -->
+            <!-- 2. Campo ESCOLA (entry.285930433) - Dropdown Oficial -->
             <div class="input-group">
               <label for="selectEscola" class="required">
                 <span class="label-step-num">2</span>
                 <i class="fa-solid fa-school-flag"></i> Unidade Escolar
               </label>
 
-              <!-- Grade Compacta de Chips / Pílulas Interativas das 7 Escolas -->
-              <div class="school-chips-grid" id="schoolChipsGrid">
-                <button type="button" class="school-chip-btn" data-school="ALZIRA ACRA">
-                  <i class="fa-solid fa-school"></i> <span>ALZIRA ACRA</span>
-                </button>
-                <button type="button" class="school-chip-btn" data-school="ANNA BONAGURA">
-                  <i class="fa-solid fa-school"></i> <span>ANNA BONAGURA</span>
-                </button>
-                <button type="button" class="school-chip-btn" data-school="BRAGA MORATO">
-                  <i class="fa-solid fa-school"></i> <span>BRAGA MORATO</span>
-                </button>
-                <button type="button" class="school-chip-btn" data-school="CAIC">
-                  <i class="fa-solid fa-school"></i> <span>CAIC</span>
-                </button>
-                <button type="button" class="school-chip-btn" data-school="CÉLIA BUENO">
-                  <i class="fa-solid fa-school"></i> <span>CÉLIA BUENO</span>
-                </button>
-                <button type="button" class="school-chip-btn" data-school="ESTHER VIANNA">
-                  <i class="fa-solid fa-school"></i> <span>ESTHER VIANNA</span>
-                </button>
-                <button type="button" class="school-chip-btn" data-school="PADRE BENITO">
-                  <i class="fa-solid fa-school"></i> <span>PADRE BENITO</span>
-                </button>
-              </div>
-
-              <!-- Select Sincronizado para Envio / Validação -->
-              <div class="select-wrapper hidden">
+              <!-- Select Dropdown Moderno -->
+              <div class="select-wrapper">
                 <select id="selectEscola" name="entry.285930433" required class="input-field select-field">
                   <option value="" disabled selected>Selecione a sua escola...</option>
                   <option value="ALZIRA ACRA">ALZIRA ACRA</option>
@@ -225,8 +200,8 @@
               </div>
 
               <span class="field-hint" id="schoolSelectedHint">
-                <i class="fa-solid fa-hand-pointer" id="schoolSelectedIcon"></i>
-                <span id="schoolSelectedText">Confirmada automaticamente ou toque para alterar</span>
+                <i class="fa-solid fa-building-columns" id="schoolSelectedIcon"></i>
+                <span id="schoolSelectedText">Identificada automaticamente pelo nome ou selecione na lista</span>
               </span>
             </div>
 
@@ -1519,6 +1494,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=4.2"></script>
+  <script src="script.js?v=4.3"></script>
 </body>
 </html>
