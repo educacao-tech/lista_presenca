@@ -344,13 +344,13 @@ body[data-progress-stage="complete"] .orb-secondary {
   box-shadow: 0 0 8px var(--success-glow);
 }
 
-/* Cabeçalho Ultracompacto do Card */
+/* Cabeçalho Ultracompacto do Card (Linha Única) */
 .card-hero-compact {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.15rem;
-  padding-bottom: 0.9rem;
+  margin-bottom: 0.95rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--card-border);
   gap: 0.75rem;
 }
@@ -359,20 +359,43 @@ body[data-progress-stage="complete"] .orb-secondary {
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.hero-titles {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  min-width: 0;
+  flex-wrap: nowrap;
 }
 
 .hero-titles h2 {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-main);
   line-height: 1.2;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.hero-dot-separator {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  opacity: 0.6;
+  user-select: none;
+  flex-shrink: 0;
 }
 
 .hero-sub-text {
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero-live-dot {
@@ -5077,8 +5100,15 @@ select {
     margin-bottom: 0.85rem;
     padding-bottom: 0.75rem;
   }
+  .hero-titles {
+    flex-wrap: wrap;
+    gap: 0.2rem;
+  }
   .hero-titles h2 {
-    font-size: 1.12rem;
+    font-size: 1.05rem;
+  }
+  .hero-dot-separator {
+    display: none;
   }
   .school-chips-grid {
     grid-template-columns: repeat(2, 1fr);
