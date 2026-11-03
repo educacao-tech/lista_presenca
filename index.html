@@ -20,12 +20,18 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=4.4">
+  <link rel="stylesheet" href="styles.css?v=4.5">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </head>
 <body>
+  <!-- Fundo com Orbes de Luz Fluida (Fluid Ambient Mesh Glow) -->
+  <div class="fluid-ambient-mesh" id="ambientMesh" aria-hidden="true">
+    <div class="mesh-orb orb-primary"></div>
+    <div class="mesh-orb orb-secondary"></div>
+    <div class="mesh-orb orb-accent"></div>
+  </div>
   <div class="bg-pattern"></div>
 
   <!-- Cabeçalho Limpo e Oficial -->
@@ -1568,6 +1574,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=4.4"></script>
+  <script src="script.js?v=4.5"></script>
 </body>
 </html>

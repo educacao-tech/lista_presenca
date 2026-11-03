@@ -75,6 +75,135 @@ body {
   overflow-x: hidden;
 }
 
+/* ==========================================================================
+   Fundo com Orbes de Luz Fluida (Fluid Ambient Mesh Glow)
+   ========================================================================== */
+.fluid-ambient-mesh {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+  -webkit-filter: blur(80px);
+  opacity: 0.75;
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), filter 1s ease;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+}
+
+.mesh-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+.orb-primary {
+  width: 55vw;
+  height: 55vw;
+  max-width: 580px;
+  max-height: 580px;
+  top: -12%;
+  left: -8%;
+  background: radial-gradient(circle, var(--primary) 0%, rgba(37, 99, 235, 0.35) 45%, transparent 75%);
+  opacity: 0.32;
+  animation: floatFluidOrb1 20s ease-in-out infinite alternate;
+}
+
+.orb-secondary {
+  width: 48vw;
+  height: 48vw;
+  max-width: 520px;
+  max-height: 520px;
+  top: 35%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.85) 0%, rgba(5, 150, 105, 0.35) 50%, transparent 75%);
+  opacity: 0.28;
+  animation: floatFluidOrb2 25s ease-in-out infinite alternate;
+}
+
+.orb-accent {
+  width: 42vw;
+  height: 42vw;
+  max-width: 460px;
+  max-height: 460px;
+  bottom: -10%;
+  left: 20%;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.8) 0%, rgba(124, 58, 237, 0.3) 50%, transparent 75%);
+  opacity: 0.22;
+  animation: floatFluidOrb3 28s ease-in-out infinite alternate;
+}
+
+@keyframes floatFluidOrb1 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(70px, 90px) scale(1.15) rotate(90deg); }
+  100% { transform: translate(-45px, 50px) scale(0.92) rotate(180deg); }
+}
+
+@keyframes floatFluidOrb2 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(-80px, -70px) scale(1.12) rotate(-90deg); }
+  100% { transform: translate(40px, 60px) scale(0.95) rotate(-180deg); }
+}
+
+@keyframes floatFluidOrb3 {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(60px, -60px) scale(1.22) rotate(60deg); }
+  100% { transform: translate(-70px, 30px) scale(0.88) rotate(120deg); }
+}
+
+/* Modificadores de Iluminação Dinâmica com o Progresso */
+body[data-progress-stage="active"] .fluid-ambient-mesh {
+  opacity: 0.9;
+  filter: blur(75px);
+  -webkit-filter: blur(75px);
+}
+
+body[data-progress-stage="complete"] .fluid-ambient-mesh {
+  opacity: 1;
+  filter: blur(65px);
+  -webkit-filter: blur(65px);
+}
+
+body[data-progress-stage="complete"] .orb-primary {
+  opacity: 0.44;
+}
+
+body[data-progress-stage="complete"] .orb-secondary {
+  opacity: 0.4;
+}
+
+/* Modo Escuro (OLED Black com Glow Suave) */
+[data-theme="dark"] .fluid-ambient-mesh {
+  opacity: 0.55;
+  filter: blur(95px);
+  -webkit-filter: blur(95px);
+}
+
+[data-theme="dark"] .mesh-orb {
+  mix-blend-mode: screen;
+}
+
+[data-theme="dark"] .orb-primary {
+  opacity: 0.45;
+}
+
+[data-theme="dark"] .orb-secondary {
+  opacity: 0.35;
+}
+
+[data-theme="dark"] .orb-accent {
+  opacity: 0.3;
+}
+
+[data-theme="dark"] body[data-progress-stage="complete"] .fluid-ambient-mesh {
+  opacity: 0.75;
+  filter: blur(80px);
+  -webkit-filter: blur(80px);
+}
+
 .bg-pattern {
   position: fixed;
   top: 0;

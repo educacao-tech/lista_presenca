@@ -1872,6 +1872,15 @@ function updateFormProgressAndValidation() {
       badge.textContent = '0% Concluído';
     }
   }
+
+  // Iluminação ambiental fluida (Fluid Ambient Mesh)
+  if (pct === 100) {
+    document.body.setAttribute('data-progress-stage', 'complete');
+  } else if (pct > 0) {
+    document.body.setAttribute('data-progress-stage', 'active');
+  } else {
+    document.body.removeAttribute('data-progress-stage');
+  }
 }
 
 // ==========================================================================
