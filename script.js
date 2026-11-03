@@ -58,9 +58,6 @@ const elements = {
   profValidationText: document.getElementById('profValidationText'),
   emailValidationBadge: document.getElementById('emailValidationBadge'),
   emailValidationText: document.getElementById('emailValidationText'),
-  emailEdmLinkBadge: document.getElementById('emailEdmLinkBadge'),
-  emailEdmDocenteNome: document.getElementById('emailEdmDocenteNome'),
-  emailEdmPortalLink: document.getElementById('emailEdmPortalLink'),
   listaSugestoesEmails: document.getElementById('listaSugestoesEmails'),
   btnTicketEDMProfessor: document.getElementById('btnTicketEDMProfessor'),
   btnPortalEDMProfessor: document.getElementById('btnPortalEDMProfessor'),
@@ -1822,7 +1819,6 @@ function linkTeacherEmailsToEDM() {
  */
 function tryAutoDetectTeacherFromEmail(email, forceFeedback = false) {
   if (!email || !email.includes('@') || email.trim().length < 5) {
-    if (elements.emailEdmLinkBadge) elements.emailEdmLinkBadge.classList.add('hidden');
     return;
   }
   const cleanEmail = email.trim().toLowerCase();
@@ -1867,15 +1863,6 @@ function tryAutoDetectTeacherFromEmail(email, forceFeedback = false) {
   }
 
   if (found && found.nome) {
-    // Exibe badge de vínculo oficial com link para o edmprofessor
-    if (elements.emailEdmLinkBadge) {
-      elements.emailEdmLinkBadge.classList.remove('hidden');
-      if (elements.emailEdmDocenteNome) elements.emailEdmDocenteNome.textContent = found.nome;
-      if (elements.emailEdmPortalLink) {
-        elements.emailEdmPortalLink.href = `https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(found.nome)}`;
-      }
-    }
-
     // Auto-preenche o nome do professor se ainda não preenchido ou incompleto
     if (elements.inputProfessor && (!elements.inputProfessor.value || elements.inputProfessor.value.trim().length < 5)) {
       elements.inputProfessor.value = found.nome.toUpperCase();
@@ -1899,8 +1886,6 @@ function tryAutoDetectTeacherFromEmail(email, forceFeedback = false) {
     if (forceFeedback) {
       showToast(`E-mail vinculado ao docente ${found.nome} (EDM)!`, "success");
     }
-  } else {
-    if (elements.emailEdmLinkBadge) elements.emailEdmLinkBadge.classList.add('hidden');
   }
 }
 
@@ -2009,23 +1994,30 @@ function updateFormProgressAndValidation() {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
   const isEmailValid = emailRegex.test(emailVal);
   const links = getTeacherEmailLinks();
-  const linkedTeacher = isEmailValid ? links[`email_${emailVal.toLowerCase()}`] : null;
+  let linkedTeacher = isEmailValid ? links[`email_${emailVal.toLowerCase()}`] : null;
 
-  // Atualiza Badge do E-mail
+  // Se não encontrou no mapa local, verifica na lista de cadastrados
+  if (isEmailValid && !linkedTeacher && appState.cadastrados) {
+    const cleanMail = emailVal.toLowerCase();
+    const cadMatch = appState.cadastrados.find(c => (c.email || '').trim().toLowerCase() === cleanMail);
+    if (cadMatch) {
+      linkedTeacher = { nome: cadMatch.nome, email: cleanMail, escola: cadMatch.escola };
+      saveTeacherEmailLink(cadMatch.nome, cleanMail, cadMatch.escola);
+    }
+  }
+
+  // Atualiza Badge Unificado do E-mail
   const emailBadge = elements.emailValidationBadge;
-  if (emailBadge) {
+  if (emailBadge && elements.emailValidationText) {
     if (linkedTeacher && linkedTeacher.nome) {
       emailBadge.className = 'live-validation-badge badge-recognized';
-      if (elements.emailValidationText) {
-        elements.emailValidationText.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> Vinculado ao EDM: <strong>${escapeHtml(linkedTeacher.nome)}</strong> <a href="https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(linkedTeacher.nome)}" target="_blank" class="badge-portal-link" title="Ver no Portal EDM Professor"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
-      }
+      elements.emailValidationText.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> Vinculado ao EDM Professor: <strong>${escapeHtml(linkedTeacher.nome)}</strong> <a href="https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(linkedTeacher.nome)}" target="_blank" class="badge-portal-link" title="Abrir cadastro no Portal EDM Professor"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
     } else if (isEmailValid) {
       emailBadge.className = 'live-validation-badge badge-valid';
-      if (elements.emailValidationText) {
-        elements.emailValidationText.textContent = 'E-mail no formato correto';
-      }
+      elements.emailValidationText.innerHTML = '<i class="fa-solid fa-circle-check"></i> E-mail no formato correto';
     } else {
       emailBadge.className = 'live-validation-badge hidden';
+      elements.emailValidationText.innerHTML = '';
     }
   }
 

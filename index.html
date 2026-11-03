@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=5.4">
+  <link rel="stylesheet" href="styles.css?v=5.5">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
@@ -225,19 +225,9 @@
                 <i class="fa-regular fa-envelope input-icon"></i>
               </div>
 
-              <!-- Badge de Validação em Tempo Real -->
+              <!-- Badge Unificado de Validação e Vínculo em Tempo Real -->
               <div id="emailValidationBadge" class="live-validation-badge hidden">
-                <i class="fa-solid fa-circle-check"></i>
                 <span id="emailValidationText">E-mail no formato correto</span>
-              </div>
-
-              <!-- Badge de Vínculo com EDM Professor -->
-              <div id="emailEdmLinkBadge" class="live-validation-badge badge-recognized hidden">
-                <i class="fa-solid fa-graduation-cap"></i>
-                <span>Vinculado ao EDM Professor: <strong id="emailEdmDocenteNome">-</strong></span>
-                <a id="emailEdmPortalLink" href="https://educacao-tech.github.io/edmprofessor/" target="_blank" class="badge-portal-link" title="Abrir cadastro no Portal EDM Professor">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                </a>
               </div>
 
               <span class="field-hint" id="emailHintDefault"><i class="fa-solid fa-key"></i> Chave única para validação da presença</span>
@@ -1616,6 +1606,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=5.4"></script>
+  <script src="script.js?v=5.5"></script>
 </body>
 </html>
