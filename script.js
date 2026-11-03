@@ -1552,6 +1552,7 @@ function setGoogleAuthenticatedUser(profile, showFeedback = true) {
   if (elements.googleBtnWrapper) elements.googleBtnWrapper.classList.add('hidden');
   if (elements.googleConnectedCard) elements.googleConnectedCard.classList.remove('hidden');
 
+  tryAutoDetectSchoolFromName(nome, false);
   updateFormProgressAndValidation();
 
   if (showFeedback) {
@@ -1674,7 +1675,9 @@ function resetForNewEntry() {
   syncSchoolChipsFromSelect();
   updateFormProgressAndValidation();
 
-  elements.selectEscola.focus();
+  if (elements.inputProfessor) {
+    elements.inputProfessor.focus();
+  }
 }
 
 // ==========================================================================
@@ -1725,6 +1728,46 @@ function syncSchoolChipsFromSelect() {
   } else {
     if (hintText) hintText.textContent = 'Toque na sua unidade escolar acima para selecionar';
     if (hintIcon) hintIcon.className = 'fa-solid fa-hand-pointer';
+  }
+}
+
+/**
+ * Detecta e vincula automaticamente a unidade escolar a partir do nome do professor
+ */
+function tryAutoDetectSchoolFromName(name, forceFeedback = false) {
+  if (!name || name.trim().length < 4) return;
+  const profNorm = normalizeName(name);
+  const ALL_KNOWN_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+
+  // 1. Busca na base oficial de professores EDM (Firestore)
+  const match = (appState.cadastrados || []).find(c => {
+    const cNorm = normalizeName(c.nome);
+    return cNorm === profNorm || (profNorm.length >= 7 && (cNorm.includes(profNorm) || profNorm.includes(cNorm)));
+  });
+
+  let targetSchool = '';
+  if (match && match.escola) {
+    const sNorm = normalizeSchoolName(match.escola);
+    targetSchool = ALL_KNOWN_SCHOOLS.find(s => normalizeSchoolName(s) === sNorm) || match.escola.trim().toUpperCase();
+  } else {
+    // 2. Busca no histórico de presenças anteriores
+    const histMatch = (appState.history || []).find(h => {
+      const hNorm = normalizeName(h.professor);
+      return hNorm === profNorm && h.escola;
+    });
+    if (histMatch && histMatch.escola) {
+      const hSchoolNorm = normalizeSchoolName(histMatch.escola);
+      targetSchool = ALL_KNOWN_SCHOOLS.find(s => normalizeSchoolName(s) === hSchoolNorm) || histMatch.escola.trim().toUpperCase();
+    }
+  }
+
+  if (targetSchool && elements.selectEscola && elements.selectEscola.value !== targetSchool) {
+    elements.selectEscola.value = targetSchool;
+    syncSchoolChipsFromSelect();
+    updateFormProgressAndValidation();
+    if (forceFeedback || profNorm.length >= 8) {
+      showToast(`Escola vinculada: ${targetSchool}`, "success");
+    }
   }
 }
 
@@ -3531,10 +3574,10 @@ function updateTeacherDatalist() {
     options = options.filter(c => normalizeSchoolName(c.escola) === normSelectedSchool);
   }
 
-  options.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  options = [...options].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   datalist.innerHTML = options.map(c => {
-    const meta = [c.ano, c.turma, c.turno ? `(${c.turno})` : ''].filter(Boolean).join(' ');
+    const meta = [c.escola, c.turma, c.turno ? `(${c.turno})` : ''].filter(Boolean).join(' • ');
     return `<option value="${escapeHtml(c.nome)}">${meta ? escapeHtml(meta) : ''}</option>`;
   }).join('');
 }
@@ -4143,7 +4186,7 @@ function setupEventListeners() {
     });
   }
 
-  // Conversão automática para maiúsculas ao digitar o nome do professor e validação dinâmica
+  // Conversão automática para maiúsculas, auto-vínculo de escola e validação dinâmica
   if (elements.inputProfessor) {
     elements.inputProfessor.addEventListener('input', (e) => {
       const start = e.target.selectionStart;
@@ -4152,6 +4195,12 @@ function setupEventListeners() {
       if (start !== null && end !== null) {
         e.target.setSelectionRange(start, end);
       }
+      tryAutoDetectSchoolFromName(e.target.value, false);
+      updateFormProgressAndValidation();
+    });
+
+    elements.inputProfessor.addEventListener('change', (e) => {
+      tryAutoDetectSchoolFromName(e.target.value, true);
       updateFormProgressAndValidation();
     });
   }

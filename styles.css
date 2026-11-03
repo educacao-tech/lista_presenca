@@ -188,20 +188,106 @@ body {
   overflow: hidden;
 }
 
-.attendance-card::before {
-  content: '';
+/* Linha de Progresso Contínua Ultrafina no Topo do Card */
+.card-progress-track {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 50%, #10b981 100%);
+  background: rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  z-index: 5;
+}
+
+[data-theme="dark"] .card-progress-track {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.card-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), #38bdf8);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-progress-fill.complete {
+  background: linear-gradient(90deg, var(--success), #34d399);
+  box-shadow: 0 0 8px var(--success-glow);
+}
+
+/* Cabeçalho Ultracompacto do Card */
+.card-hero-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.15rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--card-border);
+  gap: 0.75rem;
+}
+
+.hero-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.hero-titles h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.hero-sub-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.hero-live-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px var(--success-glow);
+  display: inline-block;
+  animation: pulseLiveDot 2s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulseLiveDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.9); }
+}
+
+.progress-pill-compact {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.progress-pill-compact.complete {
+  background: var(--success-light);
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.compact-google-box {
+  margin-bottom: 1.15rem;
 }
 
 .card-hero {
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--card-border);
 }
 
 .hero-tag-row {
@@ -4448,6 +4534,28 @@ select {
   }
   .brand-text p {
     display: none;
+  }
+  .main-content {
+    margin: 1rem auto 2.5rem;
+    padding: 0 0.85rem;
+  }
+  .card {
+    padding: 1.35rem 1.1rem;
+  }
+  .card-hero-compact {
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.75rem;
+  }
+  .hero-titles h2 {
+    font-size: 1.12rem;
+  }
+  .school-chips-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem;
+  }
+  .school-chip-btn {
+    padding: 0.45rem 0.55rem;
+    font-size: 0.75rem;
   }
   .ticket-card {
     padding: 1.25rem;
