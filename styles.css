@@ -4568,3 +4568,411 @@ select {
     align-items: flex-start;
   }
 }
+
+/* ==========================================================================
+   1. Avatar Dinâmico em Tempo Real (Iniciais do Docente)
+   ========================================================================== */
+.name-avatar-badge {
+  position: absolute;
+  right: 0.75rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  background: var(--bg-surface, #f1f5f9);
+  border: 1px solid var(--card-border);
+  pointer-events: none;
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.name-avatar-badge.has-name {
+  color: #ffffff;
+  border-color: transparent;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="dark"] .name-avatar-badge {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   2. Micro-interações de Foco & Validação Fluida (Pop Bounce)
+   ========================================================================== */
+@keyframes popBounce {
+  0% { opacity: 0; transform: scale(0.85) translateY(-4px); }
+  65% { transform: scale(1.05) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.live-validation-badge:not(.hidden) {
+  animation: popBounce 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.input-field:focus,
+select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3.5px var(--primary-glow), 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+  outline: none;
+}
+
+/* ==========================================================================
+   3. Ações Rápidas no Comprovante (WhatsApp & Copiar)
+   ========================================================================== */
+.ticket-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--border-radius-md);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.28);
+  font-size: 0.9rem;
+}
+
+.btn-whatsapp:hover {
+  background: #20ba5a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.38);
+  color: #ffffff;
+}
+
+.btn-full-row {
+  grid-column: 1 / -1;
+  margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   4. Modo Projetor / Telão Ao Vivo (Live Presentation TV Mode)
+   ========================================================================== */
+.projector-backdrop {
+  z-index: 1000;
+  background: #020617;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+}
+
+.projector-container {
+  width: 100%;
+  max-width: 1380px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: cardEntrance 0.4s ease both;
+}
+
+.projector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.projector-brand {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.projector-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.6rem;
+  box-shadow: 0 0 25px var(--primary-glow);
+}
+
+.projector-brand-info h2 {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+
+.projector-brand-info p {
+  font-size: 0.9rem;
+  color: #94a3b8;
+}
+
+.projector-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.projector-clock-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.projector-clock-time {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.04em;
+}
+
+.projector-clock-date {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.btn-projector-close {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 1.25rem;
+}
+
+.btn-projector-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+.projector-body {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 1.5rem;
+}
+
+.projector-summary-card,
+.projector-schools-card {
+  background: #0b0f19;
+  border: 1px solid #1e293b;
+  border-radius: 20px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.projector-counter-hero {
+  text-align: center;
+  padding: 1.75rem 1rem;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.projector-counter-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.projector-counter-val {
+  font-size: 6rem;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0.65rem 0;
+  background: linear-gradient(135deg, #ffffff 0%, #38bdf8 50%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px var(--primary-glow);
+}
+
+.projector-counter-sub {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.projector-kpi-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.projector-mini-kpi {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.p-kpi-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+  display: block;
+}
+
+.p-kpi-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.projector-latest-box {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  padding: 0.85rem 1.15rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.p-latest-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.p-latest-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0.25rem 0 0.1rem;
+}
+
+.p-latest-school {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.projector-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.projector-card-title i {
+  color: var(--primary);
+}
+
+.projector-schools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.p-school-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  padding: 0.9rem 1.15rem;
+  transition: all 0.2s ease;
+}
+
+.p-school-row.p-school-complete {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.p-school-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.p-school-title {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.p-school-badge-complete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  animation: pulseLiveDot 2s infinite;
+}
+
+.p-school-stats {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.p-school-track {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.p-school-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--primary), #38bdf8);
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.p-school-row.p-school-complete .p-school-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+@media (max-width: 980px) {
+  .projector-body {
+    grid-template-columns: 1fr;
+  }
+  .projector-backdrop {
+    padding: 1rem;
+  }
+}

@@ -59,6 +59,8 @@ const elements = {
   emailValidationBadge: document.getElementById('emailValidationBadge'),
   schoolBarsChartContainer: document.getElementById('schoolBarsChartContainer'),
   ticketAuthCode: document.getElementById('ticketAuthCode'),
+  nameAvatarBadge: document.getElementById('nameAvatarBadge'),
+  nameAvatarInitials: document.getElementById('nameAvatarInitials'),
   
   // Portal do Docente (Minhas Presenças & Atestado - Painel Admin)
   listaSugestoesAtestado: document.getElementById('listaSugestoesAtestado'),
@@ -294,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Inicializa estado de progresso e chips de escola
   syncSchoolChipsFromSelect();
+  updateLiveNameAvatar(appState.googleUser ? appState.googleUser.name : '');
   updateFormProgressAndValidation();
 
   // Se já tiver URL da planilha configurada, tenta sincronizar em segundo plano
@@ -1552,6 +1555,7 @@ function setGoogleAuthenticatedUser(profile, showFeedback = true) {
   if (elements.googleBtnWrapper) elements.googleBtnWrapper.classList.add('hidden');
   if (elements.googleConnectedCard) elements.googleConnectedCard.classList.remove('hidden');
 
+  updateLiveNameAvatar(nome);
   tryAutoDetectSchoolFromName(nome, false);
   updateFormProgressAndValidation();
 
@@ -1673,6 +1677,7 @@ function resetForNewEntry() {
   }
   
   syncSchoolChipsFromSelect();
+  updateLiveNameAvatar(appState.googleUser ? appState.googleUser.name : '');
   updateFormProgressAndValidation();
 
   if (elements.inputProfessor) {
@@ -4188,7 +4193,7 @@ function setupEventListeners() {
     });
   }
 
-  // Conversão automática para maiúsculas, auto-vínculo de escola e validação dinâmica
+  // Conversão automática para maiúsculas, avatar dinâmico, auto-vínculo de escola e validação
   if (elements.inputProfessor) {
     elements.inputProfessor.addEventListener('input', (e) => {
       const start = e.target.selectionStart;
@@ -4197,11 +4202,13 @@ function setupEventListeners() {
       if (start !== null && end !== null) {
         e.target.setSelectionRange(start, end);
       }
+      updateLiveNameAvatar(e.target.value);
       tryAutoDetectSchoolFromName(e.target.value, false);
       updateFormProgressAndValidation();
     });
 
     elements.inputProfessor.addEventListener('change', (e) => {
+      updateLiveNameAvatar(e.target.value);
       tryAutoDetectSchoolFromName(e.target.value, true);
       updateFormProgressAndValidation();
     });
@@ -4646,6 +4653,227 @@ function setSchoolDistributionView(view) {
   }
 }
 
+// ==========================================================================
+// 1. Avatar Dinâmico com Iniciais e Gradiente Exclusivo
+// ==========================================================================
+function updateLiveNameAvatar(name) {
+  const badge = elements.nameAvatarBadge || document.getElementById('nameAvatarBadge');
+  const initialsEl = elements.nameAvatarInitials || document.getElementById('nameAvatarInitials');
+  if (!badge || !initialsEl) return;
+
+  const trimmed = (name || '').trim();
+  if (trimmed.length < 2) {
+    badge.classList.remove('has-name');
+    badge.style.background = '';
+    badge.style.color = '';
+    initialsEl.innerHTML = '<i class="fa-regular fa-user"></i>';
+    return;
+  }
+
+  // Gera iniciais (primeira letra do primeiro nome + primeira letra do último)
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  let initials = parts[0][0].toUpperCase();
+  if (parts.length > 1) {
+    initials += parts[parts.length - 1][0].toUpperCase();
+  } else if (parts[0].length > 1) {
+    initials += parts[0][1].toUpperCase();
+  }
+
+  // Gera gradiente harmonioso com base no nome
+  let hash = 0;
+  for (let i = 0; i < trimmed.length; i++) {
+    hash = trimmed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  const gradient = `linear-gradient(135deg, hsl(${hue}, 70%, 50%), hsl(${(hue + 45) % 360}, 80%, 42%))`;
+
+  badge.classList.add('has-name');
+  badge.style.background = gradient;
+  badge.style.color = '#ffffff';
+  initialsEl.textContent = initials;
+}
+
+// ==========================================================================
+// 3. Compartilhamento e Ações Rápidas no Comprovante
+// ==========================================================================
+function shareTicketWhatsApp() {
+  const prof = (elements.receiptProfessor ? elements.receiptProfessor.textContent : '').trim() || 'Docente';
+  const escola = (elements.receiptEscola ? elements.receiptEscola.textContent : '').trim() || 'EDM';
+  const time = (elements.receiptTimestamp ? elements.receiptTimestamp.textContent : '').trim() || new Date().toLocaleString('pt-BR');
+  const auth = (document.getElementById('ticketAuthCode') ? document.getElementById('ticketAuthCode').textContent : 'EDM-CONFIRMADO').trim();
+
+  const msg = `🎓 *COMPROVANTE OFICIAL DE PRESENÇA • EDM*\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `👤 *Docente:* ${prof}\n` +
+              `🏫 *Unidade Escolar:* ${escola}\n` +
+              `📅 *Data / Horário:* ${time}\n` +
+              `🔑 *Chave de Autenticação:* ${auth}\n` +
+              `━━━━━━━━━━━━━━━━━━━━━━\n` +
+              `✅ Presença registrada e confirmada na lista digital da Secretaria Municipal de Educação.`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: 'Comprovante de Presença EDM',
+      text: msg
+    }).catch(() => {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    });
+  } else {
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+}
+
+function copyTicketSummary() {
+  const prof = (elements.receiptProfessor ? elements.receiptProfessor.textContent : '').trim() || 'Docente';
+  const escola = (elements.receiptEscola ? elements.receiptEscola.textContent : '').trim() || 'EDM';
+  const time = (elements.receiptTimestamp ? elements.receiptTimestamp.textContent : '').trim() || new Date().toLocaleString('pt-BR');
+  const auth = (document.getElementById('ticketAuthCode') ? document.getElementById('ticketAuthCode').textContent : 'EDM-CONFIRMADO').trim();
+
+  const msg = `🎓 COMPROVANTE OFICIAL DE PRESENÇA • EDM\n` +
+              `------------------------------------\n` +
+              `Docente: ${prof}\n` +
+              `Unidade Escolar: ${escola}\n` +
+              `Data / Horário: ${time}\n` +
+              `Autenticação: ${auth}\n` +
+              `------------------------------------\n` +
+              `Situação: Confirmado e Gravado no Sistema Oficial.`;
+
+  copyTextToClipboard(msg).then(() => {
+    showToast("Resumo do comprovante copiado com sucesso!", "success");
+  }).catch(() => {
+    showToast("Não foi possível copiar o comprovante.", "error");
+  });
+}
+
+// ==========================================================================
+// 4. Modo Projetor / Telão Ao Vivo (Live TV / Presentation Monitor)
+// ==========================================================================
+let projectorTimer = null;
+let projectorClockTimer = null;
+
+function openLiveProjector() {
+  const modal = document.getElementById('modalLiveProjector');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  updateProjectorClock();
+  if (projectorClockTimer) clearInterval(projectorClockTimer);
+  projectorClockTimer = setInterval(updateProjectorClock, 1000);
+
+  renderProjectorLiveUI();
+  if (projectorTimer) clearInterval(projectorTimer);
+  projectorTimer = setInterval(renderProjectorLiveUI, 5000);
+
+  showToast("Modo Telão / TV ativado!", "info");
+}
+
+function closeLiveProjector() {
+  const modal = document.getElementById('modalLiveProjector');
+  if (modal) modal.classList.add('hidden');
+  if (projectorTimer) clearInterval(projectorTimer);
+  if (projectorClockTimer) clearInterval(projectorClockTimer);
+}
+
+function updateProjectorClock() {
+  const now = new Date();
+  const timeEl = document.getElementById('projectorClockTime');
+  const dateEl = document.getElementById('projectorClockDate');
+  if (timeEl) timeEl.textContent = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function renderProjectorLiveUI() {
+  const records = appState.history || [];
+  const todayBR = normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+  
+  // Filtra registros do dia ou usa histórico geral
+  const todayRecords = records.filter(r => {
+    const rDate = extractDateFromTimestamp(r.timestamp, r.date);
+    return rDate === todayBR;
+  });
+  const displayRecords = todayRecords.length > 0 ? todayRecords : records;
+
+  const total = displayRecords.length;
+  const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+
+  const schoolCounts = {};
+  ALL_SCHOOLS.forEach(s => schoolCounts[s] = 0);
+  displayRecords.forEach(r => {
+    const sName = (r.escola || '').trim().toUpperCase();
+    if (schoolCounts[sName] !== undefined) schoolCounts[sName]++;
+  });
+
+  const activeSchools = Object.values(schoolCounts).filter(c => c > 0).length;
+  const totalCadastrados = (appState.cadastrados || []).length || 1;
+  const adhesion = Math.min(100, Math.round((total / totalCadastrados) * 100));
+
+  // Elementos do painel esquerdo
+  const totalEl = document.getElementById('projectorTotalCount');
+  const activeEl = document.getElementById('projectorActiveSchools');
+  const adhesionEl = document.getElementById('projectorAdhesionRate');
+  const latestNameEl = document.getElementById('projectorLatestName');
+  const latestSchoolEl = document.getElementById('projectorLatestSchool');
+
+  if (totalEl) totalEl.textContent = total;
+  if (activeEl) activeEl.textContent = `${activeSchools} / ${ALL_SCHOOLS.length}`;
+  if (adhesionEl) adhesionEl.textContent = `${adhesion}%`;
+
+  if (displayRecords.length > 0) {
+    const latest = displayRecords[0];
+    if (latestNameEl) latestNameEl.textContent = latest.professor || 'Registrado';
+    if (latestSchoolEl) latestSchoolEl.textContent = `${latest.escola || ''} • ${latest.timestamp || ''}`;
+  } else {
+    if (latestNameEl) latestNameEl.textContent = 'Aguardando primeiros registros...';
+    if (latestSchoolEl) latestSchoolEl.textContent = '-';
+  }
+
+  // Lista de escolas
+  const listEl = document.getElementById('projectorSchoolsList');
+  if (!listEl) return;
+
+  const maxCount = Math.max(...Object.values(schoolCounts), 1);
+  let html = '';
+
+  ALL_SCHOOLS.forEach(school => {
+    const count = schoolCounts[school] || 0;
+    const faculty = (appState.cadastrados || []).filter(c => {
+      const cE = normalizeName(c.escola);
+      const sE = normalizeName(school);
+      return cE.includes(sE) || sE.includes(cE);
+    }).length;
+
+    const isComplete = faculty > 0 && count >= faculty;
+    let detailText = `${count} presentes`;
+    let pct = 0;
+
+    if (faculty > 0) {
+      pct = Math.min(100, Math.round((count / faculty) * 100));
+      detailText = `${count} de ${faculty} docentes (${pct}%)`;
+    } else {
+      pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+      detailText = `${count} presentes`;
+    }
+
+    html += `
+      <div class="p-school-row ${isComplete ? 'p-school-complete' : ''}">
+        <div class="p-school-meta">
+          <div class="p-school-title">
+            <i class="fa-solid fa-school"></i>
+            <span>${escapeHtml(school)}</span>
+            ${isComplete ? '<span class="p-school-badge-complete"><i class="fa-solid fa-crown"></i> 100% COMPLETO</span>' : ''}
+          </div>
+          <span class="p-school-stats">${detailText}</span>
+        </div>
+        <div class="p-school-track">
+          <div class="p-school-fill" style="width: ${Math.max(pct, count > 0 ? 6 : 0)}%;"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  listEl.innerHTML = html;
+}
+
 // Funções globais expostas no window
 window.initTheme = initTheme;
 window.toggleTheme = toggleTheme;
@@ -4653,6 +4881,11 @@ window.applyTheme = applyTheme;
 window.initAccentColor = initAccentColor;
 window.setAccentColor = setAccentColor;
 window.setSchoolDistributionView = setSchoolDistributionView;
+window.updateLiveNameAvatar = updateLiveNameAvatar;
+window.shareTicketWhatsApp = shareTicketWhatsApp;
+window.copyTicketSummary = copyTicketSummary;
+window.openLiveProjector = openLiveProjector;
+window.closeLiveProjector = closeLiveProjector;
 window.handleGoogleSignInClick = handleGoogleSignInClick;
 window.openGoogleQuickAuthModal = openGoogleQuickAuthModal;
 window.handleQuickAuthSubmit = handleQuickAuthSubmit;

@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=4.3">
+  <link rel="stylesheet" href="styles.css?v=4.4">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
@@ -165,7 +165,9 @@
                   class="input-field"
                 >
                 <datalist id="listaSugestoesProfessores"></datalist>
-                <i class="fa-regular fa-user input-icon"></i>
+                <div class="name-avatar-badge" id="nameAvatarBadge" title="Avatar Dinâmico do Docente">
+                  <span id="nameAvatarInitials"><i class="fa-regular fa-user"></i></span>
+                </div>
               </div>
 
               <!-- Badge de Validação em Tempo Real -->
@@ -326,8 +328,14 @@
           </div>
         </div>
 
-        <div class="success-actions">
-          <button type="button" id="btnNovoRegistro" class="btn btn-primary btn-lg">
+        <div class="success-actions ticket-actions-grid">
+          <button type="button" id="btnShareTicketWhatsApp" onclick="shareTicketWhatsApp()" class="btn btn-whatsapp" title="Enviar comprovante oficial no WhatsApp da Coordenação/Escola">
+            <i class="fa-brands fa-whatsapp"></i> <span>Enviar no WhatsApp</span>
+          </button>
+          <button type="button" id="btnCopyTicketSummary" onclick="copyTicketSummary()" class="btn btn-outline" title="Copiar resumo do comprovante">
+            <i class="fa-regular fa-copy"></i> <span>Copiar Resumo</span>
+          </button>
+          <button type="button" id="btnNovoRegistro" class="btn btn-primary btn-full-row">
             <i class="fa-solid fa-arrow-rotate-left"></i> Realizar Outro Registro
           </button>
         </div>
@@ -400,6 +408,9 @@
           <h3>Painel Administrativo & Gestão de Presenças</h3>
         </div>
         <div class="modal-header-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" class="btn btn-sm btn-dark" id="btnOpenLiveProjector" onclick="openLiveProjector()" title="Abrir Modo Projetor / Telão para apresentação em tempo real">
+            <i class="fa-solid fa-tv"></i> <span>Modo Telão / TV</span>
+          </button>
           <button type="button" class="btn btn-sm btn-outline" id="btnAdminFullscreen" onclick="toggleAdminFullscreen()" title="Alternar Tela Cheia para ver todos os registros">
             <i class="fa-solid fa-expand"></i> <span>Tela Cheia</span>
           </button>
@@ -1487,6 +1498,69 @@
     </div>
   </div>
 
+  <!-- Modal: Modo Projetor / Telão Ao Vivo (Live TV / Presentation Monitor) -->
+  <div id="modalLiveProjector" class="modal-backdrop projector-backdrop hidden">
+    <div class="projector-container">
+      <div class="projector-header">
+        <div class="projector-brand">
+          <div class="projector-icon"><i class="fa-solid fa-laptop-code"></i></div>
+          <div class="projector-brand-info">
+            <h2>EDM • Painel de Presença ao Vivo</h2>
+            <p>Educação Digital e Midiática • Secretaria Municipal de Educação</p>
+          </div>
+        </div>
+        <div class="projector-meta">
+          <div class="projector-clock-box">
+            <span class="projector-clock-time" id="projectorClockTime">--:--:--</span>
+            <span class="projector-clock-date" id="projectorClockDate">--/--/----</span>
+          </div>
+          <button type="button" class="btn-icon btn-projector-close" onclick="closeLiveProjector()" title="Fechar Modo Telão">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="projector-body">
+        <!-- Coluna Esquerda: Contador Gigante e Status da Formação -->
+        <div class="projector-summary-card">
+          <div class="projector-counter-hero">
+            <span class="projector-counter-label">TOTAL DE DOCENTES PRESENTES HOJE</span>
+            <strong class="projector-counter-val" id="projectorTotalCount">0</strong>
+            <span class="projector-counter-sub" id="projectorCounterSub"><i class="fa-solid fa-bolt text-warning"></i> Atualização contínua ao vivo</span>
+          </div>
+
+          <div class="projector-kpi-row">
+            <div class="projector-mini-kpi">
+              <span class="p-kpi-label">Escolas Ativas</span>
+              <strong class="p-kpi-val" id="projectorActiveSchools">0 / 7</strong>
+            </div>
+            <div class="projector-mini-kpi">
+              <span class="p-kpi-label">Taxa de Adesão</span>
+              <strong class="p-kpi-val" id="projectorAdhesionRate">0%</strong>
+            </div>
+          </div>
+
+          <div class="projector-latest-box">
+            <span class="p-latest-label"><i class="fa-solid fa-check-double"></i> Último Docente Registrado:</span>
+            <strong class="p-latest-name" id="projectorLatestName">Aguardando envios...</strong>
+            <span class="p-latest-school" id="projectorLatestSchool">-</span>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Placar das 7 Escolas com Barras Proporcionais -->
+        <div class="projector-schools-card">
+          <div class="projector-card-title">
+            <i class="fa-solid fa-chart-column"></i>
+            <span>Frequência e Adesão por Unidade Escolar</span>
+          </div>
+          <div class="projector-schools-list" id="projectorSchoolsList">
+            <!-- Gerado dinamicamente via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast -->
   <div id="toast" class="toast">
     <i class="toast-icon fa-solid fa-circle-check"></i>
@@ -1494,6 +1568,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=4.3"></script>
+  <script src="script.js?v=4.4"></script>
 </body>
 </html>
