@@ -57,6 +57,8 @@ const elements = {
   profValidationBadge: document.getElementById('profValidationBadge'),
   profValidationText: document.getElementById('profValidationText'),
   emailValidationBadge: document.getElementById('emailValidationBadge'),
+  schoolBarsChartContainer: document.getElementById('schoolBarsChartContainer'),
+  ticketAuthCode: document.getElementById('ticketAuthCode'),
   
   // Portal do Docente (Minhas Presenças & Atestado - Painel Admin)
   listaSugestoesAtestado: document.getElementById('listaSugestoesAtestado'),
@@ -273,6 +275,7 @@ initTheme();
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initAccentColor();
   loadConfig();
   loadHistory();
   updateRelatorioDateSelect();
@@ -1606,13 +1609,55 @@ function disconnectGoogleUser() {
 
 function showReceipt(record) {
   if (elements.receiptEmail) elements.receiptEmail.textContent = record.email || '-';
-  elements.receiptEscola.textContent = record.escola;
-  elements.receiptProfessor.textContent = record.professor;
-  elements.receiptTimestamp.textContent = record.timestamp;
+  if (elements.receiptEscola) elements.receiptEscola.textContent = record.escola || '-';
+  if (elements.receiptProfessor) elements.receiptProfessor.textContent = record.professor || '-';
+  if (elements.receiptTimestamp) elements.receiptTimestamp.textContent = record.timestamp || '-';
+
+  // Gera código único criptográfico/identificador para o ticket oficial
+  const authCodeEl = elements.ticketAuthCode || document.getElementById('ticketAuthCode');
+  if (authCodeEl) {
+    const yr = new Date().getFullYear();
+    const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
+    authCodeEl.textContent = `EDM-${yr}-${hash}`;
+  }
 
   elements.formCard.classList.add('hidden');
   elements.successCard.classList.remove('hidden');
   elements.successCard.scrollIntoView({ behavior: 'smooth' });
+
+  // Celebração festiva com confetes digitais
+  fireConfettiCelebration();
+}
+
+/**
+ * Efeito comemorativo de confetes digitais (canvas-confetti)
+ */
+function fireConfettiCelebration() {
+  try {
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 85,
+        spread: 75,
+        origin: { y: 0.6 }
+      });
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 60,
+          origin: { x: 0.05, y: 0.65 }
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 60,
+          origin: { x: 0.95, y: 0.65 }
+        });
+      }, 260);
+    }
+  } catch (e) {
+    console.warn("Confetti error:", e);
+  }
 }
 
 function resetForNewEntry() {
@@ -2304,10 +2349,81 @@ function updateKPIsAndSchools(records) {
     if (elements.kpiUltimoNome) elements.kpiUltimoNome.textContent = 'Aguardando envios';
   }
 
-  // Renderiza Pílulas de Escolas
+  // 1. Renderiza Gráfico Visual de Adesão em Barras Proporcionais
+  const barsContainer = elements.schoolBarsChartContainer || document.getElementById('schoolBarsChartContainer');
+  const currentSchoolFilter = elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value : '';
+
+  if (barsContainer) {
+    let maxCount = Math.max(...Object.values(schoolCounts), 1);
+    let barsHtml = `
+      <div class="school-bar-row ${!currentSchoolFilter ? 'active' : ''}" data-school="" title="Clique para ver todas as presenças">
+        <div class="school-bar-meta">
+          <div class="school-bar-title">
+            <i class="fa-solid fa-layer-group"></i> <span>Todas as 7 Escolas (Visão Geral)</span>
+          </div>
+          <div class="school-bar-stats">
+            <span class="school-bar-count">${total} presentes</span>
+            <span class="school-bar-pct">100%</span>
+          </div>
+        </div>
+        <div class="school-bar-track">
+          <div class="school-bar-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+    `;
+
+    ALL_SCHOOLS.forEach(school => {
+      const count = schoolCounts[school] || 0;
+      const isActive = currentSchoolFilter === school;
+      const pctOfTotal = total > 0 ? Math.round((count / total) * 100) : 0;
+      const barWidth = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+
+      // Docentes oficiais cadastrados desta escola no Firestore
+      const faculty = (appState.cadastrados || []).filter(c => {
+        const cEscola = normalizeName(c.escola);
+        const sEscola = normalizeName(school);
+        return cEscola.includes(sEscola) || sEscola.includes(cEscola);
+      }).length;
+
+      let detailStats = `${count} presentes (${pctOfTotal}% do encontro)`;
+      if (faculty > 0) {
+        const adPct = Math.min(100, Math.round((count / faculty) * 100));
+        detailStats = `${count} de ${faculty} cadastrados (${adPct}%)`;
+      }
+
+      barsHtml += `
+        <div class="school-bar-row ${isActive ? 'active' : ''}" data-school="${escapeHtml(school)}" title="Clique para filtrar apenas ${escapeHtml(school)}">
+          <div class="school-bar-meta">
+            <div class="school-bar-title">
+              <i class="fa-solid fa-school"></i> <span>${escapeHtml(school)}</span>
+            </div>
+            <div class="school-bar-stats">
+              <span class="school-bar-count">${detailStats}</span>
+              <span class="school-bar-pct">${pctOfTotal}%</span>
+            </div>
+          </div>
+          <div class="school-bar-track">
+            <div class="school-bar-fill" style="width: ${Math.max(barWidth, count > 0 ? 5 : 0)}%;"></div>
+          </div>
+        </div>
+      `;
+    });
+
+    barsContainer.innerHTML = barsHtml;
+
+    barsContainer.querySelectorAll('.school-bar-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const targetSchool = row.getAttribute('data-school');
+        if (elements.filtroEscolaSelect) {
+          elements.filtroEscolaSelect.value = targetSchool;
+        }
+        renderHistoryTable();
+      });
+    });
+  }
+
+  // 2. Renderiza Pílulas Alternativas de Escolas
   if (elements.schoolBadgesContainer) {
-    const currentSchoolFilter = elements.filtroEscolaSelect ? elements.filtroEscolaSelect.value : '';
-    
     let html = `
       <div class="school-pill ${!currentSchoolFilter ? 'active' : ''}" data-school="">
         <span>🏫 Todas</span>
@@ -4417,10 +4533,75 @@ function applyTheme(theme) {
   }
 }
 
+// ==========================================================================
+// Gestão de Cores de Destaque (Accent Colors)
+// ==========================================================================
+function initAccentColor() {
+  try {
+    const savedAccent = localStorage.getItem('presenca_accent_color') || 'blue';
+    setAccentColor(savedAccent, false);
+
+    const dots = document.querySelectorAll('.accent-dot');
+    dots.forEach(dot => {
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const accent = dot.getAttribute('data-accent');
+        setAccentColor(accent, true);
+        const labels = { blue: "Azul Cobalto", emerald: "Verde Esmeralda", purple: "Roxo Tech" };
+        showToast(`Cor de destaque: ${labels[accent] || accent}`, "info");
+      });
+    });
+  } catch (e) {
+    console.warn("Accent error:", e);
+  }
+}
+
+function setAccentColor(accent, save = true) {
+  document.documentElement.setAttribute('data-accent', accent);
+  if (save) {
+    try {
+      localStorage.setItem('presenca_accent_color', accent);
+    } catch (e) {}
+  }
+  const dots = document.querySelectorAll('.accent-dot');
+  dots.forEach(d => {
+    if (d.getAttribute('data-accent') === accent) {
+      d.classList.add('active');
+    } else {
+      d.classList.remove('active');
+    }
+  });
+}
+
+// ==========================================================================
+// Alternador de Visualização da Distribuição de Escolas no Admin
+// ==========================================================================
+function setSchoolDistributionView(view) {
+  const barsContainer = document.getElementById('schoolBarsChartContainer');
+  const pillsContainer = document.getElementById('schoolBadgesContainer');
+  const btnBars = document.getElementById('btnViewBars');
+  const btnPills = document.getElementById('btnViewPills');
+
+  if (view === 'bars') {
+    if (barsContainer) barsContainer.classList.remove('hidden');
+    if (pillsContainer) pillsContainer.classList.add('hidden');
+    if (btnBars) btnBars.classList.add('active');
+    if (btnPills) btnPills.classList.remove('active');
+  } else {
+    if (barsContainer) barsContainer.classList.add('hidden');
+    if (pillsContainer) pillsContainer.classList.remove('hidden');
+    if (btnBars) btnBars.classList.remove('active');
+    if (btnPills) btnPills.classList.add('active');
+  }
+}
+
 // Funções globais expostas no window
 window.initTheme = initTheme;
 window.toggleTheme = toggleTheme;
 window.applyTheme = applyTheme;
+window.initAccentColor = initAccentColor;
+window.setAccentColor = setAccentColor;
+window.setSchoolDistributionView = setSchoolDistributionView;
 window.handleGoogleSignInClick = handleGoogleSignInClick;
 window.openGoogleQuickAuthModal = openGoogleQuickAuthModal;
 window.handleQuickAuthSubmit = handleQuickAuthSubmit;

@@ -20,7 +20,10 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=4.0">
+  <link rel="stylesheet" href="styles.css?v=4.1">
+  
+  <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -38,8 +41,15 @@
         </div>
       </div>
       
-      <!-- Ações do Cabeçalho: Tema e Administração -->
+      <!-- Ações do Cabeçalho: Tema, Cores e Administração -->
       <div class="header-actions">
+        <!-- Seletor de Cores de Destaque -->
+        <div class="accent-picker" id="accentPicker" title="Personalizar Cor de Destaque">
+          <button type="button" class="accent-dot accent-blue active" data-accent="blue" title="Azul Cobalto (Institucional)"></button>
+          <button type="button" class="accent-dot accent-emerald" data-accent="emerald" title="Verde Esmeralda (Confirmação)"></button>
+          <button type="button" class="accent-dot accent-purple" data-accent="purple" title="Roxo Tech (EDM)"></button>
+        </div>
+
         <div id="adminBadge" class="admin-badge hidden" title="Modo Administrador Ativo">
           <i class="fa-solid fa-shield-halved"></i>
           <span>Admin</span>
@@ -284,43 +294,70 @@
         </form>
       </div>
 
-      <!-- Card de Comprovante Individual (Exibido apenas após o professor enviar) -->
-      <div id="successCard" class="card success-card hidden">
-        <div class="success-icon-badge">
-          <i class="fa-solid fa-check"></i>
+      <!-- Card de Comprovante Individual em Formato "Crachá / Ticket de Embarque" (Digital Event Pass) -->
+      <div id="successCard" class="card success-card ticket-card hidden">
+        <!-- Topo da Credencial -->
+        <div class="ticket-header">
+          <div class="ticket-badge-pill">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>EDM • Credencial Oficial</span>
+          </div>
+          <span class="ticket-status-pill"><i class="fa-solid fa-circle-check"></i> Homologado</span>
         </div>
-        <h3>Presença Registrada com Sucesso!</h3>
-        <p>Seus dados foram computados na lista oficial.</p>
+
+        <div class="ticket-hero-section">
+          <div class="success-icon-badge ticket-check-badge">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <h3>Presença Confirmada!</h3>
+          <p class="ticket-subtitle">Sua participação no Encontro Formativo EDM foi registrada oficialmente.</p>
+        </div>
         
-        <div class="receipt-box">
+        <div class="receipt-box ticket-details">
           <div class="receipt-row">
-            <span>E-mail:</span>
-            <strong id="receiptEmail">-</strong>
+            <span class="ticket-label"><i class="fa-solid fa-user"></i> Professor(a):</span>
+            <strong id="receiptProfessor" class="ticket-prof-name">-</strong>
           </div>
           <div class="receipt-row">
-            <span>Escola:</span>
+            <span class="ticket-label"><i class="fa-solid fa-school"></i> Unidade Escolar:</span>
             <strong id="receiptEscola">-</strong>
           </div>
           <div class="receipt-row">
-            <span>Professor(a):</span>
-            <strong id="receiptProfessor">-</strong>
+            <span class="ticket-label"><i class="fa-regular fa-envelope"></i> E-mail:</span>
+            <strong id="receiptEmail">-</strong>
           </div>
           <div class="receipt-row">
-            <span>Data / Horário:</span>
+            <span class="ticket-label"><i class="fa-regular fa-clock"></i> Data / Horário:</span>
             <strong id="receiptTimestamp">-</strong>
           </div>
-          <div class="receipt-row">
-            <span>Situação:</span>
-            <span class="badge badge-success"><i class="fa-solid fa-check-double"></i> Confirmado</span>
+        </div>
+
+        <!-- Divisor Estilizado de Ticket com Recortes / Picote Perfurado -->
+        <div class="ticket-divider">
+          <span class="ticket-notch ticket-notch-left"></span>
+          <span class="ticket-perforated-line"></span>
+          <span class="ticket-notch ticket-notch-right"></span>
+        </div>
+
+        <!-- Rodapé do Ticket com Autenticação e QR Code de Validação -->
+        <div class="ticket-footer">
+          <div class="ticket-auth-block">
+            <div class="ticket-qr-icon">
+              <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <div class="ticket-auth-text">
+              <span class="ticket-auth-label">CHAVE DIGITAL DE AUTENTICAÇÃO</span>
+              <code class="ticket-auth-code" id="ticketAuthCode">EDM-PRESENCA-OK</code>
+            </div>
           </div>
-          <div class="receipt-row">
-            <span>Sincronização:</span>
-            <span class="badge badge-sync-live"><i class="fa-solid fa-cloud-arrow-up"></i> Gravado no Google Forms Oficial</span>
+          <div class="ticket-sync-indicator">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Gravado no Google Forms Oficial</span>
           </div>
         </div>
 
         <div class="success-actions">
-          <button type="button" id="btnNovoRegistro" class="btn btn-primary">
+          <button type="button" id="btnNovoRegistro" class="btn btn-primary btn-lg">
             <i class="fa-solid fa-arrow-rotate-left"></i> Realizar Outro Registro
           </button>
         </div>
@@ -483,13 +520,30 @@
             </div>
           </div>
 
-          <!-- Quadro de Distribuição por Escola (Pills Interativos) -->
+          <!-- Quadro de Distribuição por Escola (Gráficos Visuais de Adesão em Barras Proporcionais & Pílulas) -->
           <div class="school-summary-section">
-            <div class="section-title-sm">
-              <i class="fa-solid fa-chart-pie"></i>
-              <span>Presenças por Unidade Escolar (clique para filtrar):</span>
+            <div class="school-summary-header">
+              <div class="section-title-sm">
+                <i class="fa-solid fa-chart-column"></i>
+                <span>Adesão & Presenças por Unidade Escolar:</span>
+              </div>
+              <div class="school-view-toggle">
+                <button type="button" class="btn-view-toggle active" id="btnViewBars" onclick="setSchoolDistributionView('bars')" title="Visualização em Barras Proporcionais">
+                  <i class="fa-solid fa-bars-progress"></i> <span>Barras</span>
+                </button>
+                <button type="button" class="btn-view-toggle" id="btnViewPills" onclick="setSchoolDistributionView('pills')" title="Visualização em Pílulas Compactas">
+                  <i class="fa-solid fa-table-cells-large"></i> <span>Pílulas</span>
+                </button>
+              </div>
             </div>
-            <div id="schoolBadgesContainer" class="school-badges-container">
+
+            <!-- Gráfico Visual de Barras Proporcionais de Cada Escola -->
+            <div id="schoolBarsChartContainer" class="school-bars-chart-container">
+              <!-- Gerado dinamicamente via JS -->
+            </div>
+
+            <!-- Pílulas Interativas (Visão Alternativa) -->
+            <div id="schoolBadgesContainer" class="school-badges-container hidden">
               <!-- Gerado dinamicamente via JS -->
             </div>
           </div>
@@ -1470,6 +1524,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=4.0"></script>
+  <script src="script.js?v=4.1"></script>
 </body>
 </html>
