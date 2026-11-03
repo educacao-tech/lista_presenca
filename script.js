@@ -46,6 +46,17 @@ const elements = {
   displayDate: document.getElementById('displayDate'),
   displayTime: document.getElementById('displayTime'),
   btnSubmit: document.getElementById('btnSubmit'),
+
+  // Barra de Progresso e Validações em Tempo Real
+  progressBarFill: document.getElementById('progressBarFill'),
+  progressBadge: document.getElementById('progressBadge'),
+  schoolChipsGrid: document.getElementById('schoolChipsGrid'),
+  schoolSelectedHint: document.getElementById('schoolSelectedHint'),
+  schoolSelectedIcon: document.getElementById('schoolSelectedIcon'),
+  schoolSelectedText: document.getElementById('schoolSelectedText'),
+  profValidationBadge: document.getElementById('profValidationBadge'),
+  profValidationText: document.getElementById('profValidationText'),
+  emailValidationBadge: document.getElementById('emailValidationBadge'),
   
   // Portal do Docente (Minhas Presenças & Atestado - Painel Admin)
   listaSugestoesAtestado: document.getElementById('listaSugestoesAtestado'),
@@ -277,6 +288,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Sincroniza Base Oficial de Professores (Firestore EDM)
   syncCadastradosEDM(false);
+
+  // Inicializa estado de progresso e chips de escola
+  syncSchoolChipsFromSelect();
+  updateFormProgressAndValidation();
 
   // Se já tiver URL da planilha configurada, tenta sincronizar em segundo plano
   if (appState.config.sheetUrl) {
@@ -1534,6 +1549,8 @@ function setGoogleAuthenticatedUser(profile, showFeedback = true) {
   if (elements.googleBtnWrapper) elements.googleBtnWrapper.classList.add('hidden');
   if (elements.googleConnectedCard) elements.googleConnectedCard.classList.remove('hidden');
 
+  updateFormProgressAndValidation();
+
   if (showFeedback) {
     showToast(`Identificado como ${profile.name || email}!`, "success");
 
@@ -1582,6 +1599,8 @@ function disconnectGoogleUser() {
     elements.googleBtnWrapper.classList.remove('hidden');
   }
 
+  updateFormProgressAndValidation();
+
   showToast("Identificação limpa. Você pode conectar outra conta ou digitar.", "info");
 }
 
@@ -1607,7 +1626,157 @@ function resetForNewEntry() {
     elements.inputProfessor.value = (appState.googleUser.name || '').toUpperCase();
   }
   
+  syncSchoolChipsFromSelect();
+  updateFormProgressAndValidation();
+
   elements.selectEscola.focus();
+}
+
+// ==========================================================================
+// Experiência do Formulário: Chips de Escolas, Validação e Progresso Dinâmico
+// ==========================================================================
+
+/**
+ * Configura os botões em formato de chip para seleção rápida das 7 escolas
+ */
+function setupSchoolChips() {
+  const chips = document.querySelectorAll('.school-chip-btn');
+  const select = elements.selectEscola;
+
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const schoolName = chip.getAttribute('data-school');
+      if (select) {
+        select.value = schoolName;
+        // Dispara o evento change para atualizar a auto-sugestão da lista de professores da escola
+        select.dispatchEvent(new Event('change'));
+      }
+      syncSchoolChipsFromSelect();
+      updateFormProgressAndValidation();
+    });
+  });
+}
+
+/**
+ * Sincroniza visualmente os chips de escola e o texto informativo com o valor atual do select
+ */
+function syncSchoolChipsFromSelect() {
+  const currentVal = elements.selectEscola ? elements.selectEscola.value : '';
+  const chips = document.querySelectorAll('.school-chip-btn');
+  const hintText = elements.schoolSelectedText || document.getElementById('schoolSelectedText');
+  const hintIcon = elements.schoolSelectedIcon || document.getElementById('schoolSelectedIcon');
+
+  chips.forEach(chip => {
+    if (currentVal && chip.getAttribute('data-school') === currentVal) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+
+  if (currentVal) {
+    if (hintText) hintText.innerHTML = `Escola selecionada: <strong>${escapeHtml(currentVal)}</strong>`;
+    if (hintIcon) hintIcon.className = 'fa-solid fa-circle-check text-success';
+  } else {
+    if (hintText) hintText.textContent = 'Toque na sua unidade escolar acima para selecionar';
+    if (hintIcon) hintIcon.className = 'fa-solid fa-hand-pointer';
+  }
+}
+
+/**
+ * Atualiza dinamicamente a barra de progresso (0% a 100%)
+ * e os badges animados de validação de Professor e E-mail
+ */
+function updateFormProgressAndValidation() {
+  const schoolVal = elements.selectEscola ? elements.selectEscola.value.trim() : '';
+  const profVal = elements.inputProfessor ? elements.inputProfessor.value.trim() : '';
+  const emailVal = elements.inputEmail ? elements.inputEmail.value.trim() : '';
+
+  // 1. Escola
+  const isSchoolValid = Boolean(schoolVal);
+
+  // 2. Professor(a)
+  let isProfValid = false;
+  let isProfRecognized = false;
+  
+  if (profVal.length >= 3) {
+    const profNorm = normalizeName(profVal);
+    const words = profVal.split(/\s+/).filter(w => w.length > 0);
+    isProfValid = words.length >= 2 && profVal.length >= 5;
+
+    // Reconhecimento na base oficial EDM ou histórico
+    const inCadastrados = (appState.cadastrados || []).some(c => {
+      const cNorm = normalizeName(c.nome);
+      return cNorm === profNorm || (profNorm.length >= 6 && cNorm.includes(profNorm));
+    });
+
+    const inHistory = !inCadastrados && (appState.history || []).some(h => {
+      const hNorm = normalizeName(h.professor);
+      return hNorm === profNorm || (profNorm.length >= 6 && hNorm.includes(profNorm));
+    });
+
+    isProfRecognized = inCadastrados || inHistory;
+  }
+
+  // Atualiza Badge do Professor
+  const profBadge = elements.profValidationBadge;
+  const profBadgeText = elements.profValidationText;
+  if (profBadge && profBadgeText) {
+    if (isProfRecognized) {
+      profBadge.className = 'live-validation-badge badge-recognized';
+      profBadgeText.innerHTML = '<i class="fa-solid fa-award"></i> Docente Reconhecido(a) na Rede EDM';
+    } else if (isProfValid) {
+      profBadge.className = 'live-validation-badge badge-valid';
+      profBadgeText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Nome completo preenchido';
+    } else {
+      profBadge.className = 'live-validation-badge hidden';
+    }
+  }
+
+  // 3. E-mail
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+  const isEmailValid = emailRegex.test(emailVal);
+
+  // Atualiza Badge do E-mail
+  const emailBadge = elements.emailValidationBadge;
+  if (emailBadge) {
+    if (isEmailValid) {
+      emailBadge.className = 'live-validation-badge badge-valid';
+    } else {
+      emailBadge.className = 'live-validation-badge hidden';
+    }
+  }
+
+  // Cálculo da porcentagem (Escola: 33%, Nome: 33%, Email: 34% => 100%)
+  let pct = 0;
+  if (isSchoolValid) pct += 33;
+  if (isProfValid || isProfRecognized) pct += 33;
+  if (isEmailValid) pct += 34;
+
+  const barFill = elements.progressBarFill;
+  const badge = elements.progressBadge;
+
+  if (barFill) {
+    barFill.style.width = `${pct}%`;
+    if (pct === 100) {
+      barFill.classList.add('complete');
+    } else {
+      barFill.classList.remove('complete');
+    }
+  }
+
+  if (badge) {
+    if (pct === 100) {
+      badge.classList.add('complete');
+      badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> 100% Pronto para Assinar';
+    } else if (pct > 0) {
+      badge.classList.remove('complete');
+      badge.textContent = `${pct}% Preenchido`;
+    } else {
+      badge.classList.remove('complete');
+      badge.textContent = '0% Concluído';
+    }
+  }
 }
 
 // ==========================================================================
@@ -3134,6 +3303,7 @@ function loadCachedCadastrados() {
     try {
       appState.cadastrados = JSON.parse(cached);
       updateTeacherDatalist();
+      updateFormProgressAndValidation();
       renderAuditoriaUI();
     } catch (e) {
       appState.cadastrados = [];
@@ -3193,6 +3363,7 @@ async function syncCadastradosEDM(showFeedback = false) {
     }
 
     updateTeacherDatalist();
+    updateFormProgressAndValidation();
     renderAuditoriaUI();
 
     if (showFeedback) {
@@ -3844,12 +4015,19 @@ function clearHistory() {
 // Event Listeners
 // ==========================================================================
 function setupEventListeners() {
+  // Inicializa botões/chips de seleção interativa de escolas
+  setupSchoolChips();
+
   // Atualiza datalist de auto-sugestão de professores quando muda a escola
   if (elements.selectEscola) {
-    elements.selectEscola.addEventListener('change', updateTeacherDatalist);
+    elements.selectEscola.addEventListener('change', () => {
+      updateTeacherDatalist();
+      syncSchoolChipsFromSelect();
+      updateFormProgressAndValidation();
+    });
   }
 
-  // Conversão automática para maiúsculas ao digitar o nome do professor
+  // Conversão automática para maiúsculas ao digitar o nome do professor e validação dinâmica
   if (elements.inputProfessor) {
     elements.inputProfessor.addEventListener('input', (e) => {
       const start = e.target.selectionStart;
@@ -3858,13 +4036,15 @@ function setupEventListeners() {
       if (start !== null && end !== null) {
         e.target.setSelectionRange(start, end);
       }
+      updateFormProgressAndValidation();
     });
   }
 
-  // Conversão automática para minúsculas ao digitar o e-mail
+  // Conversão automática para minúsculas ao digitar o e-mail e validação dinâmica
   if (elements.inputEmail) {
     elements.inputEmail.addEventListener('input', (e) => {
       e.target.value = e.target.value.toLowerCase().trim();
+      updateFormProgressAndValidation();
     });
   }
 

@@ -282,6 +282,154 @@ body {
   font-size: 0.925rem;
 }
 
+/* Barra de Progresso Dinâmica */
+.form-progress-box {
+  background: var(--bg-surface, #f8fafc);
+  border: 1px solid var(--card-border);
+  border-radius: var(--border-radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.form-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.progress-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.progress-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+}
+
+.progress-badge.badge-complete {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb 0%, #38bdf8 100%);
+  border-radius: 9999px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+}
+
+.progress-bar-fill.progress-complete {
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+/* Grade de Chips das 7 Escolas */
+.school-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.school-chip-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.school-chip-btn i {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.school-chip-btn:hover {
+  border-color: #93c5fd;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.school-chip-btn.active {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), 0 2px 4px rgba(37, 99, 235, 0.1);
+}
+
+.school-chip-btn.active i {
+  color: var(--primary);
+}
+
+/* Badges de Validação em Tempo Real */
+.live-validation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.32rem 0.75rem;
+  border-radius: 9999px;
+  margin-top: 0.4rem;
+  animation: badgeSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.live-validation-badge.badge-recognized {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+  color: #1e40af;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+}
+
+.live-validation-badge.badge-valid {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+@keyframes badgeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Bloco Compacto de Identificação Google Sign-In */
 .google-auth-box {
   background: transparent;
@@ -2822,6 +2970,55 @@ select {
 
 [data-theme="dark"] .summary-divider-v {
   background: #334155;
+}
+
+[data-theme="dark"] .form-progress-box {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .progress-bar-track {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .school-chip-btn {
+  background: #0f172a;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .school-chip-btn:hover {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+[data-theme="dark"] .school-chip-btn.active {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: #3b82f6;
+  color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+[data-theme="dark"] .school-chip-btn.active i {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .live-validation-badge {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #059669;
+  color: #a7f3d0;
+}
+
+[data-theme="dark"] .live-validation-badge.badge-recognized {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .live-validation-badge.badge-valid {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #059669;
+  color: #a7f3d0;
 }
 
 /* ==========================================================================

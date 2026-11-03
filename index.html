@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=3.9">
+  <link rel="stylesheet" href="styles.css?v=4.0">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -71,6 +71,17 @@
           </div>
           <h2>Confirmação de Presença Docente</h2>
           <p>Encontro Formativo Presencial • Confirme seus dados para assinar a lista oficial de frequência.</p>
+        </div>
+
+        <!-- Barra de Progresso Dinâmica do Preenchimento (0% a 100%) -->
+        <div class="form-progress-box" id="formProgressBox">
+          <div class="form-progress-header">
+            <span class="progress-label"><i class="fa-solid fa-bars-progress"></i> Progresso do Registro</span>
+            <span class="progress-badge" id="progressBadge">0% Concluído</span>
+          </div>
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+          </div>
         </div>
 
         <!-- Banner de Formulário Fechado / Não Aceitando Respostas -->
@@ -137,7 +148,34 @@
                 <span class="label-step-num">1</span>
                 <i class="fa-solid fa-school-flag"></i> Unidade Escolar
               </label>
-              <div class="select-wrapper">
+
+              <!-- Grade de Chips / Pílulas Interativas das 7 Escolas -->
+              <div class="school-chips-grid" id="schoolChipsGrid">
+                <button type="button" class="school-chip-btn" data-school="ALZIRA ACRA">
+                  <i class="fa-solid fa-school"></i> <span>ALZIRA ACRA</span>
+                </button>
+                <button type="button" class="school-chip-btn" data-school="ANNA BONAGURA">
+                  <i class="fa-solid fa-school"></i> <span>ANNA BONAGURA</span>
+                </button>
+                <button type="button" class="school-chip-btn" data-school="BRAGA MORATO">
+                  <i class="fa-solid fa-school"></i> <span>BRAGA MORATO</span>
+                </button>
+                <button type="button" class="school-chip-btn" data-school="CAIC">
+                  <i class="fa-solid fa-school"></i> <span>CAIC</span>
+                </button>
+                <button type="button" class="school-chip-btn" data-school="CÉLIA BUENO">
+                  <i class="fa-solid fa-school"></i> <span>CÉLIA BUENO</span>
+                </button>
+                <button type="button" class="school-chip-btn" data-school="ESTHER VIANNA">
+                  <i class="fa-solid fa-school"></i> <span>ESTHER VIANNA</span>
+                </button>
+                <button type="button" class="school-chip-btn" data-school="PADRE BENITO">
+                  <i class="fa-solid fa-school"></i> <span>PADRE BENITO</span>
+                </button>
+              </div>
+
+              <!-- Select Sincronizado para Envio / Validação -->
+              <div class="select-wrapper hidden">
                 <select id="selectEscola" name="entry.285930433" required class="input-field select-field">
                   <option value="" disabled selected>Selecione a sua escola...</option>
                   <option value="ALZIRA ACRA">ALZIRA ACRA</option>
@@ -150,6 +188,11 @@
                 </select>
                 <i class="fa-solid fa-chevron-down select-arrow"></i>
               </div>
+
+              <span class="field-hint" id="schoolSelectedHint">
+                <i class="fa-solid fa-hand-pointer" id="schoolSelectedIcon"></i>
+                <span id="schoolSelectedText">Toque na sua unidade escolar acima para selecionar</span>
+              </span>
             </div>
 
             <!-- 2. Campo NOME COMPLETO (entry.278265355) -->
@@ -172,7 +215,14 @@
                 <datalist id="listaSugestoesProfessores"></datalist>
                 <i class="fa-regular fa-user input-icon"></i>
               </div>
-              <span class="field-hint"><i class="fa-solid fa-shield-halved"></i> Preencha sem abreviações (auto-sugestão disponível)</span>
+
+              <!-- Badge de Validação em Tempo Real -->
+              <div id="profValidationBadge" class="live-validation-badge hidden">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="profValidationText">Docente Reconhecido(a) na Rede EDM</span>
+              </div>
+
+              <span class="field-hint" id="profHintDefault"><i class="fa-solid fa-shield-halved"></i> Preencha sem abreviações (auto-sugestão disponível)</span>
             </div>
 
             <!-- 3. Campo E-MAIL (emailAddress) - Chave Única -->
@@ -193,7 +243,14 @@
                 >
                 <i class="fa-regular fa-envelope input-icon"></i>
               </div>
-              <span class="field-hint"><i class="fa-solid fa-key"></i> Chave única para validação da presença</span>
+
+              <!-- Badge de Validação em Tempo Real -->
+              <div id="emailValidationBadge" class="live-validation-badge hidden">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>E-mail no formato correto</span>
+              </div>
+
+              <span class="field-hint" id="emailHintDefault"><i class="fa-solid fa-key"></i> Chave única para validação da presença</span>
             </div>
           </div>
 
@@ -1413,6 +1470,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=3.9"></script>
+  <script src="script.js?v=4.0"></script>
 </body>
 </html>
