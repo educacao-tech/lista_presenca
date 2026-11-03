@@ -20,7 +20,7 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=3.5">
+  <link rel="stylesheet" href="styles.css?v=3.8">
 </head>
 <body>
   <div class="bg-pattern"></div>
@@ -62,26 +62,15 @@
   <main class="main-content">
     <div class="form-wrapper">
 
-      <!-- Alternador de Visão Principal: Registrar Presença vs Portal do Docente -->
-      <nav class="main-nav-tabs" aria-label="Navegação do Docente">
-        <button type="button" class="main-nav-tab-btn active" id="btnNavPresenca">
-          <i class="fa-solid fa-clipboard-check"></i>
-          <span>Registrar Presença</span>
-        </button>
-        <button type="button" class="main-nav-tab-btn" id="btnNavPortalDocente">
-          <i class="fa-solid fa-graduation-cap"></i>
-          <span>Minhas Presenças & Atestado</span>
-        </button>
-      </nav>
-
       <!-- Card Principal de Preenchimento -->
       <div class="attendance-card card" id="formCard">
         <div class="card-hero">
           <div class="hero-tag-row">
             <div class="hero-tag"><i class="fa-solid fa-laptop-code"></i> EDM — Educação Digital e Midiática</div>
+            <div class="hero-status-tag"><span class="pulse-indicator"></span> Chamada Oficial Aberta</div>
           </div>
           <h2>Confirmação de Presença Docente</h2>
-          <p>Encontro Formativo • Selecione sua unidade escolar e confirme seus dados para assinar a lista.</p>
+          <p>Encontro Formativo Presencial • Confirme seus dados para assinar a lista oficial de frequência.</p>
         </div>
 
         <!-- Banner de Formulário Fechado / Não Aceitando Respostas -->
@@ -264,139 +253,18 @@
         </div>
 
         <div class="success-actions">
-          <button type="button" id="btnIrParaPortalDocente" class="btn btn-primary">
-            <i class="fa-solid fa-graduation-cap"></i>
-            <span>Ver Meu Histórico & Atestado</span>
-          </button>
-          <button type="button" id="btnNovoRegistro" class="btn btn-outline">
+          <button type="button" id="btnNovoRegistro" class="btn btn-primary">
             <i class="fa-solid fa-arrow-rotate-left"></i> Realizar Outro Registro
           </button>
         </div>
       </div>
 
-      <!-- Card do Portal do Docente (Minhas Presenças & Atestado de Horas) -->
-      <div class="attendance-card card hidden" id="portalDocenteCard">
-        <div class="card-hero">
-          <div class="hero-tag-row">
-            <div class="hero-tag"><i class="fa-solid fa-graduation-cap"></i> Portal do Docente EDM</div>
-          </div>
-          <h2>Minhas Presenças & Atestado de Horas</h2>
-          <p>Consulte sua frequência nos encontros formativos e emita sua declaração oficial de participação.</p>
-        </div>
-
-        <!-- Barra de Busca por E-mail ou Nome -->
-        <div class="portal-search-box">
-          <div class="input-group">
-            <label for="portalEmailInput">
-              <i class="fa-solid fa-magnifying-glass"></i> Digite seu e-mail ou nome cadastrado:
-            </label>
-            <div class="portal-search-bar">
-              <div class="input-with-icon" style="flex: 1;">
-                <input 
-                  type="text" 
-                  id="portalEmailInput" 
-                  class="input-field" 
-                  placeholder="exemplo@gmail.com ou nome do docente..."
-                  autocomplete="email"
-                >
-                <i class="fa-regular fa-envelope input-icon"></i>
-              </div>
-              <button type="button" id="btnBuscarPresencasDocente" class="btn btn-primary" onclick="executarBuscaPortalDocente()">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <span>Consultar</span>
-              </button>
-            </div>
-            <span class="field-hint"><i class="fa-solid fa-circle-info"></i> Digite o mesmo e-mail utilizado na confirmação de presença da formação.</span>
-          </div>
-        </div>
-
-        <!-- Estado Inicial / Instruções -->
-        <div id="portalEmptyState" class="portal-empty-state">
-          <div class="portal-empty-icon"><i class="fa-solid fa-user-graduate"></i></div>
-          <h4>Consulte seu Histórico de Formação</h4>
-          <p>Informe seu e-mail acima para visualizar suas presenças computadas em cada encontro e emitir sua declaração de carga horária em PDF.</p>
-        </div>
-
-        <!-- Estado Não Encontrado -->
-        <div id="portalNotFoundState" class="portal-not-found-state hidden">
-          <div class="portal-notfound-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
-          <h4>Nenhum registro localizado</h4>
-          <p id="portalNotFoundMsg">Não foram encontradas presenças registradas para os dados informados.</p>
-          <span class="portal-notfound-hint">Verifique se digitou o e-mail exatamente como informado no momento do registro.</span>
-        </div>
-
-        <!-- Resultados do Docente -->
-        <div id="portalResultContainer" class="portal-result-container hidden">
-          <!-- Cabeçalho do Perfil -->
-          <div class="portal-docente-header">
-            <div class="portal-avatar-circle" id="portalAvatarBadge">PR</div>
-            <div class="portal-docente-info">
-              <div class="portal-name-row">
-                <h3 id="portalNomeDocente">Nome do Professor</h3>
-                <span class="badge badge-success badge-sm" id="portalStatusBadge"><i class="fa-solid fa-certificate"></i> Apto para Atestado</span>
-              </div>
-              <p id="portalEmailDocente" class="portal-docente-email">email@exemplo.com</p>
-              <div class="portal-badges-row">
-                <span class="badge badge-primary badge-sm" id="portalEscolaDocente"><i class="fa-solid fa-school"></i> Escola</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Grade de Indicadores (KPIs) -->
-          <div class="portal-kpi-grid">
-            <div class="portal-kpi-card">
-              <span class="portal-kpi-label">Encontros Formativos</span>
-              <strong class="portal-kpi-val" id="portalKpiTotalEncontros">0</strong>
-              <span class="portal-kpi-sub">Total realizados</span>
-            </div>
-            <div class="portal-kpi-card">
-              <span class="portal-kpi-label">Presenças Confirmadas</span>
-              <strong class="portal-kpi-val text-success" id="portalKpiPresencas">0</strong>
-              <span class="portal-kpi-sub">Comparecimentos</span>
-            </div>
-            <div class="portal-kpi-card">
-              <span class="portal-kpi-label">Frequência Geral</span>
-              <strong class="portal-kpi-val text-primary" id="portalKpiTaxa">0%</strong>
-              <span class="portal-kpi-sub">Aproveitamento</span>
-            </div>
-            <div class="portal-kpi-card">
-              <span class="portal-kpi-label">Carga Horária Total</span>
-              <strong class="portal-kpi-val text-purple" id="portalKpiCargaHoraria">0h</strong>
-              <span class="portal-kpi-sub">Horas certificadas</span>
-            </div>
-          </div>
-
-          <!-- Linha do Tempo de Encontros -->
-          <div class="portal-timeline-section">
-            <h4><i class="fa-solid fa-calendar-check"></i> Histórico por Encontro Formativo</h4>
-            <div id="portalTimelineList" class="portal-timeline-list">
-              <!-- Itens preenchidos via JS -->
-            </div>
-          </div>
-
-          <!-- Ações Oficiais: Emissão e Impressão do Atestado -->
-          <div class="portal-actions-card">
-            <div class="portal-actions-text">
-              <h4><i class="fa-solid fa-award text-success"></i> Declaração Oficial de Participação</h4>
-              <p>Documento timbrado com autenticidade eletrônica e carga horária para evolução funcional docente.</p>
-            </div>
-            <div class="portal-action-btns">
-              <button type="button" id="btnEmitirAtestadoDocente" class="btn btn-success" onclick="emitirAtestadoDocente()">
-                <i class="fa-solid fa-file-pdf"></i>
-                <span>Baixar Declaração em PDF</span>
-              </button>
-              <button type="button" id="btnImprimirAtestadoDocente" class="btn btn-outline" onclick="imprimirAtestadoDocente()">
-                <i class="fa-solid fa-print"></i>
-                <span>Imprimir</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Rodapé Discreto -->
+      <!-- Rodapé Oficial -->
       <footer class="app-footer">
-        <p>© Secretaria de Educação • Sistema de Frequência Digital</p>
+        <div class="footer-badge">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Ambiente Oficial Conectado • Secretaria Municipal de Educação</span>
+        </div>
       </footer>
 
     </div>
@@ -474,6 +342,10 @@
         <button type="button" class="admin-tab-btn" data-tab="tabAuditoriaFaltas">
           <i class="fa-solid fa-user-xmark"></i>
           <span>Cruzamento & Faltas</span>
+        </button>
+        <button type="button" class="admin-tab-btn" data-tab="tabAtestados">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Minhas Presenças & Atestado</span>
         </button>
         <button type="button" class="admin-tab-btn" data-tab="tabRelatorios">
           <i class="fa-solid fa-file-invoice"></i>
@@ -831,7 +703,129 @@
 
         </div>
 
-        <!-- Aba 3: Relatório Oficial para a Gestão da Escola -->
+        <!-- Aba 3: Minhas Presenças & Atestado de Horas (Admin) -->
+        <div id="tabAtestados" class="admin-tab-content">
+          <div class="card-hero" style="margin-bottom: 1.25rem; padding-bottom: 1rem;">
+            <div class="hero-tag-row">
+              <div class="hero-tag"><i class="fa-solid fa-graduation-cap"></i> Emissão de Atestados & Histórico Individual</div>
+            </div>
+            <h2>Minhas Presenças & Atestado de Horas</h2>
+            <p>Consulte a frequência individual do docente nos encontros formativos e emita a declaração oficial com carga horária em PDF.</p>
+          </div>
+
+          <!-- Barra de Busca por E-mail ou Nome com Datalist -->
+          <div class="portal-search-box">
+            <div class="input-group">
+              <label for="portalEmailInput">
+                <i class="fa-solid fa-magnifying-glass"></i> Digite ou selecione o professor (nome ou e-mail):
+              </label>
+              <div class="portal-search-bar">
+                <div class="input-with-icon" style="flex: 1;">
+                  <input 
+                    type="text" 
+                    id="portalEmailInput" 
+                    class="input-field" 
+                    list="listaSugestoesAtestado"
+                    placeholder="Digite o nome ou e-mail do docente..."
+                    autocomplete="off"
+                  >
+                  <datalist id="listaSugestoesAtestado"></datalist>
+                  <i class="fa-regular fa-envelope input-icon"></i>
+                </div>
+                <button type="button" id="btnBuscarPresencasDocente" class="btn btn-primary" onclick="executarBuscaPortalDocente()">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <span>Consultar</span>
+                </button>
+              </div>
+              <span class="field-hint"><i class="fa-solid fa-circle-info"></i> Selecione um professor para visualizar presenças em cada data e emitir a declaração oficial.</span>
+            </div>
+          </div>
+
+          <!-- Estado Inicial / Instruções -->
+          <div id="portalEmptyState" class="portal-empty-state">
+            <div class="portal-empty-icon"><i class="fa-solid fa-user-graduate"></i></div>
+            <h4>Histórico Individual & Emissão de Atestado</h4>
+            <p>Digite ou selecione o docente acima para visualizar as presenças computadas em cada encontro e gerar a declaração com autenticidade eletrônica em PDF.</p>
+          </div>
+
+          <!-- Estado Não Encontrado -->
+          <div id="portalNotFoundState" class="portal-not-found-state hidden">
+            <div class="portal-notfound-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+            <h4>Nenhum registro localizado</h4>
+            <p id="portalNotFoundMsg">Não foram encontradas presenças registradas para os dados informados.</p>
+            <span class="portal-notfound-hint">Verifique se o nome ou e-mail confere com o cadastro ou com as confirmações da lista.</span>
+          </div>
+
+          <!-- Resultados do Docente -->
+          <div id="portalResultContainer" class="portal-result-container hidden">
+            <!-- Cabeçalho do Perfil -->
+            <div class="portal-docente-header">
+              <div class="portal-avatar-circle" id="portalAvatarBadge">PR</div>
+              <div class="portal-docente-info">
+                <div class="portal-name-row">
+                  <h3 id="portalNomeDocente">Nome do Professor</h3>
+                  <span class="badge badge-success badge-sm" id="portalStatusBadge"><i class="fa-solid fa-certificate"></i> Apto para Atestado</span>
+                </div>
+                <p id="portalEmailDocente" class="portal-docente-email">email@exemplo.com</p>
+                <div class="portal-badges-row">
+                  <span class="badge badge-primary badge-sm" id="portalEscolaDocente"><i class="fa-solid fa-school"></i> Escola</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Grade de Indicadores (KPIs) -->
+            <div class="portal-kpi-grid">
+              <div class="portal-kpi-card">
+                <span class="portal-kpi-label">Encontros Formativos</span>
+                <strong class="portal-kpi-val" id="portalKpiTotalEncontros">0</strong>
+                <span class="portal-kpi-sub">Total realizados</span>
+              </div>
+              <div class="portal-kpi-card">
+                <span class="portal-kpi-label">Presenças Confirmadas</span>
+                <strong class="portal-kpi-val text-success" id="portalKpiPresencas">0</strong>
+                <span class="portal-kpi-sub">Comparecimentos</span>
+              </div>
+              <div class="portal-kpi-card">
+                <span class="portal-kpi-label">Frequência Geral</span>
+                <strong class="portal-kpi-val text-primary" id="portalKpiTaxa">0%</strong>
+                <span class="portal-kpi-sub">Aproveitamento</span>
+              </div>
+              <div class="portal-kpi-card">
+                <span class="portal-kpi-label">Carga Horária Total</span>
+                <strong class="portal-kpi-val text-purple" id="portalKpiCargaHoraria">0h</strong>
+                <span class="portal-kpi-sub">Horas certificadas</span>
+              </div>
+            </div>
+
+            <!-- Linha do Tempo de Encontros -->
+            <div class="portal-timeline-section">
+              <h4><i class="fa-solid fa-calendar-check"></i> Histórico por Encontro Formativo</h4>
+              <div id="portalTimelineList" class="portal-timeline-list">
+                <!-- Itens preenchidos via JS -->
+              </div>
+            </div>
+
+            <!-- Ações Oficiais: Emissão e Impressão do Atestado -->
+            <div class="portal-actions-card">
+              <div class="portal-actions-text">
+                <h4><i class="fa-solid fa-award text-success"></i> Declaração Oficial de Participação</h4>
+                <p>Documento timbrado com autenticidade eletrônica e carga horária para evolução funcional docente.</p>
+              </div>
+              <div class="portal-action-btns">
+                <button type="button" id="btnEmitirAtestadoDocente" class="btn btn-success" onclick="emitirAtestadoDocente()">
+                  <i class="fa-solid fa-file-pdf"></i>
+                  <span>Baixar Declaração em PDF</span>
+                </button>
+                <button type="button" id="btnImprimirAtestadoDocente" class="btn btn-outline" onclick="imprimirAtestadoDocente()">
+                  <i class="fa-solid fa-print"></i>
+                  <span>Imprimir</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aba 4: Relatório Oficial para a Gestão da Escola -->
         <div id="tabRelatorios" class="admin-tab-content">
           
           <!-- Controles do Relatório -->
@@ -1409,6 +1403,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=3.5"></script>
+  <script src="script.js?v=3.6"></script>
 </body>
 </html>

@@ -47,13 +47,9 @@ const elements = {
   displayTime: document.getElementById('displayTime'),
   btnSubmit: document.getElementById('btnSubmit'),
   
-  // Navegação Principal do Docente
-  btnNavPresenca: document.getElementById('btnNavPresenca'),
-  btnNavPortalDocente: document.getElementById('btnNavPortalDocente'),
-  btnIrParaPortalDocente: document.getElementById('btnIrParaPortalDocente'),
-
-  // Portal do Docente (Minhas Presenças & Atestado)
-  portalDocenteCard: document.getElementById('portalDocenteCard'),
+  // Portal do Docente (Minhas Presenças & Atestado - Painel Admin)
+  listaSugestoesAtestado: document.getElementById('listaSugestoesAtestado'),
+  tabAtestados: document.getElementById('tabAtestados'),
   portalEmailInput: document.getElementById('portalEmailInput'),
   btnBuscarPresencasDocente: document.getElementById('btnBuscarPresencasDocente'),
   portalEmptyState: document.getElementById('portalEmptyState'),
@@ -1621,35 +1617,67 @@ let currentPortalDocenteData = null;
 
 function switchMainView(viewName) {
   if (viewName === 'portal') {
-    if (elements.btnNavPresenca) elements.btnNavPresenca.classList.remove('active');
-    if (elements.btnNavPortalDocente) elements.btnNavPortalDocente.classList.add('active');
-    if (elements.formCard) elements.formCard.classList.add('hidden');
-    if (elements.successCard) elements.successCard.classList.add('hidden');
-    if (elements.portalDocenteCard) elements.portalDocenteCard.classList.remove('hidden');
-
-    // Auto-preenche o campo de e-mail se houver perfil conectado ou histórico recente
-    if (elements.portalEmailInput && !elements.portalEmailInput.value) {
-      const savedEmail = (appState.googleUser && appState.googleUser.email) || 
-                         (elements.receiptEmail && elements.receiptEmail.textContent !== '-' ? elements.receiptEmail.textContent : '') ||
-                         (elements.inputEmail ? elements.inputEmail.value : '') || '';
-      if (savedEmail) {
-        elements.portalEmailInput.value = savedEmail.trim().toLowerCase();
-        executarBuscaPortalDocente(savedEmail);
-      }
-    }
-  } else {
-    // viewName === 'presenca'
-    if (elements.btnNavPresenca) elements.btnNavPresenca.classList.add('active');
-    if (elements.btnNavPortalDocente) elements.btnNavPortalDocente.classList.remove('active');
-    if (elements.portalDocenteCard) elements.portalDocenteCard.classList.add('hidden');
-
-    if (elements.successCard && !elements.successCard.classList.contains('hidden')) {
-      // Deixa successCard visível se o professor acabou de enviar
+    // Se invocado, direciona para o painel administrativo se autorizado ou abre modal
+    if (appState.isAdminLoggedIn) {
+      openAdminPanel();
+      switchAdminTab('tabAtestados');
     } else {
-      if (elements.formCard) elements.formCard.classList.remove('hidden');
+      openAdminAuthModal();
     }
+    return;
+  }
+
+  // Visualização padrão do usuário: Formulário de Presença
+  if (elements.successCard && !elements.successCard.classList.contains('hidden')) {
+    // Deixa successCard visível se o professor acabou de enviar
+  } else {
+    if (elements.formCard) elements.formCard.classList.remove('hidden');
   }
 }
+
+// Atualiza datalist de sugestões de professores para o atestado no Admin
+function atualizarSugestoesAtestado() {
+  const datalist = document.getElementById('listaSugestoesAtestado');
+  if (!datalist) return;
+
+  const namesSet = new Set();
+  const options = [];
+
+  // Docentes do histórico de presenças
+  (appState.history || []).forEach(h => {
+    const prof = (h.professor || '').trim();
+    if (prof && !namesSet.has(prof.toUpperCase())) {
+      namesSet.add(prof.toUpperCase());
+      options.push({ nome: prof.toUpperCase(), email: (h.email || '').trim().toLowerCase() });
+    }
+  });
+
+  // Docentes cadastrados no Firestore (base oficial EDM)
+  (appState.cadastrados || []).forEach(c => {
+    const prof = (c.nome || '').trim();
+    if (prof && !namesSet.has(prof.toUpperCase())) {
+      namesSet.add(prof.toUpperCase());
+      options.push({ nome: prof.toUpperCase(), email: (c.email || '').trim().toLowerCase() });
+    }
+  });
+
+  options.sort((a, b) => a.nome.localeCompare(b.nome));
+
+  datalist.innerHTML = options.map(opt => {
+    const label = opt.email ? `${opt.nome} (${opt.email})` : opt.nome;
+    return `<option value="${escapeHtml(opt.nome)}">${escapeHtml(label)}</option>`;
+  }).join('');
+}
+
+// Abre diretamente o atestado de um docente no Painel Admin
+window.abrirAtestadoDocenteAdmin = function(emailOuNome) {
+  if (!emailOuNome) return;
+  switchAdminTab('tabAtestados');
+  if (elements.portalEmailInput) {
+    elements.portalEmailInput.value = emailOuNome;
+  }
+  executarBuscaPortalDocente(emailOuNome);
+};
 
 function hashString(str) {
   let hash = 0;
@@ -2053,6 +2081,8 @@ function switchAdminTab(targetTabId) {
   } else if (targetTabId === 'tabAuditoriaFaltas') {
     updateAuditoriaDateSelect();
     renderAuditoriaUI();
+  } else if (targetTabId === 'tabAtestados') {
+    atualizarSugestoesAtestado();
   }
 }
 
@@ -2066,6 +2096,7 @@ function getInitials(name) {
 
 // Atualiza os Cards de KPIs e as pílulas de contagem por escola
 function updateKPIsAndSchools(records) {
+  records = records || appState.history || [];
   const total = records.length;
   const ALL_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
 
@@ -2202,10 +2233,13 @@ function renderHistoryTable() {
     elements.totalPresencasBadge.textContent = `${filtered.length} registro${filtered.length !== 1 ? 's' : ''}`;
   }
 
-  container.innerHTML = '';
+  const targetContainer = container || elements.historicoContainer || document.getElementById('historicoContainer');
+  if (!targetContainer) return;
+
+  targetContainer.innerHTML = '';
 
   if (filtered.length === 0) {
-    container.innerHTML = `
+    targetContainer.innerHTML = `
       <div style="text-align:center; padding: 3rem 1.5rem; color: #64748b;">
         <i class="fa-solid fa-folder-open" style="font-size: 2.25rem; margin-bottom: 0.75rem; color: #cbd5e1;"></i>
         <p style="font-weight:600; font-size:1rem;">Nenhum registro encontrado para os filtros selecionados.</p>
@@ -2269,6 +2303,9 @@ function renderHistoryTable() {
               }
             </td>
             <td style="text-align:center; white-space:nowrap;">
+              <button type="button" class="btn-table-action" onclick="abrirAtestadoDocenteAdmin('${escapeHtml(h.email || h.professor)}')" title="Ver Presenças & Atestado deste Professor">
+                <i class="fa-solid fa-graduation-cap text-success"></i>
+              </button>
               <button type="button" class="btn-table-action" onclick="abrirModalEdicaoRegistro('${escapeHtml(h.id)}')" title="Editar Registro">
                 <i class="fa-solid fa-pen-to-square text-primary"></i>
               </button>
@@ -3542,6 +3579,7 @@ function renderAuditoriaUI() {
             <th>Unidade Escolar</th>
             <th>Turma / Turno</th>
             <th>Confirmação / E-mail</th>
+            <th style="text-align: center; width: 60px;">Atestado</th>
           </tr>
         </thead>
         <tbody>
@@ -3576,6 +3614,11 @@ function renderAuditoriaUI() {
           <td>
             ${item.timestamp !== '-' ? `<div><i class="fa-regular fa-clock text-muted"></i> <strong>${escapeHtml(item.timestamp)}</strong></div>` : '<span class="text-muted">--:--</span>'}
             ${item.email !== '-' ? `<div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(item.email)}</div>` : ''}
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="btn-table-action" onclick="abrirAtestadoDocenteAdmin('${escapeHtml((item.email && item.email !== '-') ? item.email : item.nome)}')" title="Ver Histórico & Atestado deste Docente">
+              <i class="fa-solid fa-graduation-cap text-primary"></i>
+            </button>
           </td>
         </tr>
       `;
@@ -3834,25 +3877,7 @@ function setupEventListeners() {
   elements.form.addEventListener('submit', handleSubmit);
   elements.btnNovoRegistro.addEventListener('click', resetForNewEntry);
 
-  // Navegação Principal: Registrar Presença vs Portal do Docente
-  if (elements.btnNavPresenca) {
-    elements.btnNavPresenca.addEventListener('click', () => switchMainView('presenca'));
-  }
-  if (elements.btnNavPortalDocente) {
-    elements.btnNavPortalDocente.addEventListener('click', () => switchMainView('portal'));
-  }
-  if (elements.btnIrParaPortalDocente) {
-    elements.btnIrParaPortalDocente.addEventListener('click', () => {
-      switchMainView('portal');
-      const email = elements.receiptEmail ? elements.receiptEmail.textContent.trim() : '';
-      if (email && email !== '-') {
-        if (elements.portalEmailInput) elements.portalEmailInput.value = email;
-        executarBuscaPortalDocente(email);
-      }
-    });
-  }
-
-  // Ações do Portal do Docente
+  // Ações de Consulta e Atestado no Painel Admin
   if (elements.portalEmailInput) {
     elements.portalEmailInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {

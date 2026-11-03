@@ -28,10 +28,11 @@ A lista suspensa contém as 7 escolas cadastradas:
 ## ✨ Recursos
 - **Envio Instantâneo:** Grava diretamente no Google Forms Oficial e na Planilha vinculada.
 - **Validação com Chave Única por Encontro:** Bloqueia registros duplicados apenas se forem realizados no mesmo dia (mesmo encontro). Permite que o mesmo docente registre presença normalmente em datas formativas distintas.
-- **🎓 Portal do Docente (Minhas Presenças & Atestado de Horas):**
-  - Consulta nominal ou por e-mail com histórico completo de presenças e ausências em cada encontro formativo.
+- **🎓 Gestão de Presenças Individuais & Atestados (Exclusivo no Painel Admin):**
+  - Consulta nominal ou por e-mail com histórico completo de presenças e ausências de qualquer docente em cada encontro formativo.
   - Indicadores individuais de frequência (taxa % de assiduidade e total de horas formativas acumuladas).
-  - Emissão de **Declaração Oficial de Frequência e Carga Horária em PDF** timbrada com autenticidade eletrônica e campos para assinatura funcional.
+  - Emissão e impressão da **Declaração Oficial de Frequência e Carga Horária em PDF** timbrada com autenticidade eletrônica e campos para assinatura funcional.
+  - Acesso direto via botões dedicados na tabela de histórico e no cruzamento de auditoria de faltas.
 - **📧 Disparo Automático de Comprovante por E-mail:**
   - Envio instantâneo de comprovante timbrado em HTML com dados do registro diretamente para o e-mail do professor via Google Apps Script.
 - **Sincronização em Tempo Real (Google Planilhas):** Carrega automaticamente todas as presenças registradas em qualquer dispositivo.
