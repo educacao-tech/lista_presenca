@@ -57,6 +57,13 @@ const elements = {
   profValidationBadge: document.getElementById('profValidationBadge'),
   profValidationText: document.getElementById('profValidationText'),
   emailValidationBadge: document.getElementById('emailValidationBadge'),
+  emailValidationText: document.getElementById('emailValidationText'),
+  emailEdmLinkBadge: document.getElementById('emailEdmLinkBadge'),
+  emailEdmDocenteNome: document.getElementById('emailEdmDocenteNome'),
+  emailEdmPortalLink: document.getElementById('emailEdmPortalLink'),
+  listaSugestoesEmails: document.getElementById('listaSugestoesEmails'),
+  btnTicketEDMProfessor: document.getElementById('btnTicketEDMProfessor'),
+  btnPortalEDMProfessor: document.getElementById('btnPortalEDMProfessor'),
   schoolBarsChartContainer: document.getElementById('schoolBarsChartContainer'),
   ticketAuthCode: document.getElementById('ticketAuthCode'),
   nameAvatarBadge: document.getElementById('nameAvatarBadge'),
@@ -283,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateRelatorioDateSelect();
   updateAuditoriaDateSelect();
   loadCachedCadastrados();
+  linkTeacherEmailsToEDM();
   startClock();
   checkStoredAdminSession();
   setupEventListeners();
@@ -1203,6 +1211,7 @@ async function handleSubmit(e) {
 
     // Submissão complementar via iframe (garante compatibilidade total com Google Forms)
     submitViaHiddenIframe(escola, professor, email);
+    saveTeacherEmailLink(professor, email, escola);
     saveToHistory(record);
     showReceipt(record);
     showToast("Presença confirmada e gravada! Comprovante enviado por e-mail.", "success");
@@ -1214,6 +1223,7 @@ async function handleSubmit(e) {
 
   } catch (error) {
     console.error("Envio:", error);
+    saveTeacherEmailLink(professor, email, escola);
     submitViaHiddenIframe(escola, professor, email);
     saveToHistory(record);
     showReceipt(record);
@@ -1555,7 +1565,9 @@ function setGoogleAuthenticatedUser(profile, showFeedback = true) {
   if (elements.googleBtnWrapper) elements.googleBtnWrapper.classList.add('hidden');
   if (elements.googleConnectedCard) elements.googleConnectedCard.classList.remove('hidden');
 
+  saveTeacherEmailLink(nome, email);
   updateLiveNameAvatar(nome);
+  tryAutoDetectTeacherFromEmail(email, false);
   tryAutoDetectSchoolFromName(nome, false);
   updateFormProgressAndValidation();
 
@@ -1624,6 +1636,12 @@ function showReceipt(record) {
     const yr = new Date().getFullYear();
     const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
     authCodeEl.textContent = `EDM-${yr}-${hash}`;
+  }
+
+  // Atualiza link direto para o Portal Oficial EDM Professor no Ticket de Presença
+  if (elements.btnTicketEDMProfessor) {
+    const searchTarget = record.professor || record.email || '';
+    elements.btnTicketEDMProfessor.href = `https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(searchTarget)}`;
   }
 
   elements.formCard.classList.add('hidden');
@@ -1738,8 +1756,156 @@ function syncSchoolChipsFromSelect() {
   }
 }
 
+// ==========================================================================
+// Vínculo Inteligente de E-mails com a Base Oficial EDM (https://educacao-tech.github.io/edmprofessor/)
+// ==========================================================================
+
+function getTeacherEmailLinks() {
+  let saved = {};
+  try {
+    const raw = localStorage.getItem('edm_teacher_email_links');
+    if (raw) saved = JSON.parse(raw);
+  } catch (e) {
+    saved = {};
+  }
+  return saved;
+}
+
+function saveTeacherEmailLink(nome, email, escola = '') {
+  if (!nome || !email || !email.includes('@')) return;
+  const links = getTeacherEmailLinks();
+  const nKey = normalizeName(nome);
+  const eKey = email.trim().toLowerCase();
+  
+  const payload = { nome: nome.trim(), email: eKey, escola: escola || links[nKey]?.escola || '' };
+  links[nKey] = payload;
+  links[`email_${eKey}`] = payload;
+
+  try {
+    localStorage.setItem('edm_teacher_email_links', JSON.stringify(links));
+  } catch (e) {}
+}
+
+function linkTeacherEmailsToEDM() {
+  const links = getTeacherEmailLinks();
+  // 1. Extrai vínculos a partir do histórico já registrado
+  (appState.history || []).forEach(h => {
+    if (h.professor && h.email && h.email.includes('@')) {
+      const nKey = normalizeName(h.professor);
+      const eKey = h.email.trim().toLowerCase();
+      if (!links[nKey]) {
+        links[nKey] = { nome: h.professor.trim(), email: eKey, escola: h.escola || '' };
+      }
+      if (!links[`email_${eKey}`]) {
+        links[`email_${eKey}`] = { nome: h.professor.trim(), email: eKey, escola: h.escola || '' };
+      }
+    }
+  });
+
+  // 2. Enriquecer appState.cadastrados com os e-mails encontrados
+  (appState.cadastrados || []).forEach(c => {
+    const nKey = normalizeName(c.nome);
+    const link = links[nKey];
+    if (link && link.email) {
+      c.email = link.email;
+    }
+  });
+
+  try {
+    localStorage.setItem('edm_teacher_email_links', JSON.stringify(links));
+  } catch (e) {}
+}
+
 /**
- * Detecta e vincula automaticamente a unidade escolar a partir do nome do professor
+ * Detecta e vincula automaticamente o Professor e a Escola a partir do E-mail digitado
+ * Cruzando com o Portal EDM Professor (https://educacao-tech.github.io/edmprofessor/)
+ */
+function tryAutoDetectTeacherFromEmail(email, forceFeedback = false) {
+  if (!email || !email.includes('@') || email.trim().length < 5) {
+    if (elements.emailEdmLinkBadge) elements.emailEdmLinkBadge.classList.add('hidden');
+    return;
+  }
+  const cleanEmail = email.trim().toLowerCase();
+  const links = getTeacherEmailLinks();
+  const ALL_KNOWN_SCHOOLS = ["ALZIRA ACRA", "ANNA BONAGURA", "BRAGA MORATO", "CAIC", "CÉLIA BUENO", "ESTHER VIANNA", "PADRE BENITO"];
+
+  // 1. Procura no mapa de vínculos salvos
+  let found = links[`email_${cleanEmail}`];
+
+  // 2. Se não achou, procura no histórico de presenças
+  if (!found) {
+    const histMatch = (appState.history || []).find(h => (h.email || '').trim().toLowerCase() === cleanEmail && h.professor);
+    if (histMatch) {
+      found = { nome: histMatch.professor, email: cleanEmail, escola: histMatch.escola };
+      saveTeacherEmailLink(histMatch.professor, cleanEmail, histMatch.escola);
+    }
+  }
+
+  // 3. Procura no appState.cadastrados se algum já tem esse email associado
+  if (!found) {
+    const cadMatch = (appState.cadastrados || []).find(c => (c.email || '').trim().toLowerCase() === cleanEmail);
+    if (cadMatch) {
+      found = { nome: cadMatch.nome, email: cleanEmail, escola: cadMatch.escola };
+      saveTeacherEmailLink(cadMatch.nome, cleanEmail, cadMatch.escola);
+    }
+  }
+
+  // 4. Heurística pelo prefixo do e-mail (ex: maria.silva@... -> Maria Silva)
+  if (!found) {
+    const userPart = cleanEmail.split('@')[0].replace(/[._-]/g, ' ');
+    const userNorm = normalizeName(userPart);
+    if (userNorm.length >= 6) {
+      const cadMatchHeuristic = (appState.cadastrados || []).find(c => {
+        const cNorm = normalizeName(c.nome);
+        return cNorm === userNorm || (cNorm.includes(userNorm) && userNorm.length >= 8);
+      });
+      if (cadMatchHeuristic) {
+        found = { nome: cadMatchHeuristic.nome, email: cleanEmail, escola: cadMatchHeuristic.escola };
+        saveTeacherEmailLink(cadMatchHeuristic.nome, cleanEmail, cadMatchHeuristic.escola);
+      }
+    }
+  }
+
+  if (found && found.nome) {
+    // Exibe badge de vínculo oficial com link para o edmprofessor
+    if (elements.emailEdmLinkBadge) {
+      elements.emailEdmLinkBadge.classList.remove('hidden');
+      if (elements.emailEdmDocenteNome) elements.emailEdmDocenteNome.textContent = found.nome;
+      if (elements.emailEdmPortalLink) {
+        elements.emailEdmPortalLink.href = `https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(found.nome)}`;
+      }
+    }
+
+    // Auto-preenche o nome do professor se ainda não preenchido ou incompleto
+    if (elements.inputProfessor && (!elements.inputProfessor.value || elements.inputProfessor.value.trim().length < 5)) {
+      elements.inputProfessor.value = found.nome.toUpperCase();
+      updateLiveNameAvatar(found.nome);
+      if (elements.nameAvatarBadge) elements.nameAvatarBadge.classList.remove('hidden');
+    }
+
+    // Auto-preenche a escola
+    let targetSchool = '';
+    if (found.escola) {
+      const sNorm = normalizeSchoolName(found.escola);
+      targetSchool = ALL_KNOWN_SCHOOLS.find(s => normalizeSchoolName(s) === sNorm) || found.escola.trim().toUpperCase();
+      if (targetSchool && elements.selectEscola && elements.selectEscola.value !== targetSchool) {
+        elements.selectEscola.value = targetSchool;
+        syncSchoolChipsFromSelect();
+      }
+    }
+
+    updateFormProgressAndValidation();
+
+    if (forceFeedback) {
+      showToast(`E-mail vinculado ao docente ${found.nome} (EDM)!`, "success");
+    }
+  } else {
+    if (elements.emailEdmLinkBadge) elements.emailEdmLinkBadge.classList.add('hidden');
+  }
+}
+
+/**
+ * Detecta e vincula automaticamente a unidade escolar e e-mail a partir do nome do professor
  */
 function tryAutoDetectSchoolFromName(name, forceFeedback = false) {
   if (!name || name.trim().length < 4) return;
@@ -1774,6 +1940,17 @@ function tryAutoDetectSchoolFromName(name, forceFeedback = false) {
     updateFormProgressAndValidation();
     if (forceFeedback || profNorm.length >= 8) {
       showToast(`Escola vinculada: ${targetSchool}`, "success");
+    }
+  }
+
+  // 3. Auto-vincula e-mail se o professor já tiver e-mail associado no EDM
+  const links = getTeacherEmailLinks();
+  const linked = links[profNorm];
+  if (linked && linked.email && elements.inputEmail && !elements.inputEmail.value) {
+    elements.inputEmail.value = linked.email;
+    tryAutoDetectTeacherFromEmail(linked.email, false);
+    if (forceFeedback) {
+      showToast(`E-mail vinculado ao cadastro EDM: ${linked.email}`, "info");
     }
   }
 }
@@ -1819,7 +1996,7 @@ function updateFormProgressAndValidation() {
   if (profBadge && profBadgeText) {
     if (isProfRecognized) {
       profBadge.className = 'live-validation-badge badge-recognized';
-      profBadgeText.innerHTML = '<i class="fa-solid fa-award"></i> Docente Reconhecido(a) na Rede EDM';
+      profBadgeText.innerHTML = `<i class="fa-solid fa-award"></i> Docente Reconhecido(a) na Rede EDM <a href="https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(profVal)}" target="_blank" class="badge-portal-link" title="Abrir cadastro no Portal EDM Professor"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
     } else if (isProfValid) {
       profBadge.className = 'live-validation-badge badge-valid';
       profBadgeText.innerHTML = '<i class="fa-solid fa-circle-check"></i> Nome completo preenchido';
@@ -1831,12 +2008,22 @@ function updateFormProgressAndValidation() {
   // 3. E-mail
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
   const isEmailValid = emailRegex.test(emailVal);
+  const links = getTeacherEmailLinks();
+  const linkedTeacher = isEmailValid ? links[`email_${emailVal.toLowerCase()}`] : null;
 
   // Atualiza Badge do E-mail
   const emailBadge = elements.emailValidationBadge;
   if (emailBadge) {
-    if (isEmailValid) {
+    if (linkedTeacher && linkedTeacher.nome) {
+      emailBadge.className = 'live-validation-badge badge-recognized';
+      if (elements.emailValidationText) {
+        elements.emailValidationText.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> Vinculado ao EDM: <strong>${escapeHtml(linkedTeacher.nome)}</strong> <a href="https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(linkedTeacher.nome)}" target="_blank" class="badge-portal-link" title="Ver no Portal EDM Professor"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
+      }
+    } else if (isEmailValid) {
       emailBadge.className = 'live-validation-badge badge-valid';
+      if (elements.emailValidationText) {
+        elements.emailValidationText.textContent = 'E-mail no formato correto';
+      }
     } else {
       emailBadge.className = 'live-validation-badge hidden';
     }
@@ -2062,6 +2249,12 @@ function renderPortalDocenteUI(data) {
   if (elements.portalEmailDocente) elements.portalEmailDocente.textContent = data.email;
   if (elements.portalEscolaDocente) {
     elements.portalEscolaDocente.innerHTML = `<i class="fa-solid fa-school"></i> ${data.escola}`;
+  }
+
+  // Link direto para o Portal Oficial EDM Professor
+  if (elements.btnPortalEDMProfessor) {
+    const q = data.nome || data.email || '';
+    elements.btnPortalEDMProfessor.href = `https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(q)}`;
   }
 
   if (elements.portalKpiTotalEncontros) elements.portalKpiTotalEncontros.textContent = data.totalEncontros;
@@ -2652,6 +2845,9 @@ function renderHistoryTable() {
                 }
               </td>
               <td style="text-align:center; white-space:nowrap;">
+                <a href="https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(h.professor || '')}" target="_blank" class="btn-table-action" title="Abrir cadastro no Portal EDM Professor">
+                  <i class="fa-solid fa-arrow-up-right-from-square" style="color: #6366f1;"></i>
+                </a>
                 <button type="button" class="btn-table-action" onclick="abrirAtestadoDocenteAdmin('${safeEmailOrProf}')" title="Ver Presenças & Atestado deste Professor">
                   <i class="fa-solid fa-graduation-cap text-success"></i>
                 </button>
@@ -3585,6 +3781,7 @@ async function syncCadastradosEDM(showFeedback = false) {
       elements.edmStatusDesc.textContent = `Sincronizado com o Firestore às ${timeStr}`;
     }
 
+    linkTeacherEmailsToEDM();
     updateTeacherDatalist();
     updateFormProgressAndValidation();
     renderAuditoriaUI();
@@ -3628,22 +3825,51 @@ function normalizeSchoolName(name) {
 // Atualiza o <datalist> de auto-sugestão do formulário
 function updateTeacherDatalist() {
   const datalist = elements.listaSugestoesProfessores;
-  if (!datalist) return;
+  if (datalist) {
+    const selectedSchool = elements.selectEscola ? elements.selectEscola.value : '';
+    const normSelectedSchool = normalizeSchoolName(selectedSchool);
 
-  const selectedSchool = elements.selectEscola ? elements.selectEscola.value : '';
-  const normSelectedSchool = normalizeSchoolName(selectedSchool);
+    let options = appState.cadastrados || [];
+    if (normSelectedSchool) {
+      options = options.filter(c => normalizeSchoolName(c.escola) === normSelectedSchool);
+    }
 
-  let options = appState.cadastrados || [];
-  if (normSelectedSchool) {
-    options = options.filter(c => normalizeSchoolName(c.escola) === normSelectedSchool);
+    options = [...options].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    datalist.innerHTML = options.map(c => {
+      const meta = [c.escola, c.turma, c.turno ? `(${c.turno})` : ''].filter(Boolean).join(' • ');
+      return `<option value="${escapeHtml(c.nome)}">${meta ? escapeHtml(meta) : ''}</option>`;
+    }).join('');
   }
 
-  options = [...options].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  // Atualiza também sugestões de emails vinculados ao EDM
+  if (elements.listaSugestoesEmails) {
+    const links = getTeacherEmailLinks();
+    const emailList = [];
+    const seen = new Set();
+    Object.keys(links).forEach(k => {
+      if (k.startsWith('email_')) {
+        const item = links[k];
+        if (item && item.email && !seen.has(item.email)) {
+          seen.add(item.email);
+          emailList.push(item);
+        }
+      }
+    });
 
-  datalist.innerHTML = options.map(c => {
-    const meta = [c.escola, c.turma, c.turno ? `(${c.turno})` : ''].filter(Boolean).join(' • ');
-    return `<option value="${escapeHtml(c.nome)}">${meta ? escapeHtml(meta) : ''}</option>`;
-  }).join('');
+    (appState.history || []).forEach(h => {
+      if (h.email && h.email.includes('@') && !seen.has(h.email.toLowerCase())) {
+        seen.add(h.email.toLowerCase());
+        emailList.push({ email: h.email.toLowerCase(), nome: h.professor || '', escola: h.escola || '' });
+      }
+    });
+
+    emailList.sort((a, b) => (a.email || '').localeCompare(b.email || ''));
+    elements.listaSugestoesEmails.innerHTML = emailList.map(item => {
+      const label = item.nome ? `${item.nome}${item.escola ? ' - ' + item.escola : ''}` : '';
+      return `<option value="${escapeHtml(item.email)}">${label ? escapeHtml(label) : ''}</option>`;
+    }).join('');
+  }
 }
 
 // Executa o cruzamento completo dos dados (Presentes vs Faltantes vs Extras)
@@ -4009,7 +4235,10 @@ function renderAuditoriaUI() {
             ${item.timestamp !== '-' ? `<div><i class="fa-regular fa-clock text-muted"></i> <strong>${escapeHtml(item.timestamp)}</strong></div>` : '<span class="text-muted">--:--</span>'}
             ${item.email !== '-' ? `<div style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(item.email)}</div>` : ''}
           </td>
-          <td style="text-align: center;">
+          <td style="text-align: center; white-space: nowrap;">
+            <a href="https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(item.nome || '')}" target="_blank" class="btn-table-action" title="Abrir cadastro no Portal EDM Professor">
+              <i class="fa-solid fa-arrow-up-right-from-square" style="color: #6366f1;"></i>
+            </a>
             <button type="button" class="btn-table-action" onclick="abrirAtestadoDocenteAdmin('${escapeHtml((item.email && item.email !== '-') ? item.email : item.nome)}')" title="Ver Histórico & Atestado deste Docente">
               <i class="fa-solid fa-graduation-cap text-primary"></i>
             </button>
@@ -4271,10 +4500,17 @@ function setupEventListeners() {
     });
   }
 
-  // Conversão automática para minúsculas ao digitar o e-mail e validação dinâmica
+  // Conversão automática para minúsculas ao digitar o e-mail, auto-detecção EDM e validação dinâmica
   if (elements.inputEmail) {
     elements.inputEmail.addEventListener('input', (e) => {
       e.target.value = e.target.value.toLowerCase().trim();
+      tryAutoDetectTeacherFromEmail(e.target.value, false);
+      updateFormProgressAndValidation();
+    });
+
+    elements.inputEmail.addEventListener('change', (e) => {
+      e.target.value = e.target.value.toLowerCase().trim();
+      tryAutoDetectTeacherFromEmail(e.target.value, true);
       updateFormProgressAndValidation();
     });
   }
