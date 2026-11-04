@@ -21,7 +21,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <link rel="icon" type="image/png" href="logo_educacao_batatais.png">
-  <link rel="stylesheet" href="styles.css?v=6.0">
+  <link rel="stylesheet" href="styles.css?v=6.5">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
@@ -413,7 +413,19 @@
           <i class="fa-solid fa-sliders text-primary"></i>
           <h3>Painel Administrativo & Gestão de Presenças</h3>
         </div>
-        <div class="modal-header-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+        <div class="modal-header-actions" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          
+          <!-- Check / Switch de Abertura e Fechamento da Chamada -->
+          <div class="chamada-toggle-wrapper" id="chamadaToggleWrapper" title="Abrir ou fechar o recebimento de presenças para todos os professores da rede">
+            <label class="chamada-switch" for="chkStatusChamada" onclick="event.stopPropagation()">
+              <input type="checkbox" id="chkStatusChamada" checked>
+              <span class="chamada-slider"></span>
+            </label>
+            <span class="chamada-status-label status-open" id="lblStatusChamada">
+              <i class="fa-solid fa-circle-dot"></i> Chamada Aberta
+            </span>
+          </div>
+
           <button type="button" class="btn btn-sm btn-dark" id="btnOpenLiveProjector" onclick="openLiveProjector()" title="Abrir Modo Projetor / Telão para apresentação em tempo real">
             <i class="fa-solid fa-tv"></i> <span>Modo Telão / TV</span>
           </button>
@@ -1611,6 +1623,6 @@
   </div>
 
   <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-  <script src="script.js?v=6.0"></script>
+  <script src="script.js?v=6.5"></script>
 </body>
 </html>

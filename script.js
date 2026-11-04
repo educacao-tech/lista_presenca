@@ -60,6 +60,9 @@ const elements = {
   emailValidationBadge: document.getElementById('emailValidationBadge'),
   emailValidationText: document.getElementById('emailValidationText'),
   listaSugestoesEmails: document.getElementById('listaSugestoesEmails'),
+  chkStatusChamada: document.getElementById('chkStatusChamada'),
+  lblStatusChamada: document.getElementById('lblStatusChamada'),
+  chamadaToggleWrapper: document.getElementById('chamadaToggleWrapper'),
   btnTicketEDMProfessor: document.getElementById('btnTicketEDMProfessor'),
   btnPortalEDMProfessor: document.getElementById('btnPortalEDMProfessor'),
   schoolBarsChartContainer: document.getElementById('schoolBarsChartContainer'),
@@ -284,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initAccentColor();
   loadConfig();
+  syncChamadaStatusFromFirestore();
   loadHistory();
   updateRelatorioDateSelect();
   updateAuditoriaDateSelect();
@@ -421,9 +425,100 @@ function updateFormStatusUI() {
     if (form) form.classList.add('hidden');
   }
 
+  // Atualiza seletor da aba Config
   if (elements.cfgFormStatusSelect) {
     elements.cfgFormStatusSelect.value = isOpen ? 'open' : 'closed';
   }
+
+  // Atualiza Toggle Switch no Cabeçalho do Painel Admin
+  if (elements.chkStatusChamada) {
+    elements.chkStatusChamada.checked = isOpen;
+  }
+  if (elements.lblStatusChamada) {
+    elements.lblStatusChamada.className = `chamada-status-label ${isOpen ? 'status-open' : 'status-closed'}`;
+    elements.lblStatusChamada.innerHTML = isOpen 
+      ? '<i class="fa-solid fa-circle-dot"></i> Chamada Aberta' 
+      : '<i class="fa-solid fa-lock"></i> Chamada Fechada';
+  }
+}
+
+// ==========================================================================
+// Controle Dinâmico de Abertura / Encerramento da Chamada (Nuvem Firestore)
+// ==========================================================================
+
+async function setChamadaStatus(isOpen, notify = true) {
+  appState.config.isFormOpen = !!isOpen;
+  
+  // Atualiza interface imediatamente
+  updateFormStatusUI();
+
+  // Salva no armazenamento local da configuração
+  try {
+    localStorage.setItem('presenca_gforms_cfg', JSON.stringify(appState.config));
+  } catch (e) {}
+
+  // Sincroniza em tempo real com o Firestore para todos os professores da rede
+  try {
+    const todayBR = normalizeDateBR(new Date().toLocaleDateString('pt-BR'));
+    fetch('https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/configuracoes/chamada', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fields: {
+          aberta: { booleanValue: isOpen },
+          data_encontro: { stringValue: todayBR },
+          atualizado_em: { timestampValue: new Date().toISOString() }
+        }
+      })
+    }).then(res => {
+      if (res.ok) console.log(`Status da chamada no Firestore alterado para: ${isOpen ? 'ABERTA' : 'ENCERRADA'}`);
+    }).catch(err => console.warn("Aviso ao salvar status da chamada no Firestore:", err));
+  } catch (err) {}
+
+  if (notify) {
+    if (isOpen) {
+      showToast("🟢 Chamada ABERTA! Professores já podem registrar presença normalmente.", "success");
+    } else {
+      showToast("🔴 Chamada ENCERRADA! O recebimento de presenças foi bloqueado para todos.", "warning");
+    }
+  }
+}
+
+async function syncChamadaStatusFromFirestore() {
+  try {
+    const res = await fetch('https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/configuracoes/chamada', {
+      cache: 'no-store'
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.fields && typeof data.fields.aberta?.booleanValue === 'boolean') {
+      const remoteOpen = data.fields.aberta.booleanValue;
+      if (appState.config.isFormOpen !== remoteOpen) {
+        appState.config.isFormOpen = remoteOpen;
+        updateFormStatusUI();
+      }
+    }
+  } catch (err) {
+    console.warn("Aviso ao verificar status da chamada no Firestore:", err);
+  }
+}
+
+async function checkChamadaIsOpenInFirestore() {
+  try {
+    const res = await fetch('https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/configuracoes/chamada', {
+      cache: 'no-store'
+    });
+    if (!res.ok) return appState.config.isFormOpen !== false;
+    const data = await res.json();
+    if (data && data.fields && typeof data.fields.aberta?.booleanValue === 'boolean') {
+      const remoteOpen = data.fields.aberta.booleanValue;
+      appState.config.isFormOpen = remoteOpen;
+      return remoteOpen;
+    }
+  } catch (err) {
+    console.warn("Aviso na checagem final da chamada:", err);
+  }
+  return appState.config.isFormOpen !== false;
 }
 
 function saveConfig() {
@@ -457,6 +552,7 @@ function restoreDefaultConfig() {
     appState.config = { ...DEFAULT_CONFIG };
     localStorage.removeItem('presenca_gforms_cfg');
     loadConfig();
+  syncChamadaStatusFromFirestore();
     showToast("Configurações padrão restauradas!", "info");
     syncRealTime(false);
   }
@@ -1113,7 +1209,15 @@ async function handleSubmit(e) {
   e.preventDefault();
 
   if (appState.config.isFormOpen === false) {
-    showToast("A lista de presença está encerrada e não aceita novos envios.", "warning");
+    showToast("A lista de presença está encerrada e não aceita novos envios.", "error");
+    updateFormStatusUI();
+    return;
+  }
+
+  // Checagem em tempo real no Firestore para garantir que a coordenação não fechou a chamada
+  const isStillOpen = await checkChamadaIsOpenInFirestore();
+  if (!isStillOpen) {
+    showToast("Atenção: A chamada foi encerrada pela coordenação!", "error");
     updateFormStatusUI();
     return;
   }
@@ -2631,6 +2735,7 @@ window.handleAdminLogout = handleAdminLogout;
 // ==========================================================================
 function openAdminPanel() {
   loadConfig();
+  syncChamadaStatusFromFirestore();
 
   // 1. Abre o modal PRIMEIRO para garantir visibilidade imediata
   openModal(elements.modalAdminPanel || 'modalAdminPanel');
@@ -4692,6 +4797,28 @@ function setupEventListeners() {
   // Desconectar / Trocar conta Google
   if (elements.btnGoogleDisconnect) {
     elements.btnGoogleDisconnect.addEventListener('click', disconnectGoogleUser);
+  }
+
+  // Controle de Abertura / Fechamento da Chamada via Toggle Checkbox no Painel Admin
+  if (elements.chkStatusChamada) {
+    elements.chkStatusChamada.addEventListener('change', (e) => {
+      setChamadaStatus(e.target.checked, true);
+    });
+  }
+  if (elements.chamadaToggleWrapper) {
+    elements.chamadaToggleWrapper.addEventListener('click', (e) => {
+      if (e.target !== elements.chkStatusChamada) {
+        if (elements.chkStatusChamada) {
+          elements.chkStatusChamada.checked = !elements.chkStatusChamada.checked;
+          setChamadaStatus(elements.chkStatusChamada.checked, true);
+        }
+      }
+    });
+  }
+  if (elements.cfgFormStatusSelect) {
+    elements.cfgFormStatusSelect.addEventListener('change', (e) => {
+      setChamadaStatus(e.target.value === 'open', true);
+    });
   }
 
   // Envio do formulário principal
