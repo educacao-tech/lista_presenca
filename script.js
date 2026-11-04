@@ -60,6 +60,9 @@ const elements = {
   emailValidationBadge: document.getElementById('emailValidationBadge'),
   emailValidationText: document.getElementById('emailValidationText'),
   listaSugestoesEmails: document.getElementById('listaSugestoesEmails'),
+  chamadaPulseContainer: document.getElementById('chamadaPulseContainer'),
+  chamadaPulseBanner: document.getElementById('chamadaPulseBanner'),
+  chamadaPulseText: document.getElementById('chamadaPulseText'),
   chkStatusChamada: document.getElementById('chkStatusChamada'),
   lblStatusChamada: document.getElementById('lblStatusChamada'),
   chamadaToggleWrapper: document.getElementById('chamadaToggleWrapper'),
@@ -439,6 +442,22 @@ function updateFormStatusUI() {
     elements.lblStatusChamada.innerHTML = isOpen 
       ? '<i class="fa-solid fa-circle-dot"></i> Chamada Aberta' 
       : '<i class="fa-solid fa-lock"></i> Chamada Fechada';
+  }
+
+  // Atualiza Badge Pulsante de "Chamada Aberta" para o Professor
+  if (elements.chamadaPulseContainer) {
+    if (isOpen) {
+      elements.chamadaPulseContainer.classList.remove('hidden');
+      if (elements.chamadaPulseText) {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('pt-BR');
+        const weekday = now.toLocaleDateString('pt-BR', { weekday: 'long' });
+        const weekdayCap = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+        elements.chamadaPulseText.innerHTML = `Chamada Oficial Aberta • <strong>${dateStr}</strong> <span class="chamada-pulse-weekday">(${weekdayCap})</span>`;
+      }
+    } else {
+      elements.chamadaPulseContainer.classList.add('hidden');
+    }
   }
 }
 
