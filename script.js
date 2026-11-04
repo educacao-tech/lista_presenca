@@ -13,6 +13,7 @@ const DEFAULT_CONFIG = {
   sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQng9IxPZEAbQsrdWBqfNi5FMTdXOKAzySIgw8zMtHk0LeiD2A9BRc71m7GSnWyCD7IHGMDVCNR9mqY/pub?output=csv",
   appsScriptUrl: "https://script.google.com/macros/s/AKfycby9lsXXrEUX_49aTYfcjQhgHD1xmB7DFODzXgk0691auDIBOTDEzScBPnu9PUUcgni9/exec",
   firestoreUrl: "https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/professores?pageSize=300",
+  firestorePresencasUrl: "https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/presencas",
   googleClientId: "",
   isFormOpen: true,
   collectEmailInForms: false
@@ -932,55 +933,73 @@ async function syncRealTime(showFeedback = false) {
     elements.syncStatusTitle.textContent = "Sincronizando em Tempo Real...";
   }
 
-  // Se não houver link da planilha configurado
-  if (!sheetUrl) {
-    if (elements.syncStatusBar) {
-      elements.syncStatusBar.className = "sync-status-bar warning";
-    }
-    if (elements.syncStatusIcon) {
-      elements.syncStatusIcon.innerHTML = `<i class="fa-solid fa-cloud-slash"></i>`;
-    }
-    if (elements.syncStatusTitle) {
-      elements.syncStatusTitle.textContent = "Modo Local Ativo";
-    }
-    if (elements.syncStatusDesc) {
-      elements.syncStatusDesc.textContent = "Para sincronizar entre todos os aparelhos, conecte sua Planilha Google na aba Configurações.";
-    }
-    if (elements.syncPromptBanner) {
-      elements.syncPromptBanner.classList.remove('hidden');
-    }
-    if (elements.btnOpenSheetLink) {
-      elements.btnOpenSheetLink.classList.add('hidden');
-    }
-    if (elements.syncModeBadge) {
-      elements.syncModeBadge.innerHTML = `<i class="fa-solid fa-hard-drive"></i> Local`;
-      elements.syncModeBadge.className = "badge badge-warning";
-    }
-    renderHistoryTable();
-    return;
-  }
-
-  // Configura botão para abrir planilha
-  if (elements.btnOpenSheetLink) {
-    elements.btnOpenSheetLink.href = sheetUrl;
-    elements.btnOpenSheetLink.classList.remove('hidden');
-  }
-  if (elements.syncPromptBanner) {
-    elements.syncPromptBanner.classList.add('hidden');
-  }
-
-  const csvUrl = getNormalizedSheetCsvUrl(sheetUrl);
   appState.isSyncing = true;
 
   try {
-    const response = await fetch(csvUrl, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`Status ${response.status}`);
+    // 1. Busca presenças registradas no Firestore EDM
+    const firestorePresencasPromise = fetchPresencasFromFirestore();
+
+    // 2. Busca presenças da Planilha Google (se link estiver configurado)
+    let sheetRecords = [];
+    if (sheetUrl) {
+      const csvUrl = getNormalizedSheetCsvUrl(sheetUrl);
+      try {
+        const response = await fetch(csvUrl, { cache: 'no-store' });
+        if (response.ok) {
+          const csvText = await response.text();
+          const rows = parseCSV(csvText);
+          sheetRecords = extractRecordsFromRows(rows);
+        }
+      } catch (sheetErr) {
+        console.warn("Aviso ao buscar dados da planilha:", sheetErr);
+      }
     }
 
-    const csvText = await response.text();
-    const rows = parseCSV(csvText);
-    const remoteRecords = extractRecordsFromRows(rows);
+    const firestorePresencas = await firestorePresencasPromise;
+
+    // Se não há nem planilha nem registros remotos no Firestore
+    if (!sheetUrl && firestorePresencas.length === 0) {
+      if (elements.syncStatusBar) {
+        elements.syncStatusBar.className = "sync-status-bar warning";
+      }
+      if (elements.syncStatusIcon) {
+        elements.syncStatusIcon.innerHTML = `<i class="fa-solid fa-cloud-slash"></i>`;
+      }
+      if (elements.syncStatusTitle) {
+        elements.syncStatusTitle.textContent = "Modo Local Ativo";
+      }
+      if (elements.syncStatusDesc) {
+        elements.syncStatusDesc.textContent = "Para sincronizar entre todos os aparelhos, conecte sua Planilha Google ou base Firestore.";
+      }
+      if (elements.syncPromptBanner) {
+        elements.syncPromptBanner.classList.remove('hidden');
+      }
+      if (elements.btnOpenSheetLink) {
+        elements.btnOpenSheetLink.classList.add('hidden');
+      }
+      if (elements.syncModeBadge) {
+        elements.syncModeBadge.innerHTML = `<i class="fa-solid fa-hard-drive"></i> Local`;
+        elements.syncModeBadge.className = "badge badge-warning";
+      }
+      renderHistoryTable();
+      return;
+    }
+
+    // Configura botão para abrir planilha se disponível
+    if (elements.btnOpenSheetLink) {
+      if (sheetUrl) {
+        elements.btnOpenSheetLink.href = sheetUrl;
+        elements.btnOpenSheetLink.classList.remove('hidden');
+      } else {
+        elements.btnOpenSheetLink.classList.add('hidden');
+      }
+    }
+    if (elements.syncPromptBanner) {
+      elements.syncPromptBanner.classList.add('hidden');
+    }
+
+    // Junta as duas fontes remotas (Firestore EDM + Planilha Google)
+    const remoteRecords = [...firestorePresencas, ...sheetRecords];
 
     // Carrega registros locais
     loadHistory();
@@ -1045,10 +1064,14 @@ async function syncRealTime(showFeedback = false) {
       elements.syncStatusIcon.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
     }
     if (elements.syncStatusTitle) {
-      elements.syncStatusTitle.textContent = `Sincronizado com Google Planilhas (${remoteRecords.length} da nuvem)`;
+      const sources = [];
+      if (firestorePresencas.length > 0) sources.push(`EDM Firestore (${firestorePresencas.length})`);
+      if (sheetRecords.length > 0) sources.push(`Google Planilhas (${sheetRecords.length})`);
+      const srcText = sources.length > 0 ? sources.join(' + ') : 'Nuvem';
+      elements.syncStatusTitle.textContent = `Sincronizado em Tempo Real: ${srcText}`;
     }
     if (elements.syncStatusDesc) {
-      elements.syncStatusDesc.textContent = `Última atualização em tempo real às ${timeStr}`;
+      elements.syncStatusDesc.textContent = `Última sincronização às ${timeStr}`;
     }
     if (elements.syncModeBadge) {
       elements.syncModeBadge.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> Em Tempo Real`;
@@ -1059,6 +1082,7 @@ async function syncRealTime(showFeedback = false) {
     updateRelatorioDateSelect();
     updateAuditoriaDateSelect();
     renderAuditoriaUI();
+
     const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
     if (activeTab === 'tabRelatorios') {
       const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
@@ -1067,43 +1091,16 @@ async function syncRealTime(showFeedback = false) {
     }
 
     if (showFeedback) {
-      showToast(`Sincronizado! ${merged.length} presenças atualizadas.`, "success");
+      showToast(`Sincronização em tempo real concluída! ${remoteRecords.length} presenças atualizadas.`, "success");
     }
 
   } catch (err) {
-    console.warn("Sincronização em tempo real:", err);
-
-    if (elements.syncStatusBar) {
-      elements.syncStatusBar.className = "sync-status-bar warning";
-    }
-    if (elements.syncStatusIcon) {
-      elements.syncStatusIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
-    }
-    if (elements.syncStatusTitle) {
-      elements.syncStatusTitle.textContent = "Atenção na Conexão da Planilha";
-    }
-    if (elements.syncStatusDesc) {
-      elements.syncStatusDesc.textContent = "Não foi possível carregar a planilha automaticamente. Verifique se ela está 'Publicada na Web' como CSV.";
-    }
-    if (elements.syncModeBadge) {
-      elements.syncModeBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Erro Sync`;
-      elements.syncModeBadge.className = "badge badge-warning";
-    }
-
-    renderHistoryTable();
-    updateRelatorioDateSelect();
-    updateAuditoriaDateSelect();
-    renderAuditoriaUI();
-    const activeTab = document.querySelector('.admin-tab-btn.active')?.getAttribute('data-tab');
-    if (activeTab === 'tabRelatorios') {
-      const selectedSchool = elements.relatorioEscolaSelect ? elements.relatorioEscolaSelect.value : '';
-      const selectedDate = elements.relatorioDataSelect ? elements.relatorioDataSelect.value : '';
-      renderManagementReport(selectedSchool, selectedDate);
-    }
-
-    if (showFeedback) {
-      showToast("Verifique se a planilha foi publicada como CSV na Web (Arquivo > Compartilhar > Publicar na Web).", "warning");
-    }
+    console.warn("Erro ao sincronizar em tempo real:", err);
+    if (elements.syncStatusBar) elements.syncStatusBar.className = "sync-status-bar error";
+    if (elements.syncStatusIcon) elements.syncStatusIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+    if (elements.syncStatusTitle) elements.syncStatusTitle.textContent = "Falha na Sincronização";
+    if (elements.syncStatusDesc) elements.syncStatusDesc.textContent = `Erro ao ler dados: ${err.message}`;
+    if (showFeedback) showToast(`Erro ao sincronizar: ${err.message}`, "error");
   } finally {
     appState.isSyncing = false;
   }
@@ -1161,6 +1158,10 @@ async function handleSubmit(e) {
     return;
   }
 
+  const yr = now.getFullYear();
+  const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
+  const authCode = `EDM-${yr}-${hash}`;
+
   const record = {
     id: `loc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     email: email,
@@ -1168,13 +1169,25 @@ async function handleSubmit(e) {
     professor: professor,
     timestamp: timestamp,
     date: todayBR,
+    authCode: authCode,
+    isGoogleAuth: !!(appState.googleUser && (appState.googleUser.email || '').toLowerCase() === email),
     isRemote: false
   };
 
   setLoading(true);
 
   try {
-    // 1. Gravação DIRETA e instantânea na Planilha Google via Apps Script Web App
+    // 1. Gravação DIRETA na Base Oficial Firestore EDM (Coleção 'presencas' e atualização do docente)
+    const firestoreSavePromise = (async () => {
+      try {
+        await savePresencaToFirestore(record);
+        await updateDocenteInFirestore(professor, email, todayBR);
+      } catch (fsErr) {
+        console.warn("Aviso envio Firestore:", fsErr);
+      }
+    })();
+
+    // 2. Gravação DIRETA e instantânea na Planilha Google via Apps Script Web App
     const appsScriptUrl = appState.config.appsScriptUrl || DEFAULT_CONFIG.appsScriptUrl;
     if (appsScriptUrl) {
       try {
@@ -1635,12 +1648,15 @@ function showReceipt(record) {
   if (elements.receiptProfessor) elements.receiptProfessor.textContent = record.professor || '-';
   if (elements.receiptTimestamp) elements.receiptTimestamp.textContent = record.timestamp || '-';
 
-  // Gera código único criptográfico/identificador para o ticket oficial
+  // Exibe código único criptográfico/identificador do ticket oficial
   const authCodeEl = elements.ticketAuthCode || document.getElementById('ticketAuthCode');
   if (authCodeEl) {
-    const yr = new Date().getFullYear();
-    const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
-    authCodeEl.textContent = `EDM-${yr}-${hash}`;
+    if (!record.authCode) {
+      const yr = new Date().getFullYear();
+      const hash = Math.random().toString(36).substring(2, 7).toUpperCase();
+      record.authCode = `EDM-${yr}-${hash}`;
+    }
+    authCodeEl.textContent = record.authCode;
   }
 
   // Atualiza link direto para o Portal Oficial EDM Professor no Ticket de Presença
@@ -1758,6 +1774,138 @@ function syncSchoolChipsFromSelect() {
   } else {
     if (hintText) hintText.textContent = 'Identificada automaticamente pelo nome ou selecione na lista';
     if (hintIcon) hintIcon.className = 'fa-solid fa-building-columns';
+  }
+}
+
+// ==========================================================================
+// Base Oficial Firestore EDM (edmprofessor-1542b) - Gravação e Sincronização
+// ==========================================================================
+
+/**
+ * Grava o registro oficial de presença diretamente na coleção 'presencas' do Firestore EDM
+ */
+async function savePresencaToFirestore(record) {
+  const url = appState.config.firestorePresencasUrl || DEFAULT_CONFIG.firestorePresencasUrl;
+  if (!url) return;
+
+  const payload = {
+    fields: {
+      professor: { stringValue: (record.professor || '').trim().toUpperCase() },
+      email: { stringValue: (record.email || '').trim().toLowerCase() },
+      escola: { stringValue: (record.escola || '').trim().toUpperCase() },
+      data: { stringValue: (record.date || '').trim() },
+      timestamp: { stringValue: (record.timestamp || '').trim() },
+      authCode: { stringValue: record.authCode || '' },
+      origem: { stringValue: record.isGoogleAuth ? 'google_auth' : 'web' },
+      createdAt: { timestampValue: new Date().toISOString() }
+    }
+  };
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const fsId = data.name ? data.name.split('/').pop() : '';
+      if (fsId) {
+        record.id = `fs_${fsId}`;
+      }
+      console.log("Presença registrada no Firestore EDM com sucesso:", data.name);
+    } else {
+      console.warn("Firestore Presença resposta HTTP:", res.status);
+    }
+  } catch (err) {
+    console.warn("Aviso ao salvar presença no Firestore EDM:", err);
+  }
+}
+
+/**
+ * Atualiza o cadastro do docente na coleção oficial 'professores' do Firestore EDM:
+ * 1. Vincula permanentemente seu e-mail ao documento
+ * 2. Marca a presença na data do encontro (ex: presenca_2026_11_03: true)
+ * 3. Registra carimbo de última alteração
+ */
+async function updateDocenteInFirestore(nome, email, dataEncontro) {
+  if (!nome) return;
+  const normTarget = normalizeName(nome);
+  const matched = (appState.cadastrados || []).find(c => normalizeName(c.nome) === normTarget);
+  if (!matched || !matched.id) return;
+
+  let presencaField = '';
+  if (dataEncontro && dataEncontro.includes('/')) {
+    const parts = dataEncontro.split('/');
+    if (parts.length === 3) {
+      const d = parts[0].padStart(2, '0');
+      const m = parts[1].padStart(2, '0');
+      const y = parts[2];
+      presencaField = `presenca_${y}_${m}_${d}`;
+    }
+  }
+
+  const patchUrl = new URL(`https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/professores/${matched.id}`);
+  const updateFields = {
+    ultima_alteracao: { stringValue: new Date().toISOString() }
+  };
+  patchUrl.searchParams.append('updateMask.fieldPaths', 'ultima_alteracao');
+
+  if (email && email.includes('@')) {
+    updateFields.email = { stringValue: email.trim().toLowerCase() };
+    patchUrl.searchParams.append('updateMask.fieldPaths', 'email');
+  }
+
+  if (presencaField) {
+    updateFields[presencaField] = { booleanValue: true };
+    patchUrl.searchParams.append('updateMask.fieldPaths', presencaField);
+  }
+
+  try {
+    const res = await fetch(patchUrl.toString(), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: updateFields })
+    });
+    if (res.ok) {
+      console.log(`Docente ${nome} atualizado no Firestore EDM com sucesso!`);
+      if (email) matched.email = email.trim().toLowerCase();
+    }
+  } catch (err) {
+    console.warn("Aviso ao atualizar docente no Firestore:", err);
+  }
+}
+
+/**
+ * Carrega a lista de presenças em tempo real registradas na coleção 'presencas' do Firestore EDM
+ */
+async function fetchPresencasFromFirestore() {
+  const base = appState.config.firestorePresencasUrl || DEFAULT_CONFIG.firestorePresencasUrl;
+  if (!base) return [];
+  const url = base + (base.includes('?') ? '&' : '?') + 'pageSize=300';
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const docs = data.documents || [];
+    return docs.map(doc => {
+      const f = doc.fields || {};
+      const id = doc.name ? doc.name.split('/').pop() : '';
+      return {
+        id: `fs_${id}`,
+        professor: (f.professor?.stringValue || '').trim().toUpperCase(),
+        email: (f.email?.stringValue || '').trim().toLowerCase(),
+        escola: (f.escola?.stringValue || '').trim().toUpperCase(),
+        date: (f.data?.stringValue || '').trim(),
+        timestamp: (f.timestamp?.stringValue || '').trim(),
+        authCode: f.authCode?.stringValue || '',
+        isRemote: true,
+        source: 'firestore'
+      };
+    }).filter(r => r.professor.length > 0);
+  } catch (err) {
+    console.warn("Aviso ao carregar presenças do Firestore:", err);
+    return [];
   }
 }
 
@@ -2848,7 +2996,9 @@ function renderHistoryTable() {
               </td>
               <td style="text-align:center;">
                 ${h.isRemote 
-                  ? `<span class="badge badge-success" style="font-size:0.7rem; padding: 2px 6px;" title="Sincronizado da Nuvem Google"><i class="fa-solid fa-cloud"></i> Nuvem</span>`
+                  ? (h.source === 'firestore'
+                      ? `<span class="badge" style="background:#f3e8ff; color:#7e22ce; border:1px solid #d8b4fe; font-size:0.7rem; padding: 2px 6px;" title="Sincronizado da Base Oficial Firestore EDM"><i class="fa-solid fa-database"></i> EDM Nuvem</span>`
+                      : `<span class="badge badge-success" style="font-size:0.7rem; padding: 2px 6px;" title="Sincronizado da Nuvem Google Planilhas"><i class="fa-solid fa-cloud"></i> Nuvem</span>`)
                   : `<span class="badge" style="background:#f1f5f9; color:#475569; font-size:0.7rem; padding: 2px 6px;" title="Salvo neste dispositivo"><i class="fa-solid fa-hard-drive"></i> Local</span>`
                 }
               </td>
@@ -3070,6 +3220,14 @@ function excluirRegistroAdmin(recordId) {
   if (profNorm && dateNorm) saveDeletedSignature(`${profNorm}_${dateNorm}`);
   if (record.timestamp) saveDeletedSignature(`${emailNorm || profNorm}_${record.timestamp}`);
   if (record.id) saveDeletedSignature(String(record.id));
+
+  // Se o registro veio do Firestore, exclui também na nuvem
+  if (record.id && String(record.id).startsWith('fs_')) {
+    const fsDocId = String(record.id).replace('fs_', '');
+    fetch(`https://firestore.googleapis.com/v1/projects/edmprofessor-1542b/databases/(default)/documents/presencas/${fsDocId}`, {
+      method: 'DELETE'
+    }).catch(e => console.warn("Aviso ao excluir documento do Firestore:", e));
+  }
 
   // Remove de appState.history
   appState.history = appState.history.filter(h => String(h.id) !== String(recordId));
@@ -3762,6 +3920,7 @@ async function syncCadastradosEDM(showFeedback = false) {
       return {
         id: id,
         nome: (f.nome?.stringValue || f.nome_processado?.stringValue || '').trim(),
+        email: (f.email?.stringValue || '').trim().toLowerCase(),
         escola: (f.escola?.stringValue || '').trim(),
         disciplina: (f.disciplina?.stringValue || 'EDM').trim(),
         turma: (f.turma?.stringValue || '').trim(),
@@ -3773,6 +3932,13 @@ async function syncCadastradosEDM(showFeedback = false) {
 
     appState.cadastrados = cadastrados;
     localStorage.setItem('presenca_cadastrados_cache', JSON.stringify(cadastrados));
+    
+    // Alimenta dicionário de vínculos com os e-mails oficiais vindos do Firestore
+    cadastrados.forEach(c => {
+      if (c.nome && c.email && c.email.includes('@')) {
+        saveTeacherEmailLink(c.nome, c.email, c.escola);
+      }
+    });
     appState.lastSyncEDMTime = new Date();
     const timeStr = appState.lastSyncEDMTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
