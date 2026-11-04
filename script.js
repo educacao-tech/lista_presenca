@@ -304,6 +304,14 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLiveNameAvatar(appState.googleUser ? appState.googleUser.name : '');
   updateFormProgressAndValidation();
 
+  // Inicializa modo de distribuição de escolas no painel administrativo (padrão: pílulas)
+  try {
+    const savedSchoolView = localStorage.getItem('admin_school_view') || 'pills';
+    setSchoolDistributionView(savedSchoolView);
+  } catch (e) {
+    setSchoolDistributionView('pills');
+  }
+
   // Se já tiver URL da planilha configurada, tenta sincronizar em segundo plano
   if (appState.config.sheetUrl) {
     syncRealTime(false);
@@ -2488,6 +2496,14 @@ function openAdminPanel() {
       if (label) label.textContent = 'Mostrar Métricas';
     }
   } catch (e) {}
+
+  // 2.1. Define visualização da distribuição de escolas (Padrão: pílulas)
+  try {
+    const savedSchoolView = localStorage.getItem('admin_school_view') || 'pills';
+    setSchoolDistributionView(savedSchoolView);
+  } catch (e) {
+    setSchoolDistributionView('pills');
+  }
 
   // 3. Renderiza tabela com proteção contra erros
   try {
@@ -4925,6 +4941,10 @@ function setSchoolDistributionView(view) {
   const btnBars = document.getElementById('btnViewBars');
   const btnPills = document.getElementById('btnViewPills');
 
+  try {
+    localStorage.setItem('admin_school_view', view);
+  } catch (e) {}
+
   if (view === 'bars') {
     if (barsContainer) barsContainer.classList.remove('hidden');
     if (pillsContainer) pillsContainer.classList.add('hidden');
@@ -4994,7 +5014,7 @@ function shareTicketWhatsApp() {
               `📅 *Data / Horário:* ${time}\n` +
               `🔑 *Chave de Autenticação:* ${auth}\n` +
               `━━━━━━━━━━━━━━━━━━━━━━\n` +
-              `✅ Presença registrada e confirmada na lista digital da Secretaria Municipal de Educação.`;
+              `✅ Presença registrada e confirmada na lista digital da Secretaria Municipal de Educação de Batatais.`;
 
   if (navigator.share) {
     navigator.share({

@@ -20,7 +20,8 @@
   <!-- Biblioteca html2pdf.js para Geração Direta de PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css?v=5.5">
+  <link rel="icon" type="image/png" href="logo_educacao_batatais.png">
+  <link rel="stylesheet" href="styles.css?v=5.7">
   
   <!-- Canvas Confetti (Efeito Comemorativo de Confetes Digitais) -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
@@ -38,12 +39,12 @@
   <header class="main-header">
     <div class="header-container">
       <div class="brand">
-        <div class="brand-icon">
-          <i class="fa-solid fa-clipboard-check"></i>
+        <div class="brand-logo-box" title="Secretaria Municipal de Educação de Batatais">
+          <img src="logo_educacao_batatais.png" alt="Secretaria Municipal de Educação de Batatais" class="brand-logo-img">
         </div>
         <div class="brand-text">
           <h1>Lista de Presença</h1>
-          <p><span class="brand-event">Encontro Formativo On-line de EDM</span> <span class="brand-org">• Secretaria Municipal de Educação</span></p>
+          <p><span class="brand-event">Encontro Formativo On-line de EDM</span> <span class="brand-org">• Secretaria Municipal de Educação de Batatais</span></p>
         </div>
       </div>
       
@@ -350,7 +351,7 @@
       <footer class="app-footer">
         <div class="footer-badge">
           <i class="fa-solid fa-shield-halved"></i>
-          <span>Ambiente Oficial Conectado • Secretaria Municipal de Educação</span>
+          <span>Ambiente Oficial Conectado • Secretaria Municipal de Educação de Batatais</span>
         </div>
       </footer>
 
@@ -514,22 +515,22 @@
                 <span>Adesão & Presenças por Unidade Escolar:</span>
               </div>
               <div class="school-view-toggle">
-                <button type="button" class="btn-view-toggle active" id="btnViewBars" onclick="setSchoolDistributionView('bars')" title="Visualização em Barras Proporcionais">
+                <button type="button" class="btn-view-toggle" id="btnViewBars" onclick="setSchoolDistributionView('bars')" title="Visualização em Barras Proporcionais">
                   <i class="fa-solid fa-bars-progress"></i> <span>Barras</span>
                 </button>
-                <button type="button" class="btn-view-toggle" id="btnViewPills" onclick="setSchoolDistributionView('pills')" title="Visualização em Pílulas Compactas">
+                <button type="button" class="btn-view-toggle active" id="btnViewPills" onclick="setSchoolDistributionView('pills')" title="Visualização em Pílulas Compactas">
                   <i class="fa-solid fa-table-cells-large"></i> <span>Pílulas</span>
                 </button>
               </div>
             </div>
 
             <!-- Gráfico Visual de Barras Proporcionais de Cada Escola -->
-            <div id="schoolBarsChartContainer" class="school-bars-chart-container">
+            <div id="schoolBarsChartContainer" class="school-bars-chart-container hidden">
               <!-- Gerado dinamicamente via JS -->
             </div>
 
-            <!-- Pílulas Interativas (Visão Alternativa) -->
-            <div id="schoolBadgesContainer" class="school-badges-container hidden">
+            <!-- Pílulas Interativas (Visão Padrão) -->
+            <div id="schoolBadgesContainer" class="school-badges-container">
               <!-- Gerado dinamicamente via JS -->
             </div>
           </div>
@@ -745,9 +746,11 @@
           <div id="relatorioFaltasDocumento" class="official-report-document hidden-print-only">
             <div class="report-header">
               <div class="report-brand">
-                <div class="report-emblem"><i class="fa-solid fa-triangle-exclamation text-danger"></i></div>
+                <div class="report-emblem has-logo" title="Secretaria Municipal de Educação de Batatais">
+                  <img src="logo_educacao_batatais.png" alt="Logo SME Batatais" class="report-logo-img">
+                </div>
                 <div class="report-titles">
-                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h2>
+                  <h2>SECRETARIA MUNICIPAL DE EDUCAÇÃO DE BATATAIS</h2>
                   <h3>RELATÓRIO OFICIAL DE AUSÊNCIAS E FALTAS DOCENTES</h3>
                   <div class="report-event-info">
                     <p><strong>Disciplina:</strong> EDM — Educação Digital e Midiática</p>
@@ -987,8 +990,8 @@
             <!-- Cabeçalho Institucional Oficial -->
             <div class="report-header">
               <div class="report-brand">
-                <div class="report-emblem">
-                  <i class="fa-solid fa-graduation-cap"></i>
+                <div class="report-emblem has-logo" title="Secretaria Municipal de Educação de Batatais">
+                  <img src="logo_educacao_batatais.png" alt="Logo SME Batatais" class="report-logo-img">
                 </div>
                 <div class="report-titles">
                   <span class="report-gov-sub">PREFEITURA MUNICIPAL DE BATATAIS • SECRETARIA MUNICIPAL DE EDUCAÇÃO</span>
@@ -1461,12 +1464,12 @@
     <div id="atestadoDocumentCard" class="atestado-doc-card">
       <!-- Cabeçalho Timbrado Oficial -->
       <div class="atestado-header">
-        <div class="atestado-seal">
-          <i class="fa-solid fa-landmark"></i>
+        <div class="atestado-seal has-logo" title="Secretaria Municipal de Educação de Batatais">
+          <img src="logo_educacao_batatais.png" alt="Secretaria Municipal de Educação de Batatais" class="atestado-logo-img">
         </div>
         <div class="atestado-header-text">
           <h5>PREFEITURA MUNICIPAL DA ESTÂNCIA CLIMÁTICA DE BATATAIS</h5>
-          <h6>SECRETARIA MUNICIPAL DE EDUCAÇÃO</h6>
+          <h6>SECRETARIA MUNICIPAL DE EDUCAÇÃO DE BATATAIS</h6>
           <p>Programa de Formação Continuada em Educação Digital e Midiática — EDM 2026</p>
         </div>
       </div>
@@ -1508,7 +1511,7 @@
         <!-- Nota Legal -->
         <div class="atestado-legal-note">
           <p>
-            * Documento eletrônico emitido conforme os registros oficiais de frequência computados pela Secretaria Municipal de Educação. Válido para comprovação de participação e evolução funcional docente.
+            * Documento eletrônico emitido conforme os registros oficiais de frequência computados pela Secretaria Municipal de Educação de Batatais. Válido para comprovação de participação e evolução funcional docente.
           </p>
         </div>
       </div>
@@ -1524,7 +1527,7 @@
           <div class="sig-box">
             <div class="sig-line"></div>
             <strong>Coordenação Pedagógica EDM</strong>
-            <span>Secretaria Municipal de Educação</span>
+            <span>Secretaria Municipal de Educação de Batatais</span>
           </div>
           <div class="sig-box">
             <div class="sig-line"></div>
@@ -1541,10 +1544,12 @@
     <div class="projector-container">
       <div class="projector-header">
         <div class="projector-brand">
-          <div class="projector-icon"><i class="fa-solid fa-laptop-code"></i></div>
+          <div class="projector-icon has-logo" title="Secretaria Municipal de Educação de Batatais">
+            <img src="logo_educacao_batatais.png" alt="Secretaria Municipal de Educação de Batatais" class="projector-logo-img">
+          </div>
           <div class="projector-brand-info">
             <h2>EDM • Painel de Presença ao Vivo</h2>
-            <p>Educação Digital e Midiática • Secretaria Municipal de Educação</p>
+            <p>Educação Digital e Midiática • Secretaria Municipal de Educação de Batatais</p>
           </div>
         </div>
         <div class="projector-meta">
