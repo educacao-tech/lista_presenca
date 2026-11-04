@@ -66,7 +66,6 @@ const elements = {
   chkStatusChamada: document.getElementById('chkStatusChamada'),
   lblStatusChamada: document.getElementById('lblStatusChamada'),
   chamadaToggleWrapper: document.getElementById('chamadaToggleWrapper'),
-  btnTicketEDMProfessor: document.getElementById('btnTicketEDMProfessor'),
   btnPortalEDMProfessor: document.getElementById('btnPortalEDMProfessor'),
   schoolBarsChartContainer: document.getElementById('schoolBarsChartContainer'),
   ticketAuthCode: document.getElementById('ticketAuthCode'),
@@ -1780,12 +1779,6 @@ function showReceipt(record) {
       record.authCode = `EDM-${yr}-${hash}`;
     }
     authCodeEl.textContent = record.authCode;
-  }
-
-  // Atualiza link direto para o Portal Oficial EDM Professor no Ticket de Presença
-  if (elements.btnTicketEDMProfessor) {
-    const searchTarget = record.professor || record.email || '';
-    elements.btnTicketEDMProfessor.href = `https://educacao-tech.github.io/edmprofessor/?search=${encodeURIComponent(searchTarget)}`;
   }
 
   elements.formCard.classList.add('hidden');
