@@ -665,6 +665,27 @@ function extractDateFromTimestamp(timestamp, dateField) {
   return '';
 }
 
+function formatReportTimestamp(timestamp, dateField) {
+  const raw = String(timestamp || '').trim();
+  let time = '';
+  const timeMatch = raw.match(/(\d{1,2}:\d{2}(?::\d{2})?)/);
+  if (timeMatch) {
+    time = timeMatch[1];
+    if (time.length >= 4 && time.indexOf(':') === 1) {
+      time = '0' + time;
+    }
+  }
+  let date = extractDateFromTimestamp(raw, dateField);
+  if (!date && dateField) {
+    date = normalizeDateBR(dateField);
+  }
+  return {
+    time: time || '--:--',
+    date: date || (raw ? raw.split(' ')[0] : '--/--/----'),
+    raw: raw
+  };
+}
+
 function formatDateDisplayPT(dateStr) {
   if (!dateStr) return 'Data Não Definida';
   const parts = dateStr.split('/');
@@ -1785,8 +1806,68 @@ function showReceipt(record) {
   elements.successCard.classList.remove('hidden');
   elements.successCard.scrollIntoView({ behavior: 'smooth' });
 
+  // Som acústico suave e elegante de confirmação (chime harmônico)
+  playSuccessChime();
+
   // Celebração festiva com confetes digitais
   fireConfettiCelebration();
+}
+
+/**
+ * Emite um som acústico suave e elegante de confirmação (chime harmônico estilo Apple Pay/macOS)
+ * Utiliza Web Audio API nativa sintetizada em tempo real (sem dependência de arquivos externos)
+ */
+function playSuccessChime() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    const ctx = new AudioContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+
+    const now = ctx.currentTime;
+
+    // Acorde harmônico ascendente suave em Mi Maior (E5, G#5, B5, E6)
+    // Frequências exatas para harmonia limpa e aveludada
+    const notes = [
+      { freq: 659.25, time: now + 0.00, duration: 0.45, gain: 0.10 },
+      { freq: 830.61, time: now + 0.09, duration: 0.50, gain: 0.12 },
+      { freq: 987.77, time: now + 0.18, duration: 0.60, gain: 0.14 },
+      { freq: 1318.51, time: now + 0.27, duration: 0.95, gain: 0.16 }
+    ];
+
+    notes.forEach(note => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      // Forma de onda senoidal pura para timbre suave e agradável
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(note.freq, note.time);
+
+      // Envelope ADSR suave (ataque sutil, decaimento exponencial orgânico)
+      gain.gain.setValueAtTime(0.0001, note.time);
+      gain.gain.exponentialRampToValueAtTime(note.gain, note.time + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, note.time + note.duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(note.time);
+      osc.stop(note.time + note.duration);
+    });
+
+    // Encerra o AudioContext após o término da reprodução para liberar recursos
+    setTimeout(() => {
+      if (ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+      }
+    }, 1600);
+
+  } catch (err) {
+    console.debug("Web Audio chime aviso:", err);
+  }
 }
 
 /**
@@ -3071,7 +3152,7 @@ function renderHistoryTable() {
           <th style="min-width: 170px;">Professor(a)</th>
           <th style="min-width: 170px;">E-mail</th>
           <th style="min-width: 130px;">Unidade Escolar</th>
-          <th style="width: 135px; min-width: 135px;">Data / Horário</th>
+          <th style="width: 125px; min-width: 115px; text-align: center;">Horário / Data</th>
           <th style="width: 75px; min-width: 75px; text-align: center;">Origem</th>
           <th style="width: 75px; min-width: 75px; text-align: center;">Ações</th>
         </tr>
@@ -3108,8 +3189,15 @@ function renderHistoryTable() {
                   <i class="fa-solid fa-school"></i> ${escapeHtml(h.escola)}
                 </span>
               </td>
-              <td style="color:#475569; font-size:0.8rem; white-space:nowrap;">
-                <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(h.timestamp)}
+              <td style="text-align: center; vertical-align: middle;">
+                <div class="report-time-cell" title="Registro: ${escapeHtml(h.timestamp || '')}">
+                  <span class="report-time-badge">
+                    <i class="fa-regular fa-clock"></i> <strong>${escapeHtml(formatReportTimestamp(h.timestamp, h.date).time)}</strong>
+                  </span>
+                  <span class="report-date-sub">
+                    <i class="fa-regular fa-calendar"></i> ${escapeHtml(formatReportTimestamp(h.timestamp, h.date).date)}
+                  </span>
+                </div>
               </td>
               <td style="text-align:center;">
                 ${h.isRemote 
@@ -3501,8 +3589,8 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
               <th>Nome do Docente</th>
               <th>E-mail</th>
               <th>Unidade Escolar</th>
-              <th style="width: 140px;">Data / Horário</th>
-              <th style="width: 110px; text-align: center;">Situação</th>
+              <th style="width: 125px; min-width: 115px; text-align: center;">Horário / Data</th>
+              <th style="width: 105px; text-align: center;">Situação</th>
             </tr>
           </thead>
           <tbody>
@@ -3527,8 +3615,15 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
                 <i class="fa-solid fa-school"></i> ${escapeHtml(item.escola)}
               </span>
             </td>
-            <td style="font-size: 0.8rem; color: #475569; white-space: nowrap;">
-              <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(item.timestamp)}
+            <td style="text-align: center; vertical-align: middle;">
+              <div class="report-time-cell" title="Registro: ${escapeHtml(item.timestamp || '')}">
+                <span class="report-time-badge">
+                  <i class="fa-regular fa-clock"></i> <strong>${escapeHtml(formatReportTimestamp(item.timestamp, item.date).time)}</strong>
+                </span>
+                <span class="report-date-sub">
+                  <i class="fa-regular fa-calendar"></i> ${escapeHtml(formatReportTimestamp(item.timestamp, item.date).date)}
+                </span>
+              </div>
             </td>
             <td style="text-align: center;">
               <span class="badge badge-success" style="font-size: 0.72rem; padding: 3px 8px;">
@@ -3613,8 +3708,8 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
                 <th>Nome do Docente</th>
                 <th>E-mail</th>
                 <th>Unidade Escolar</th>
-                <th style="width: 140px;">Data / Horário</th>
-                <th style="width: 100px; text-align: center;">Situação</th>
+                <th style="width: 125px; min-width: 115px; text-align: center;">Horário / Data</th>
+                <th style="width: 105px; text-align: center;">Situação</th>
               </tr>
             </thead>
             <tbody>
@@ -3639,8 +3734,15 @@ function renderManagementReport(schoolFilter = '', dateFilter = '') {
                 <i class="fa-solid fa-school"></i> ${escapeHtml(item.escola)}
               </span>
             </td>
-            <td style="font-size: 0.8rem; color: #475569; white-space: nowrap;">
-              <i class="fa-regular fa-clock" style="color:#94a3b8; margin-right:4px;"></i>${escapeHtml(item.timestamp)}
+            <td style="text-align: center; vertical-align: middle;">
+              <div class="report-time-cell" title="Registro: ${escapeHtml(item.timestamp || '')}">
+                <span class="report-time-badge">
+                  <i class="fa-regular fa-clock"></i> <strong>${escapeHtml(formatReportTimestamp(item.timestamp, item.date).time)}</strong>
+                </span>
+                <span class="report-date-sub">
+                  <i class="fa-regular fa-calendar"></i> ${escapeHtml(formatReportTimestamp(item.timestamp, item.date).date)}
+                </span>
+              </div>
             </td>
             <td style="text-align: center;">
               <span class="badge badge-success" style="font-size: 0.72rem; padding: 3px 8px;">
